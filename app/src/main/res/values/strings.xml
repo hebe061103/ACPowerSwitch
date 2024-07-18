@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ACPowerSwitch</string>
+    <string name="blue_list">蓝牙列表</string>
+    <string name="wifi_list">无线列表</string>
+    <string name="about_about">关于</string>
+    <string name="bt_save">其它</string>
+    <string name="other_option">其它</string>
+    <string name="wifi_readme">在此处选择电源切换模块需要连接到的wifi网络，给模块进行配网操作</string>
+</resources>
