@@ -21,7 +21,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,7 +88,7 @@ public class WifiListActivity extends AppCompatActivity {
                             .setNegativeButton("确定", (dialog, which) -> {
                                 String inputText = editText.getText().toString();
                                 Toast.makeText(WifiListActivity.this, inputText, Toast.LENGTH_SHORT).show();
-                                String data = "{"+"\""+"ssid"+"\""+": "+"\""+wifilist.get(position)+"\""+","+"\""+"password"+"\""+":"+"\""+inputText+"\""+"}";
+                                String data = "{"+"\""+"ssid"+"\""+":"+"\""+wifilist.get(position)+"\""+","+"\""+"password"+"\""+":"+"\""+inputText+"\""+"}";
                                 Log.e(TAG,"发送数据:"+data);
                                 write_data_ble(data);
                             })

@@ -10,14 +10,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,7 +36,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public static SharedPreferences.Editor editor;
     public static SharedPreferences sp;
     public ImageView menu_bt;
-    public TextView blue_name;
     long lastBack = 0;
     @SuppressLint("MissingPermission")
     @Override
@@ -51,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         sp = getSharedPreferences("BlueInfo", MODE_PRIVATE);//获取 SharedPreferences对象
         editor = sp.edit(); // 获取编辑器对象
         menu_bt = findViewById(R.id.menu_img);
-        blue_name = findViewById(R.id.ble_name);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(menu_bt);
@@ -92,14 +88,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void bl_Status() {
         if (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
             if (connect_ok) {
-                blue_name.setTextColor(Color.parseColor("#00ff66"));
-                blue_name.setTextSize(16);
-                blue_name.setText(mlist.get(item_locale).getName());
                 if (mlist.get(item_locale).getName()!= null && mlist.get(item_locale).getName().equals("ESP32BLE")) {
-                    ESP32BLE = true;
+                    ESP32BLE = true;//连接到了esp32c3
                 }
-            }else{
-                blue_name.setText("");
             }
         }
     }
