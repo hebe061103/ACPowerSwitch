@@ -49,7 +49,7 @@ public class BleClientActivity extends AppCompatActivity {
     private ProgressDialog pd;
     public static int item_locale;
     public static boolean connect_ok;
-    public BluetoothGatt bluetoothGatt;
+    public static BluetoothGatt bluetoothGatt;
     public BluetoothManager bluetoothManager;
     public BluetoothAdapter bluetoothAdapter;
     public static BluetoothGattCharacteristic writeCharacteristic;
@@ -291,7 +291,7 @@ public class BleClientActivity extends AppCompatActivity {
         }
     };
     @SuppressLint("MissingPermission")
-    public void write_data_ble(String data){
+    public static void write_data_ble(String data){
         // 设置要写入的数据
         writeCharacteristic.setValue(data);
         // 将数据写入设备

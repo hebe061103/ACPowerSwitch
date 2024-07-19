@@ -1,5 +1,7 @@
 package com.zt.acpowerswitch;
 
+import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
+import static com.zt.acpowerswitch.MainActivity.goAnim;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,7 +12,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.EditText;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -47,12 +52,15 @@ public class WifiListActivity extends AppCompatActivity {
         List<android.net.wifi.ScanResult> scanResults = wifiManager.getScanResults();
         for (ScanResult scanResult : scanResults) {
             String ssid = scanResult.SSID;
-            Log.e(TAG,"WIFI信息:"+ssid);
-            // 其他信息，如BSSID、capabilities等
-            wifilist.add(ssid);
-            Message message = new Message();
-            message.what = 1;
-            myHandler.sendMessage(message);
+            String bssid = scanResult.BSSID;
+            if (!ssid.isEmpty()) {
+                Log.e(TAG, "WIFI信息:" + ssid + "MAC:" + bssid);
+                // 其他信息，如BSSID、capabilities等
+                wifilist.add(ssid);
+                Message message = new Message();
+                message.what = 1;
+                myHandler.sendMessage(message);
+            }
         }
     }
     private void display_wifiList() {
@@ -70,6 +78,23 @@ public class WifiListActivity extends AppCompatActivity {
             if (msg.what == 1) {
                 mRecycler = new wifiListAdapter(wifilist, WifiListActivity.this);
                 mRecyclerViewList.setAdapter(mRecycler);
+                mRecycler.setRecyclerItemClickListener(position -> {
+                    goAnim(WifiListActivity.this,50);
+                    EditText editText = new EditText(WifiListActivity.this);
+                    new AlertDialog.Builder(WifiListActivity.this)
+                            .setTitle("请输入密码")
+                            .setMessage(wifilist.get(position))
+                            .setView(editText)
+                            .setPositiveButton("取消", null)
+                            .setNegativeButton("确定", (dialog, which) -> {
+                                String inputText = editText.getText().toString();
+                                Toast.makeText(WifiListActivity.this, inputText, Toast.LENGTH_SHORT).show();
+                                String data = "{"+"\""+"ssid"+"\""+": "+"\""+wifilist.get(position)+"\""+","+"\""+"password"+"\""+":"+"\""+inputText+"\""+"}";
+                                Log.e(TAG,"发送数据:"+data);
+                                write_data_ble(data);
+                            })
+                            .show();
+                });
             }
         }
     };
