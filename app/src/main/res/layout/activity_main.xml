@@ -55,4 +55,19 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="46dp" />
 
+    <TextView
+        android:id="@+id/dev_ip_port"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:hint="ESP32C3"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.5"
+        tools:ignore="HardcodedText,TextContrastCheck" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

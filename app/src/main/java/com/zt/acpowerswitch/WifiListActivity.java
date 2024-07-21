@@ -4,6 +4,7 @@ import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
@@ -13,7 +14,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +21,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class WifiListActivity extends AppCompatActivity {
     public static List<String> wifilist = new ArrayList<>();
     private RecyclerView mRecyclerViewList;
     public  wifiListAdapter mRecycler;
+    public static ProgressDialog pd;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,17 +88,56 @@ public class WifiListActivity extends AppCompatActivity {
                             .setView(editText)
                             .setPositiveButton("取消", null)
                             .setNegativeButton("确定", (dialog, which) -> {
-                                String inputText = editText.getText().toString();
-                                Toast.makeText(WifiListActivity.this, inputText, Toast.LENGTH_SHORT).show();
-                                String data = "{"+"\""+"ssid"+"\""+":"+"\""+wifilist.get(position)+"\""+","+"\""+"password"+"\""+":"+"\""+inputText+"\""+"}";
-                                Log.e(TAG,"发送数据:"+data);
-                                write_data_ble(data);
+                                if (!editText.getText().toString().isEmpty()) {
+                                    String inputText = editText.getText().toString();
+                                    String ble_data = "{" + "\"" + "ssid" + "\"" + ":" + "\"" + wifilist.get(position) + "\"" + "," + "\"" + "password" + "\"" + ":" + "\"" + inputText + "\"" + "}";
+                                    Log.e(TAG, "发送数据:" + ble_data);
+                                    send_data(ble_data);
+                                }
                             })
                             .show();
+
                 });
             }
         }
     };
+
+    private void send_data(String data) {
+        pd = new ProgressDialog(this);
+        pd.setMessage("正在设置WIFI,请稍等......");
+        pd.show();
+        pd.setCancelable(false);
+        Thread thread = new Thread(() -> {
+            int readLength = 10; // 设置每次读取的字符数量
+            int stringLength = data.length(); // 获取字符串的总长度
+            Log.e(TAG, "发送字符的总长度:" + stringLength);
+            write_data_ble("len:"+ stringLength);
+            sleep(500);
+            for (int i = 0; i < stringLength; i += readLength) {
+                // 计算还剩多少字符可以读取
+                int remaining = stringLength - i;
+                // 如果剩余字符数少于readLength，则本次读取应该少于或等于剩余的字符数
+                if (remaining < readLength) {
+                    readLength = remaining;
+                }
+                // 使用substring方法读取字符串
+                String readString = data.substring(i, i + readLength);
+                write_data_ble(readString);
+                sleep(500);
+            }
+            write_data_ble("/");
+            Log.e(TAG, "分包发送完成");
+        });
+        thread.start();
+    }
+
+    public void sleep(int s){
+        try {
+            Thread.sleep(s);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
     @Override
     protected void onResume() {
         super.onResume();

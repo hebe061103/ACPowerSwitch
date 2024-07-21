@@ -1,9 +1,12 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
+
+import static com.zt.acpowerswitch.BleClientActivity.chara;
 import static com.zt.acpowerswitch.BleClientActivity.connect_ok;
-import static com.zt.acpowerswitch.BleClientActivity.item_locale;
-import static com.zt.acpowerswitch.BleClientActivity.mlist;
+import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
+import static com.zt.acpowerswitch.TcpClient.isIpAvailable;
+import static com.zt.acpowerswitch.WifiListActivity.pd;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -12,31 +15,40 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.util.List;
+import java.util.Objects;
+
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
+    public static String TAG = "MainActivity";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
             android.Manifest.permission.BLUETOOTH_ADMIN,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION
     };
-    public boolean ESP32BLE;
-    public static SharedPreferences.Editor editor;
     public static SharedPreferences sp;
+    public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
+    public TextView dev_ip_port;
     long lastBack = 0;
+    public String ip_info;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,15 +57,76 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         requestBluetoothPermissions();
     }
     private void init(){
-        sp = getSharedPreferences("BlueInfo", MODE_PRIVATE);//获取 SharedPreferences对象
+        sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
         editor = sp.edit(); // 获取编辑器对象
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(menu_bt);
         });
+        dev_ip_port = findViewById(R.id.dev_ip_port);
+        dev_ip_port.setOnClickListener(view -> {
+            if (connect_ok) write_data_ble("ip");
+        });
+        Thread thread = new Thread(() -> {
+            while (true) {
+                if (chara != null && chara.contains("ESIP:")) {
+                    Message message = new Message();
+                    message.what = 1;
+                    myHandler.sendMessage(message);
+                    ip_info=chara;
+                    chara="";
+                }
+                else if (chara != null && chara.contains("rec_ok")) {
+                    Message message = new Message();
+                    message.what = 2;
+                    myHandler.sendMessage(message);
+                    chara="";
+                }else if (chara != null && chara.contains("rec_error")) {
+                    Message message = new Message();
+                    message.what = 3;
+                    myHandler.sendMessage(message);
+                    chara="";
+                }
+            }
+        });
+        thread.start();
+    }
+    public Handler myHandler = new Handler(Looper.getMainLooper()) {
+        public void handleMessage(@NonNull Message msg) {
+            if (msg.what == 1) {
+                Log.e(TAG, "收到返回的IP");
+                String[] parts = ip_info.split(":");
+                if (!parts[1].equals("0.0.0.0")) saveData("wifi_ip", parts[1]);
+                Toast.makeText(MainActivity.this, parts[1], LENGTH_SHORT).show();
+            }
+            if (msg.what == 2) {
+                TextView messageTextView = Objects.requireNonNull(pd.getWindow()).getDecorView().findViewById(android.R.id.message);
+                messageTextView.setText("设置成功......");
+                sleep(2000);
+                WifiListActivity.pd.dismiss();
+            }
+            if (msg.what == 3) {
+                TextView messageTextView = Objects.requireNonNull(pd.getWindow()).getDecorView().findViewById(android.R.id.message);
+                messageTextView.setText("设置失败,请重设.....");
+                sleep(2000);
+                WifiListActivity.pd.dismiss();
+            }
+        }
+    };
+    private String readDate(String s) {
+        sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);
+        return sp.getString(s, null);
+    }
+    public static void saveData(String l, String s) {//l为保存的名字，s为要保存的字符串
+        editor.putString(l, s);
+        editor.apply();
     }
 
+    public static void deleteData(String l) {
+        editor.remove(l); // 根据l删除数据
+        editor.apply();
+    }
     @SuppressLint("MissingPermission")
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
@@ -84,20 +157,30 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         //显示菜单，不要少了这一步
         popupMenu.show();
     }
-    @SuppressLint("MissingPermission")
-    private void bl_Status() {
-        if (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
-            if (connect_ok) {
-                if (mlist.get(item_locale).getName()!= null && mlist.get(item_locale).getName().equals("ESP32BLE")) {
-                    ESP32BLE = true;//连接到了esp32c3
+    private void connect_esp32() {
+        String ip = readDate("wifi_ip");
+        Thread thread = new Thread(() -> {
+            while (true) {
+                sleep(1000);
+                if(isIpAvailable(ip)){
+                   //执行连接成功后的代码
+                }else {
+                    Log.e(TAG,"PING失败");
                 }
             }
+        });
+        thread.start();
+    }
+    public void sleep(int s){
+        try {
+            Thread.sleep(s);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
-        bl_Status();
     }
 
     protected void onDestroy() {
@@ -132,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if  (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
             //从这里进入主程序
             init();
+            connect_esp32();
         } else {
             // 没有获得权限，请求权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -144,7 +228,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             EasyPermissions.requestPermissions(this, "需要蓝牙权限以扫描周围的蓝牙设备", REQUEST_CODE_BLUETOOTH_PERMISSIONS, BLUETOOTH_PERMISSIONS);
         }
     }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

@@ -214,6 +214,7 @@ public class BleClientActivity extends AppCompatActivity {
             }
             if (itemId == R.id.disconnect_item){
                 if (bluetoothGatt != null) {
+                    connect_ok = false;
                     bluetoothGatt.close();
                     bluetoothGatt.disconnect();
                     bluetoothGatt = null;
@@ -259,7 +260,6 @@ public class BleClientActivity extends AppCompatActivity {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "GATT_SUCCESS"); //服务发现
-                gatt.requestMtu(100);
                 for (BluetoothGattService bluetoothGattService : gatt.getServices()) {
                     Log.e(TAG, "Service_UUID:" + bluetoothGattService.getUuid()); // 我们可以遍历到该蓝牙设备的全部Service对象。然后通过比较Service的UUID，我们可以区分该服务是属于什么业务的
                     if (SERVICE_UUID.equals(bluetoothGattService.getUuid().toString())) {
