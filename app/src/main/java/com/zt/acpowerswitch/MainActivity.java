@@ -6,7 +6,7 @@ import static com.zt.acpowerswitch.BleClientActivity.chara;
 import static com.zt.acpowerswitch.BleClientActivity.connect_ok;
 import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.TcpClient.isIpAvailable;
-import static com.zt.acpowerswitch.WifiListActivity.pd;
+import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -49,6 +49,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public TextView dev_ip_port;
     long lastBack = 0;
     public String ip_info;
+    public static boolean in_main;
+    public static TcpClient tcpClient;
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         requestBluetoothPermissions();
     }
     private void init(){
+        in_main=true;
+        tcpClient = new TcpClient();
         sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
         editor = sp.edit(); // 获取编辑器对象
         menu_bt = findViewById(R.id.menu_img);
@@ -77,17 +82,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     ip_info=chara;
                     chara="";
                 }
-                else if (chara != null && chara.contains("rec_ok")) {
-                    Message message = new Message();
-                    message.what = 2;
-                    myHandler.sendMessage(message);
-                    chara="";
-                }else if (chara != null && chara.contains("rec_error")) {
-                    Message message = new Message();
-                    message.what = 3;
-                    myHandler.sendMessage(message);
-                    chara="";
-                }
             }
         });
         thread.start();
@@ -99,18 +93,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 String[] parts = ip_info.split(":");
                 if (!parts[1].equals("0.0.0.0")) saveData("wifi_ip", parts[1]);
                 Toast.makeText(MainActivity.this, parts[1], LENGTH_SHORT).show();
-            }
-            if (msg.what == 2) {
-                TextView messageTextView = Objects.requireNonNull(pd.getWindow()).getDecorView().findViewById(android.R.id.message);
-                messageTextView.setText("设置成功......");
-                sleep(2000);
-                WifiListActivity.pd.dismiss();
-            }
-            if (msg.what == 3) {
-                TextView messageTextView = Objects.requireNonNull(pd.getWindow()).getDecorView().findViewById(android.R.id.message);
-                messageTextView.setText("设置失败,请重设.....");
-                sleep(2000);
-                WifiListActivity.pd.dismiss();
             }
         }
     };
@@ -162,10 +144,13 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         Thread thread = new Thread(() -> {
             while (true) {
                 sleep(1000);
-                if(isIpAvailable(ip)){
-                   //执行连接成功后的代码
-                }else {
-                    Log.e(TAG,"PING失败");
+                if (in_main) {
+                    if (isIpAvailable(ip)) {
+                        //执行连接成功后的代码
+
+                    } else {
+                        Log.e(TAG, "PING失败");
+                    }
                 }
             }
         });
@@ -181,12 +166,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
+        in_main=true;
     }
 
     protected void onDestroy() {
+        if (wifilist != null) {
+            wifilist.clear();
+        }
+        tcpClient.close();
         super.onDestroy();
     }
-
     /**
      * 简单震动
      * @param context     调用震动的Context
