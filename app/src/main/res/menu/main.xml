@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/blue_list"
-        android:title="@string/blue_list"/>
-    <item
-        android:id="@+id/wifi_list"
-        android:title="@string/wifi_list"/>
-    <item
         android:id="@+id/other_option"
         android:title="@string/other_option"/>
     <item

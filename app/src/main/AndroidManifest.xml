@@ -43,6 +43,7 @@
         <activity android:name="com.zt.acpowerswitch.BleClientActivity" />
         <activity android:name="com.zt.acpowerswitch.WifiListActivity" />
         <activity android:name="com.zt.acpowerswitch.otherOption" />
+        <activity android:name="com.zt.acpowerswitch.set_tcp_page" />
     </application>
 
 </manifest>

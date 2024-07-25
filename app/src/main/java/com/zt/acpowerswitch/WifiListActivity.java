@@ -4,7 +4,7 @@ import static com.zt.acpowerswitch.BleClientActivity.chara;
 import static com.zt.acpowerswitch.BleClientActivity.connect_ok;
 import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
-import static com.zt.acpowerswitch.MainActivity.in_main;
+import static com.zt.acpowerswitch.MainActivity.saveData;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -34,13 +34,13 @@ public class WifiListActivity extends AppCompatActivity {
     public static AlertDialog.Builder builder;
     private RecyclerView mRecyclerViewList;
     public  wifiListAdapter mRecycler;
-    private static ProgressDialog pd;
     public String wifi_ap_name;
+    public ProgressDialog pd;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.wifi_list_activity);
-        MainActivity.in_main=false;
+        pd = new ProgressDialog(WifiListActivity.this);
         WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         builder = new AlertDialog.Builder(WifiListActivity.this);
         if (!wifiManager.isWifiEnabled()) {
@@ -110,14 +110,25 @@ public class WifiListActivity extends AppCompatActivity {
             if (msg.what == 2) {
                 pd.dismiss();
                 pd.setMessage("设置成功，正在重启模块，请稍后......");
-                pd.setCancelable(false);
                 pd.show();
+                pd.setCancelable(false);
+                Thread thread = new Thread(() -> {
+                    for(int i=0;i<10;i++){
+                        write_data_ble("local_ip");
+                        sleep(3000);
+                        if(chara!=null&&chara.equals("IP:")){
+                            break;
+                        }
+                    }
+                });
+                thread.start();
             }
             if (msg.what == 3) {
                 pd.dismiss();
                 builder.setTitle("提醒"); // 设置弹窗的标题
                 builder.setMessage("设置失败，请重新设置"); // 设置弹窗的消息内容
                 builder.show();
+
             }
             if (msg.what == 4) {
                 pd.dismiss();
@@ -130,15 +141,19 @@ public class WifiListActivity extends AppCompatActivity {
                 pd.setMessage("OK,成功连接到热点:"+ wifi_ap_name);
                 pd.setCancelable(false);
                 pd.show();
-                in_main=true;
-                sleep(1000);
-                finish();
+                sleep(3000);
+                if (chara != null && chara.contains("IP:")){
+                    String[] parts = chara.split(":");
+                    saveData("wifi_ip",parts[1].replaceAll("\\s+$", ""));
+                    Log.e(TAG, "保存ip成功");
+                    pd.dismiss();
+                }
+                chara = "";
             }
         }
     };
 
     private void send_data(String data) {
-        pd = new ProgressDialog(this);
         pd.setMessage("正在设置WIFI,请稍等......");
         pd.show();
         pd.setCancelable(false);
@@ -147,7 +162,7 @@ public class WifiListActivity extends AppCompatActivity {
             int stringLength = data.length(); // 获取字符串的总长度
             Log.e(TAG, "发送字符的总长度:" + stringLength);
             write_data_ble("len:"+ stringLength);
-            sleep(500);
+            sleep(1000);
             for (int i = 0; i < stringLength; i += readLength) {
                 // 计算还剩多少字符可以读取
                 int remaining = stringLength - i;
@@ -158,11 +173,11 @@ public class WifiListActivity extends AppCompatActivity {
                 // 使用substring方法读取字符串
                 String readString = data.substring(i, i + readLength);
                 write_data_ble(readString);
-                sleep(500);
+                sleep(1000);
             }
-            write_data_ble("/");
+            write_data_ble("&");
             Log.e(TAG, "分包发送完成");
-            sleep(500);
+            sleep(1000);
             state_refresh(); //刷新连接状态
         });
         thread.start();
@@ -193,12 +208,11 @@ public class WifiListActivity extends AppCompatActivity {
                     message.what = 4;
                     myHandler.sendMessage(message);
                     chara = "";
-                }else if (chara != null && chara.contains("wifi_ok")) {
+                }else if (chara != null && chara.contains("IP:")) {
                     Log.e(TAG, "WIFI启动成功");
                     Message message = new Message();
                     message.what = 5;
                     myHandler.sendMessage(message);
-                    chara = "";
                     break;
                 }
             }

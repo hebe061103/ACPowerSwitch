@@ -4,6 +4,7 @@ import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -15,6 +16,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -36,6 +38,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /** @noinspection deprecation*/
@@ -55,10 +58,13 @@ public class BleClientActivity extends AppCompatActivity {
     public BluetoothDevice bluetoothDeviceName;
     public static BluetoothGattCharacteristic writeCharacteristic;
     public boolean discoveryFinished,BLE_ON;
+    private static ProgressDialog pd1;
+    public ComponentName topActivity;
     @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_scan);
+        pd1 = new ProgressDialog(this);
         bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         if (bluetoothAdapter == null) {
@@ -199,15 +205,16 @@ public class BleClientActivity extends AppCompatActivity {
             if (itemId == R.id.connect_item) {//连接蓝牙
                 goAnim(this,50);
                 if (connect_ok) {
-                    Toast.makeText(this, "巳连接请勿重复连接!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
+                    startActivities(new Intent[]{intent});
                 }else {
-                    Toast.makeText(this, "开始连接:"+mlist.get(item_locale).getName()+"mac:"+mlist.get(item_locale).getAddress(), Toast.LENGTH_SHORT).show();
+                    pd1.setMessage("正在连接蓝牙,请稍等");
+                    pd1.show();
+                    pd1.setCancelable(false);
                     bluetoothDeviceName = mlist.get(item_locale);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                        bluetoothAdapter.cancelDiscovery();
                         bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
                     } else {
-                        bluetoothAdapter.cancelDiscovery();
                         bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback);
                     }
                 }
@@ -218,7 +225,6 @@ public class BleClientActivity extends AppCompatActivity {
                     bluetoothGatt.close();
                     bluetoothGatt.disconnect();
                     bluetoothGatt = null;
-                    bluetoothDeviceName = null;
                 }
             }
             return false;
@@ -239,6 +245,7 @@ public class BleClientActivity extends AppCompatActivity {
                 connect_ok = true;
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.e(TAG, "连接断开");
+                connect_ok = false;
                 if (bluetoothDeviceName!=null){
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                         bluetoothAdapter.cancelDiscovery();
@@ -248,7 +255,6 @@ public class BleClientActivity extends AppCompatActivity {
                         bluetoothGatt = mlist.get(item_locale).connectGatt(BleClientActivity.this, false, gattCallback);
                     }
                 }
-                connect_ok = false;
             } else if (newState == BluetoothProfile.STATE_CONNECTING) {
                 //TODO 在实际过程中，该方法并没有调用
                 Log.e(TAG, "连接中....");
@@ -268,6 +274,21 @@ public class BleClientActivity extends AppCompatActivity {
                             writeCharacteristic = bluetoothGattService.getCharacteristic(UUID.fromString(WRITE_UUID));
                             if (writeCharacteristic != null && writeCharacteristic.getProperties() == BluetoothGattCharacteristic.PROPERTY_WRITE) {
                                 Log.e(TAG, "找到write特征,可以写入");
+                                pd1.dismiss();
+                                ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                                List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
+
+                                if (runningTasks != null && !runningTasks.isEmpty()) {
+                                    topActivity = runningTasks.get(0).topActivity;
+                                    String packageName = Objects.requireNonNull(topActivity).getPackageName();
+                                    String className = topActivity.getClassName();
+
+                                    Log.e(TAG,"Top Activity:"+topActivity+",Package Name:" + packageName + ",Class Name: " + className);
+                                }
+                                if(!topActivity.toString().equals("ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.WifiListActivity}")) {
+                                    Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
+                                    startActivities(new Intent[]{intent});
+                                }
                             }
                         }
                         return;//结束循环操作
@@ -293,22 +314,13 @@ public class BleClientActivity extends AppCompatActivity {
                 }
             }
         }
-        @Override
-        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-            super.onMtuChanged(gatt, mtu, status);
-            if (BluetoothGatt.GATT_SUCCESS == status) {
-                Log.e(TAG, "onMtuChanged success MTU = " + mtu);
-            } else {
-                Log.e(TAG, "onMtuChanged fail " + mtu);
-            }
-        }
         //蓝牙设备发送消息后的自动监听
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             // readUUID 是我要链接的蓝牙设备的消息读UUID值，跟通知的特性的UUID比较。这样可以避免其他消息的污染。
             if (READ_UUID.equals(characteristic.getUuid().toString())) {
                 chara = new String(characteristic.getValue(), StandardCharsets.UTF_8);
-                Log.e(TAG, "消息内容:" + chara);
+                Log.e(TAG, "消息内容:"+chara);
             }
         }
     };
@@ -318,7 +330,7 @@ public class BleClientActivity extends AppCompatActivity {
         writeCharacteristic.setValue(data);
         // 将数据写入设备
         bluetoothGatt.writeCharacteristic(writeCharacteristic);
-        Log.e(TAG, "写入: "+data);
+        Log.e(TAG, "写入:"+data);
     }
     @SuppressLint("MissingPermission")
     @Override
@@ -337,8 +349,8 @@ public class BleClientActivity extends AppCompatActivity {
         }
     }
     protected void onDestroy() {
-        if (foundReceiver != null)
-            unregisterReceiver(foundReceiver); //停止监听
+        if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
+        bluetoothDeviceName = null;
         super.onDestroy();
     }
     @SuppressLint("MissingPermission")
