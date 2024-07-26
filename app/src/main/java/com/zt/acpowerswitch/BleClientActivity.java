@@ -348,6 +348,7 @@ public class BleClientActivity extends AppCompatActivity {
             }
         }
     }
+
     protected void onDestroy() {
         if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;

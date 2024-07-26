@@ -1,9 +1,11 @@
 package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.goAnim;
+import static com.zt.acpowerswitch.MainActivity.readDate;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -13,6 +15,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class set_tcp_page extends AppCompatActivity {
+    public static String TAG = "set_tcp_page";
     public Button bl_ip_get,shoudong_get,bt_clean;
     public EditText ip_input;
     public TextView get_ip_from_bl;
@@ -25,8 +28,8 @@ public class set_tcp_page extends AppCompatActivity {
         ip_input = findViewById(R.id.ip_input);
         get_ip_from_bl = findViewById(R.id.get_ip_from_bl);
 
-        if (MainActivity.readDate(this,"wifi_ip")!=null){
-            get_ip_from_bl.setText(MainActivity.readDate(this,"wifi_ip"));
+        if (readDate(this,"wifi_ip")!=null){
+            get_ip_from_bl.setText(readDate(this,"wifi_ip"));
         }
         bl_ip_get.setOnClickListener(view -> {
             goAnim(set_tcp_page.this,50);
@@ -47,8 +50,17 @@ public class set_tcp_page extends AppCompatActivity {
         });
         shoudong_get.setOnClickListener(view -> {
             goAnim(set_tcp_page.this,50);
-            MainActivity.saveData("wifi_ip",ip_input.getText().toString());
-            Toast.makeText(this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
+            if (!ip_input.getText().toString().isEmpty()) {
+                MainActivity.saveData("wifi_ip", ip_input.getText().toString());
+                Toast.makeText(this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(this, "请输入目标IP", Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+    @Override
+    public void onBackPressed() {
+        // 默认返回键行为
+        super.onBackPressed(); // 或者你可以自定义返回逻辑
     }
 }

@@ -1,10 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
-
-import static com.zt.acpowerswitch.WifiListActivity.TAG;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +27,7 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
+    public static String TAG = "MainActivity";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
             android.Manifest.permission.BLUETOOTH_ADMIN,
@@ -41,15 +39,21 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public ImageView menu_bt;
     public long lastBack = 0;
     public TextView dev_ip_port;
-
+    public TCPClient tcpClient=new TCPClient();
+    public static boolean connect_tcp;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        requestBluetoothPermissions();
     }
     private void init(){
+        sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
+        editor = sp.edit(); // 获取编辑器对象
+        if(readDate(this,"wifi_ip")==null||readDate(this,"wifi_ip").isEmpty()) {
+            Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
+            startActivities(new Intent[]{intent});
+        }
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -69,6 +73,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     .show();
             return false;
         });
+        new Thread(() -> {
+            while (true) {
+                sleep(2000);
+                if(connect_tcp) {
+                    Log.e(TAG, "服务器返回的数据:" + tcpClient.send("tcp_test"));
+                }
+            }
+        }).start();
     }
     public static String readDate(Context context, String s) {
         sp = context.getSharedPreferences("WIFI_INFO", MODE_PRIVATE);
@@ -105,23 +117,35 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         //显示菜单，不要少了这一步
         popupMenu.show();
     }
+    public void sleep(int s){
+        try {
+            Thread.sleep(s);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
-        if(readDate(this,"wifi_ip")==null) finish();
+        requestBluetoothPermissions();
+        if (readDate(this, "wifi_ip")!=null) {
+            tcpClient.TcpConnect(readDate(this, "wifi_ip"), 55555);
+            Log.e(TAG, "onResume网络连接开启");
+        }
     }
-
+    protected void onPause() {
+        super.onPause();
+        tcpClient.close_socket();
+        Log.e(TAG,"onPause网络连接关闭");
+    }
     protected void onDestroy() {
+        super.onDestroy();
         if (wifilist != null) {
             wifilist.clear();
         }
-        super.onDestroy();
+        tcpClient.close_socket();
+        Log.e(TAG,"onDestroy网络连接关闭");
     }
-    /**
-     * 简单震动
-     * @param context     调用震动的Context
-     * @param millisecond 震动的时间，毫秒
-     */
     public static void goAnim(Context context, int millisecond) {
         Vibrator vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
         vibrator.vibrate(millisecond);
@@ -135,7 +159,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (lastBack == 0 || System.currentTimeMillis() - lastBack > 2000) {
             Toast.makeText(MainActivity.this, "再按一次返回退出", LENGTH_SHORT).show();
             lastBack = System.currentTimeMillis();
-            goAnim(this,500);
             return;
         }
         super.onBackPressed();
@@ -144,14 +167,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void requestBluetoothPermissions() {
         if  (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
             //从这里进入主程序
-            sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
-            editor = sp.edit(); // 获取编辑器对象
-            if(readDate(this,"wifi_ip")==null) {
-                Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
-                startActivities(new Intent[]{intent});
-            }else {
-                init();
-            }
+            init();
         } else {
             // 没有获得权限，请求权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -175,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
             // 相关权限被授予，可以进行蓝牙操作
-            Log.e(TAG,"权限巳允许");
+            Log.e(TAG,"相关权限巳允许");
         }
     }
 

@@ -9,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="在止页面配置目标设备IP,请选择配置方式."
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline14"
@@ -22,7 +22,7 @@
         android:autofillHints=""
         android:hint="0.0.0.0"
         android:minHeight="48dp"
-        android:textSize="18sp"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline18"
         tools:ignore="HardcodedText,TextFields,TextContrastCheck" />
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="蓝牙方式获取:"
-        android:textSize="18sp"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
         tools:ignore="HardcodedText" />
@@ -85,7 +85,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="手动配置:"
-        android:textSize="18sp"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline17"
         tools:ignore="HardcodedText" />
@@ -103,7 +103,6 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
         android:text="完成"
-        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline18"
         tools:ignore="HardcodedText" />
@@ -112,7 +111,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="重置软件清空设置:"
-        android:textSize="18sp"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline19"
         tools:ignore="HardcodedText" />
@@ -129,7 +128,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="重置"
-        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline20"
         tools:ignore="HardcodedText" />
@@ -146,7 +144,7 @@
         android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:hint="0.0.0.0"
-        android:textSize="18sp"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline16"
         tools:ignore="HardcodedText" />
