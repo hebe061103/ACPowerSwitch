@@ -39,21 +39,37 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public ImageView menu_bt;
     public long lastBack = 0;
     public TextView dev_ip_port;
-    public TCPClient tcpClient=new TCPClient();
-    public static boolean connect_tcp;
+    public static boolean connect_udp;
+    private boolean Permissions_allow;
+    private final UDPClient udpClient = new UDPClient();
+    private TextView out_Voltage,out_Current,power_w,out_frequency;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-    }
-    private void init(){
         sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
         editor = sp.edit(); // 获取编辑器对象
-        if(readDate(this,"wifi_ip")==null||readDate(this,"wifi_ip").isEmpty()) {
+        requestBluetoothPermissions();
+    }
+    private void init(){
+        if (readDate(this, "wifi_ip") == null || readDate(this, "wifi_ip").isEmpty()) {
             Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
             startActivities(new Intent[]{intent});
+        } else {
+            if (readDate(this, "wifi_ip") != null) {
+                if (udpClient.isNetworkAvailable(readDate(this, "wifi_ip"))) {
+                    udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
+                    Log.e(TAG, "连接服务器......");
+                }else{
+                    Log.e(TAG, "服务器无法连接......");
+                }
+            }
         }
+        out_Voltage = findViewById(R.id.out_Voltage);
+        out_Current = findViewById(R.id.out_Current);
+        power_w = findViewById(R.id.power_w);
+        out_frequency = findViewById(R.id.out_frequency);
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -62,39 +78,32 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this,50);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("提 示")
-                    .setMessage("该操作会清空数据，将无法连接到指定设备")
-                    .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> {
-                        goAnim(MainActivity.this,50);
-                        MainActivity.deleteData("wifi_ip");
-                    })
-                    .show();
+            if (readDate(this,"wifi_ip")!=null) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("提 示")
+                        .setMessage("该操作会清空数据，将无法连接到指定设备")
+                        .setPositiveButton("取消", null)
+                        .setNegativeButton("确定", (dialog, which) -> {
+                            goAnim(MainActivity.this, 50);
+                            MainActivity.deleteData("wifi_ip");
+                        })
+                        .show();
+            }else{
+                Log.e(TAG,"wifi_ip好像是null的");
+            }
             return false;
         });
         new Thread(() -> {
             while (true) {
-                sleep(2000);
-                if(connect_tcp) {
-                    Log.e(TAG, "服务器返回的数据:" + tcpClient.send("tcp_test"));
+                sleep(1000);
+                if(connect_udp) {
+                    udpClient.sendMessage("tcp_test");
+                    Log.e(TAG, "服务器返回的数据:" + udpClient.receiveMessage());
                 }
             }
         }).start();
     }
-    public static String readDate(Context context, String s) {
-        sp = context.getSharedPreferences("WIFI_INFO", MODE_PRIVATE);
-        return sp.getString(s, null);
-    }
-    public static void saveData(String l, String s) {//l为保存的名字，s为要保存的字符串
-        editor.putString(l, s);
-        editor.apply();
-    }
 
-    public static void deleteData(String l) {
-        editor.remove(l); // 根据l删除数据
-        editor.apply();
-    }
     @SuppressLint("MissingPermission")
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
@@ -117,6 +126,19 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         //显示菜单，不要少了这一步
         popupMenu.show();
     }
+    public static String readDate(Context context, String s) {
+        sp = context.getSharedPreferences("WIFI_INFO", MODE_PRIVATE);
+        return sp.getString(s, null);
+    }
+    public static void saveData(String l, String s) {//l为保存的名字，s为要保存的字符串
+        editor.putString(l, s);
+        editor.apply();
+    }
+
+    public static void deleteData(String l) {
+        editor.remove(l); // 根据l删除数据
+        editor.apply();
+    }
     public void sleep(int s){
         try {
             Thread.sleep(s);
@@ -127,24 +149,22 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
-        requestBluetoothPermissions();
-        if (readDate(this, "wifi_ip")!=null) {
-            tcpClient.TcpConnect(readDate(this, "wifi_ip"), 55555);
-            Log.e(TAG, "onResume网络连接开启");
+        if (Permissions_allow){
+            init();
         }
     }
     protected void onPause() {
         super.onPause();
-        tcpClient.close_socket();
-        Log.e(TAG,"onPause网络连接关闭");
     }
     protected void onDestroy() {
         super.onDestroy();
         if (wifilist != null) {
             wifilist.clear();
         }
-        tcpClient.close_socket();
-        Log.e(TAG,"onDestroy网络连接关闭");
+        if (UDPClient.socket!=null) {
+            udpClient.close();
+            Log.e(TAG, "onDestroy网络连接关闭");
+        }
     }
     public static void goAnim(Context context, int millisecond) {
         Vibrator vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
@@ -167,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void requestBluetoothPermissions() {
         if  (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
             //从这里进入主程序
-            init();
+            Permissions_allow=true;
         } else {
             // 没有获得权限，请求权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

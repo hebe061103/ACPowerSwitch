@@ -2,9 +2,12 @@ package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
+import static com.zt.acpowerswitch.MainActivity.saveData;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,9 +22,11 @@ public class set_tcp_page extends AppCompatActivity {
     public Button bl_ip_get,shoudong_get,bt_clean;
     public EditText ip_input;
     public TextView get_ip_from_bl;
+    private Handler handler;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.set_tcp_activity);
+        handler = new Handler(Looper.getMainLooper());
         bl_ip_get = findViewById(R.id.bl_ip_get);
         shoudong_get = findViewById(R.id.shoudong_get);
         bt_clean = findViewById(R.id.bt_clean);
@@ -48,15 +53,28 @@ public class set_tcp_page extends AppCompatActivity {
                     })
                     .show();
         });
-        shoudong_get.setOnClickListener(view -> {
+        shoudong_get.setOnClickListener(view -> new Thread(() -> {
+            // 执行一些后台工作
             goAnim(set_tcp_page.this,50);
-            if (!ip_input.getText().toString().isEmpty()) {
-                MainActivity.saveData("wifi_ip", ip_input.getText().toString());
-                Toast.makeText(this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
-            }else {
-                Toast.makeText(this, "请输入目标IP", Toast.LENGTH_SHORT).show();
+            if (!ip_input.getText().toString().isEmpty()){
+                saveData("wifi_ip",ip_input.getText().toString());
+                Log.e(TAG,"IP巳保存,请返回主页");
+                Looper.prepare();
+                Toast.makeText(set_tcp_page.this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
+                Looper.loop();
+            }else{
+                Looper.prepare();
+                Toast.makeText(set_tcp_page.this, "请输入一个正确IP地址", Toast.LENGTH_SHORT).show();
+                Looper.loop();
             }
-        });
+            // 更新UI
+            handler.post(() -> {
+                //在这里执行要刷新的操作
+                if (readDate(set_tcp_page.this,"wifi_ip")!=null) {
+                    ip_input.setText(readDate(set_tcp_page.this, "wifi_ip"));
+                }
+            });
+        }).start());
     }
     @Override
     public void onBackPressed() {
