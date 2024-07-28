@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WifiListActivity extends AppCompatActivity {
-    public static String TAG = "WifiListActivity";
+    public static String TAG = "WifiListActivity:";
     public static List<String> wifilist = new ArrayList<>();
     public static AlertDialog.Builder builder;
     private RecyclerView mRecyclerViewList;
@@ -138,17 +138,20 @@ public class WifiListActivity extends AppCompatActivity {
             }
             if (msg.what == 5) {
                 pd.dismiss();
-                pd.setMessage("OK,成功连接到热点:"+ wifi_ap_name);
-                pd.setCancelable(false);
-                pd.show();
-                sleep(3000);
-                if (chara != null && chara.contains("IP:")){
-                    String[] parts = chara.split(":");
-                    saveData("wifi_ip",parts[1].replaceAll("\\s+$", ""));
-                    Log.e(TAG, "保存ip成功");
-                    pd.dismiss();
-                }
-                chara = "";
+                builder.setTitle("提醒"); // 设置弹窗的标题
+                builder.setMessage("OK,成功连接到热点:"+ wifi_ap_name); // 设置弹窗的消息内容
+                builder.show();
+                Handler handler = new Handler();
+                handler.postDelayed(() -> {
+                    if (chara != null && chara.contains("IP:")){
+                        String[] parts = chara.split(":");
+                        saveData("wifi_ip",parts[1].replaceAll("\\s+$", ""));
+                        Log.e(TAG, "ip保存成功");
+                        about.log(TAG, "ip保存成功");
+                        BleClientActivity.close_ble();
+                    }
+                    chara = "";
+                },3000);
             }
         }
     };

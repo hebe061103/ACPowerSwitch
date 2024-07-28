@@ -43,7 +43,7 @@ import java.util.UUID;
 
 /** @noinspection deprecation*/
 public class BleClientActivity extends AppCompatActivity {
-    public static String TAG = "BleClientActivity";
+    public static String TAG = "BleClientActivity:";
     public static String chara;
     public static List<BluetoothDevice> mlist = new ArrayList<>();
     private RecyclerView mRecyclerView;
@@ -220,12 +220,7 @@ public class BleClientActivity extends AppCompatActivity {
                 }
             }
             if (itemId == R.id.disconnect_item){
-                if (bluetoothGatt != null) {
-                    connect_ok = false;
-                    bluetoothGatt.close();
-                    bluetoothGatt.disconnect();
-                    bluetoothGatt = null;
-                }
+                close_ble();
             }
             return false;
         });
@@ -348,7 +343,15 @@ public class BleClientActivity extends AppCompatActivity {
             }
         }
     }
-
+    @SuppressLint("MissingPermission")
+    public static void close_ble(){
+        if (bluetoothGatt != null) {
+            connect_ok = false;
+            bluetoothGatt.close();
+            bluetoothGatt.disconnect();
+            bluetoothGatt = null;
+        }
+    }
     protected void onDestroy() {
         if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;

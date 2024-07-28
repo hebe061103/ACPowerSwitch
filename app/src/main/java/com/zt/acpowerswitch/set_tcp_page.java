@@ -18,7 +18,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class set_tcp_page extends AppCompatActivity {
-    public static String TAG = "set_tcp_page";
+    public static String TAG = "set_tcp_page:";
     public Button bl_ip_get,shoudong_get,bt_clean;
     public EditText ip_input;
     public TextView get_ip_from_bl;
@@ -55,14 +55,15 @@ public class set_tcp_page extends AppCompatActivity {
         });
         shoudong_get.setOnClickListener(view -> new Thread(() -> {
             // 执行一些后台工作
-            goAnim(set_tcp_page.this,50);
-            if (!ip_input.getText().toString().isEmpty()){
-                saveData("wifi_ip",ip_input.getText().toString());
-                Log.e(TAG,"IP巳保存,请返回主页");
+            goAnim(set_tcp_page.this, 50);
+            if (!ip_input.getText().toString().isEmpty()) {
+                saveData("wifi_ip", ip_input.getText().toString());
+                Log.e(TAG, "IP巳保存,请返回主页");
+                about.log(TAG, "IP巳保存");
                 Looper.prepare();
                 Toast.makeText(set_tcp_page.this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
                 Looper.loop();
-            }else{
+            } else {
                 Looper.prepare();
                 Toast.makeText(set_tcp_page.this, "请输入一个正确IP地址", Toast.LENGTH_SHORT).show();
                 Looper.loop();
@@ -70,7 +71,7 @@ public class set_tcp_page extends AppCompatActivity {
             // 更新UI
             handler.post(() -> {
                 //在这里执行要刷新的操作
-                if (readDate(set_tcp_page.this,"wifi_ip")!=null) {
+                if (readDate(set_tcp_page.this, "wifi_ip") != null) {
                     ip_input.setText(readDate(set_tcp_page.this, "wifi_ip"));
                 }
             });

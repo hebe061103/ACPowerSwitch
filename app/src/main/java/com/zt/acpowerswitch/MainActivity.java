@@ -2,6 +2,7 @@ package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -27,7 +28,7 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
-    public static String TAG = "MainActivity";
+    public static String TAG = "MainActivity:";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
             android.Manifest.permission.BLUETOOTH_ADMIN,
@@ -53,18 +54,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         requestBluetoothPermissions();
     }
     private void init(){
-        if (readDate(this, "wifi_ip") == null || readDate(this, "wifi_ip").isEmpty()) {
+        if (readDate(this, "wifi_ip") == null) {
             Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
             startActivities(new Intent[]{intent});
         } else {
-            if (readDate(this, "wifi_ip") != null) {
-                if (udpClient.isNetworkAvailable(readDate(this, "wifi_ip"))) {
-                    udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
-                    Log.e(TAG, "连接服务器......");
-                }else{
-                    Log.e(TAG, "服务器无法连接......");
-                }
-            }
+            udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
         }
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -98,7 +92,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 sleep(1000);
                 if(connect_udp) {
                     udpClient.sendMessage("tcp_test");
-                    Log.e(TAG, "服务器返回的数据:" + udpClient.receiveMessage());
+                    String d = udpClient.receiveMessage();
+                    Log.e(TAG, "Receive data:" + d);
+                    about.log(TAG, "Receive data:" + d);
                 }
             }
         }).start();
@@ -164,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (UDPClient.socket!=null) {
             udpClient.close();
             Log.e(TAG, "onDestroy网络连接关闭");
+            about.log(TAG, "onDestroy网络连接关闭");
         }
     }
     public static void goAnim(Context context, int millisecond) {
