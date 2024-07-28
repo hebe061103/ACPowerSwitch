@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class otherOption extends AppCompatActivity {
     public TextView target_ip,ia_set;
-    public EditText ia_edit;
+    public EditText w_edit;
     private Handler handler;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,9 +23,9 @@ public class otherOption extends AppCompatActivity {
         str_pro();
     }
    public void str_pro(){
-       ia_edit= findViewById(R.id.ia_edit);
-       if (readDate(otherOption.this,"ia")!=null) {
-           ia_edit.setText(readDate(otherOption.this, "ia"));
+       w_edit= findViewById(R.id.w_edit);
+       if (readDate(otherOption.this,"w")!=null) {
+           w_edit.setText(readDate(otherOption.this, "w"));
        }
        target_ip = findViewById(R.id.target_ip);
        if (MainActivity.readDate(otherOption.this,"wifi_ip")!=null){
@@ -35,8 +35,8 @@ public class otherOption extends AppCompatActivity {
        ia_set.setOnClickListener(view -> new Thread(() -> {
            // 执行一些后台工作
            goAnim(otherOption.this,50);
-           if (!ia_edit.getText().toString().isEmpty()){
-               saveData("ia",ia_edit.getText().toString());
+           if (!w_edit.getText().toString().isEmpty()){
+               saveData("w",w_edit.getText().toString());
                Looper.prepare();
                Toast.makeText(otherOption.this, "巳保存", Toast.LENGTH_SHORT).show();
                Looper.loop();
@@ -48,8 +48,8 @@ public class otherOption extends AppCompatActivity {
            // 更新UI
            handler.post(() -> {
                //在这里执行要刷新的操作
-               if (readDate(otherOption.this,"ia")!=null) {
-                   ia_edit.setText(readDate(otherOption.this, "ia"));
+               if (readDate(otherOption.this,"w")!=null) {
+                   w_edit.setText(readDate(otherOption.this, "w"));
                }
            });
        }).start());
