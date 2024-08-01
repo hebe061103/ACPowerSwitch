@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
@@ -43,7 +45,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public static boolean connect_udp;
     private boolean Permissions_allow;
     private final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_w,out_frequency;
+    private TextView out_Voltage,out_Current,power_w,out_frequency,bat_Voltage,le_Voltage;
+    private String udp_value;
+    public String[] request_info = new String[]{"get_adc1_voltage", "get_adc2_voltage"};
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
+        bat_Voltage = findViewById(R.id.bat_Voltage);
+        le_Voltage = findViewById(R.id.le_Voltage);
         power_w = findViewById(R.id.power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         menu_bt = findViewById(R.id.menu_img);
@@ -89,17 +95,46 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
         new Thread(() -> {
             while (true) {
-                sleep(1000);
                 if(connect_udp) {
-                    udpClient.sendMessage("tcp_test");
-                    String d = udpClient.receiveMessage();
-                    Log.e(TAG, "Receive data:" + d);
-                    about.log(TAG, "Receive data:" + d);
+                    for (String s : request_info) {
+                        udpClient.sendMessage(s);
+                        udp_value = udpClient.receiveMessage();
+                        Log.e(TAG, "Receive_data:" + udp_value);
+                        if (udp_value != null && udp_value.contains("adc1_value")) {
+                            Message message = new Message();
+                            message.what = 1;
+                            udpProHandler.sendMessage(message);
+                        }else if (udp_value != null && udp_value.contains("adc2_value")) {
+                            Message message = new Message();
+                            message.what = 2;
+                            udpProHandler.sendMessage(message);
+                        }
+                    }
                 }
             }
         }).start();
     }
-
+    @SuppressLint("HandlerLeak")
+    Handler udpProHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            if (msg.what == 1) {
+                //adc1value为电池电压
+                if (udp_value!=null) {
+                    String[] value = udp_value.split(":");
+                    bat_Voltage.setText(value[1]);
+                    udp_value = null;
+                }
+            }
+            if (msg.what == 2) {
+                //adc2value为太阳能电压
+                if (udp_value!=null) {
+                    String[] value = udp_value.split(":");
+                    le_Voltage.setText(value[1]);
+                    udp_value = null;
+                }
+            }
+        }
+    };
     @SuppressLint("MissingPermission")
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
