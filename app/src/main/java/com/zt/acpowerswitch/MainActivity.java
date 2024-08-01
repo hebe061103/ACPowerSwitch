@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
-        power_w = findViewById(R.id.power_w);
+        power_w = findViewById(R.id.power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {

@@ -13,7 +13,6 @@
         android:id="@+id/out_frequency"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#CDDC39"
         android:hint="null"
         android:textColorHint="#1B5E20"
         android:textSize="16sp"
@@ -22,10 +21,9 @@
         tools:ignore="HardcodedText" />
 
     <TextView
-        android:id="@+id/power_w"
+        android:id="@+id/power_kw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#E84A3F"
         android:hint="null"
         android:textColorHint="#000000"
         android:textSize="16sp"
@@ -37,7 +35,6 @@
         android:id="@+id/out_Current"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#C54ADA"
         android:hint="null"
         android:textColorHint="#000000"
         android:textSize="16sp"
@@ -49,7 +46,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="交流电源切换系统:"
+        android:text="光伏市电监测转换系统:"
         android:textColor="#000666"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -106,7 +103,6 @@
         tools:ignore="HardcodedText,TextContrastCheck" />
 
     <TextView
-        android:id="@+id/textView8"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#00BCD4"
@@ -121,38 +117,37 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="61dp" />
+        app:layout_constraintGuide_begin="110dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline26"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="106dp" />
+        app:layout_constraintGuide_begin="159dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline27"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="150dp" />
+        app:layout_constraintGuide_begin="208dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline28"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="193dp" />
+        app:layout_constraintGuide_begin="254dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline29"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="240dp" />
+        app:layout_constraintGuide_begin="299dp" />
 
     <TextView
-        android:id="@+id/textView9"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#C54ADA"
@@ -163,7 +158,6 @@
         tools:ignore="HardcodedText,TextContrastCheck" />
 
     <TextView
-        android:id="@+id/textView11"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#E84A3F"
@@ -174,7 +168,6 @@
         tools:ignore="HardcodedText,TextContrastCheck" />
 
     <TextView
-        android:id="@+id/textView12"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#CDDC39"
@@ -195,7 +188,6 @@
         android:id="@+id/out_Voltage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#00BCD4"
         android:hint="null"
         android:textColorHint="#263238"
         android:textSize="16sp"
@@ -208,6 +200,199 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="358dp" />
+        app:layout_constraintGuide_begin="336dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="输出信息:"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline6"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#2196F3"
+        android:text="当前输出模式:"
+        android:textColor="#212121"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline29"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/out_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="null"
+        android:textColorHint="#546E7A"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline31"
+        app:layout_constraintTop_toTopOf="@+id/guideline29"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="太阳能信息:"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline35"
+        tools:ignore="HardcodedText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline35"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="346dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline36"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="396dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#8BC34A"
+        android:text="光伏电压(v):"
+        android:textColor="#424242"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline36"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/le_Voltage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="null"
+        android:textColorHint="#546E7A"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline31"
+        app:layout_constraintTop_toTopOf="@+id/guideline36"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#FFEB3B"
+        android:text="光伏电能统计(kw/h):"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline38"
+        tools:ignore="HardcodedText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline38"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="494dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#E91E63"
+        android:text="光伏电流(i):"
+        android:textColor="#000000"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline39"
+        tools:ignore="HardcodedText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline39"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="447dp" />
+
+    <TextView
+        android:id="@+id/le_current"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="null"
+        android:textColorHint="#546E7A"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline31"
+        app:layout_constraintTop_toTopOf="@+id/guideline39"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/electrical_statistics"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="null"
+        android:textColorHint="#546E7A"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline31"
+        app:layout_constraintTop_toTopOf="@+id/guideline38"
+        tools:ignore="HardcodedText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline40"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="549dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="电池信息:"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline40"
+        tools:ignore="HardcodedText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline41"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="601dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#FF9800"
+        android:text="电池电压(v):"
+        android:textColor="#424242"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline41"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/bat_Voltage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="null"
+        android:textColorHint="#546E7A"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline31"
+        app:layout_constraintTop_toTopOf="@+id/guideline41"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="该系统监测光伏系统各项信息，并可设置达到功率点自动切换输入方式，如需切换点击右上角设置进行功率点设置."
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@+id/dev_ip_port"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintWidth_percent="0.94"
+        tools:ignore="HardcodedText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
