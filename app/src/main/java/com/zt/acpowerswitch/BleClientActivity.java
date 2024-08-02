@@ -352,13 +352,17 @@ public class BleClientActivity extends AppCompatActivity {
             bluetoothGatt = null;
         }
     }
+    @SuppressLint("MissingPermission")
+    protected void onResume() {
+        super.onResume();
+        if (MainActivity.readDate(BleClientActivity.this,"wifi_ip")!=null){
+            finish();
+        }
+    }
     protected void onDestroy() {
         if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;
         super.onDestroy();
     }
-    @SuppressLint("MissingPermission")
-    protected void onResume() {
-        super.onResume();
-    }
+
 }

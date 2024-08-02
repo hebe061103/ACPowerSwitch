@@ -1,5 +1,7 @@
 package com.zt.acpowerswitch;
 
+import static com.zt.acpowerswitch.MainActivity.goAnim;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -55,13 +57,20 @@ public class about extends AppCompatActivity {
     private void clickEvent() {
             about_tx.setOnClickListener(view -> {
                 i++;
+                goAnim(this,50);
                 if(i==6){
                     i=0;
                     Intent intent = new Intent(about.this, Engineering.class);
                     startActivities(new Intent[]{intent});
                 }
             });
-            clean_log.setOnClickListener(view -> logList.clear());
+            clean_log.setOnClickListener(view -> {
+                goAnim(this,50);
+                logList.clear();
+                Message msg = new Message();
+                msg.what = 1;
+                gHandler.sendMessage(msg);
+            });
     }
     public static void log(String tag, String m) {
         if(logList.size()<1000) {

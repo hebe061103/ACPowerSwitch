@@ -41,13 +41,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
     public long lastBack = 0;
-    public TextView dev_ip_port;
     public static boolean connect_udp;
     private boolean Permissions_allow;
     private final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_w,out_frequency,bat_Voltage,le_Voltage;
+    private TextView dev_ip_port,out_Voltage,out_Current,power_w,out_frequency,bat_Voltage,le_Voltage,le_current;
     private String udp_value;
-    public String[] request_info = new String[]{"get_adc1_voltage", "get_adc2_voltage"};
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         out_Current = findViewById(R.id.out_Current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         le_Voltage = findViewById(R.id.le_Voltage);
+        le_current = findViewById(R.id.le_current);
         power_w = findViewById(R.id.power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         menu_bt = findViewById(R.id.menu_img);
@@ -96,20 +95,24 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         new Thread(() -> {
             while (true) {
                 if(connect_udp) {
-                    for (String s : request_info) {
-                        udpClient.sendMessage(s);
-                        udp_value = udpClient.receiveMessage();
-                        Log.e(TAG, "Receive_data:" + udp_value);
-                        if (udp_value != null && udp_value.contains("adc1_value")) {
-                            Message message = new Message();
-                            message.what = 1;
-                            udpProHandler.sendMessage(message);
-                        }else if (udp_value != null && udp_value.contains("adc2_value")) {
-                            Message message = new Message();
-                            message.what = 2;
-                            udpProHandler.sendMessage(message);
-                        }
+                    dev_ip_port.setTextColor(0x33cc33);
+                    udpClient.sendMessage("get_info");
+                    udp_value = udpClient.receiveMessage();
+                    Log.e(TAG, "Receive_data:" + udp_value);
+                    if (udp_value != null && udp_value.contains("Battery Voltage")) {
+                        Message message = new Message();
+                        message.what = 1;
+                        udpProHandler.sendMessage(message);
+                    }else if (udp_value != null && udp_value.contains("Sun Voltage")) {
+                        Message message = new Message();
+                        message.what = 2;
+                        udpProHandler.sendMessage(message);
+                    }else if (udp_value != null && udp_value.contains("Sun Current")) {
+                        Message message = new Message();
+                        message.what = 3;
+                        udpProHandler.sendMessage(message);
                     }
+                    sleep(1000);
                 }
             }
         }).start();
@@ -130,6 +133,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (udp_value!=null) {
                     String[] value = udp_value.split(":");
                     le_Voltage.setText(value[1]);
+                    udp_value = null;
+                }
+            }
+            if (msg.what == 3) {
+                //adc2value为太阳能电压
+                if (udp_value!=null) {
+                    String[] value = udp_value.split(":");
+                    le_current.setText(value[1]);
                     udp_value = null;
                 }
             }
@@ -182,6 +193,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         super.onResume();
         if (Permissions_allow){
             init();
+        }
+        if(MainActivity.readDate(this,"wifi_ip")!=null) {
+            dev_ip_port.setTextColor(0x33cc33);
+        }else{
+            dev_ip_port.setTextColor(0x999999);
         }
     }
     protected void onPause() {

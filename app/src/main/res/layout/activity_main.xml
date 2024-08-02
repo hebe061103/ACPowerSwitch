@@ -33,6 +33,7 @@
         android:hint="ESP32C3"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:textColor="#999999"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
