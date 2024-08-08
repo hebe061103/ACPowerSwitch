@@ -4,8 +4,6 @@ import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,9 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import java.util.List;
-import java.util.Objects;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -42,14 +38,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     };
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
+    public static boolean connect_udp;
     public ImageView menu_bt;
     public long lastBack = 0;
-    public static boolean connect_udp;
     private boolean Permissions_allow;
-    private final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,out_frequency,out_mode,bat_Voltage,le_Voltage,electrical_statistics,le_current;
-    private String udp_value;
-    public ComponentName topActivity;
+    public static final UDPClient udpClient = new UDPClient();
+    private TextView out_Voltage,out_Current,power_kw,out_frequency,out_mode,bat_Voltage,le_current;
+    public static String udp_value;
+    public String[] info;
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +68,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         power_kw = findViewById(R.id.power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         out_mode = findViewById(R.id.out_mode);
-        le_Voltage = findViewById(R.id.le_Voltage);
         le_current = findViewById(R.id.le_current);
-        electrical_statistics = findViewById(R.id.electrical_statistics);
         bat_Voltage = findViewById(R.id.bat_Voltage);
 
         menu_bt = findViewById(R.id.menu_img);
@@ -95,142 +90,63 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         })
                         .show();
             }else{
-                Log.e(TAG,"wifi_ip好像是null的");
+                Log.e(TAG,"wifi_ip好像是空的");
             }
             return false;
         });
+        reFresh_data();
+    }
+    public void reFresh_data(){
         new Thread(() -> {
-            while (true) {
-                if(connect_udp) {
-                    udpClient.sendMessage("get_info");
-                    udp_value = udpClient.receiveMessage();
-                    Log.e(TAG, "Receive_data:" + udp_value);
-                    if (udp_value != null && udp_value.contains("AC_voltage")) {
-                        Message message = new Message();
-                        message.what = 1;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("AC_current")) {
-                        Message message = new Message();
-                        message.what = 2;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("AC_power")) {
-                        Message message = new Message();
-                        message.what = 3;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("AC_frequency")) {
-                        Message message = new Message();
-                        message.what = 4;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("out_mode")) {
-                        Message message = new Message();
-                        message.what = 5;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("Sun Voltage")) {
-                        Message message = new Message();
-                        message.what = 6;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("Sun Current")) {
-                        Message message = new Message();
-                        message.what = 7;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("power_Statistics")) {
-                        Message message = new Message();
-                        message.what = 8;
-                        udpProHandler.sendMessage(message);
-                    }else if (udp_value != null && udp_value.contains("Battery Voltage")) {
-                        Message message = new Message();
-                        message.what = 9;
-                        udpProHandler.sendMessage(message);
-                    }
-                    sleep(1000);
-                }
+            while (connect_udp) {
+                udpClient.sendMessage("get_info");
+                udp_value = udpClient.receiveMessage();
+                String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                modifiedString = modifiedString.replace("'", "");
+                modifiedString = modifiedString.replace(",", ":");
+                modifiedString = modifiedString.replace(" ", "");
+                info = modifiedString.split(":");
+                //Log.e(TAG, "Receive_data:" + modifiedString);
+                Message message = new Message();
+                message.what = 1;
+                udpProHandler.sendMessage(message);
+                sleep(500);
             }
         }).start();
     }
-
-    private void connect_udp_service() {
-        if(!connect_udp) {
-            udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
-        }
-    }
-
     @SuppressLint("HandlerLeak")
     Handler udpProHandler = new Handler() {
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
                 //交流电压
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    out_Voltage.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 2) {
+                out_Voltage.setText(info[1]);
                 //交流电流
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    out_Current.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 3) {
+                out_Current.setText(info[3]);
                 //交流有功功率
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    power_kw.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 4) {
+                power_kw.setText(info[5]);
                 //交流频率
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    out_frequency.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 5) {
+                out_frequency.setText(info[7]);
                 //当前输出模式
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    out_mode.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 6) {
-                //为太阳能电压
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    le_Voltage.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 7) {
-                //为太阳能电流
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    le_current.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 8) {
-                //太阳能使用总功率
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    electrical_statistics.setText(value[1]);
-                    udp_value = null;
-                }
-            }
-            if (msg.what == 9) {
+                out_mode.setText(unicodeToString(info[9]));
                 //为电池电压
-                if (udp_value!=null) {
-                    String[] value = udp_value.split(":");
-                    bat_Voltage.setText(value[1]);
-                    udp_value = null;
-                }
+                bat_Voltage.setText(info[11]);
+                //为太阳能电流
+                le_current.setText(info[13]);
             }
         }
     };
+    private void connect_udp_service() {
+        udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
+    }
+    public static String unicodeToString(String unicode) {
+        StringBuilder sb = new StringBuilder();
+        String[] hex = unicode.split("\\\\u");
+        for (int i = 1; i < hex.length; i++) {
+            int value = Integer.parseInt(hex[i], 16);
+            sb.append((char) value);
+        }
+        return sb.toString();
+    }
     @SuppressLint("MissingPermission")
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
@@ -252,19 +168,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
         //显示菜单，不要少了这一步
         popupMenu.show();
-    }
-    public ComponentName get_top_activity(){
-        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
-
-        if (runningTasks != null && !runningTasks.isEmpty()) {
-            topActivity = runningTasks.get(0).topActivity;
-            String packageName = Objects.requireNonNull(topActivity).getPackageName();
-            String className = topActivity.getClassName();
-
-            Log.e(TAG,"Top Activity:"+topActivity+",Package Name:" + packageName + ",Class Name: " + className);
-        }
-       return topActivity;
     }
     public static String readDate(Context context, String s) {
         sp = context.getSharedPreferences("WIFI_INFO", MODE_PRIVATE);

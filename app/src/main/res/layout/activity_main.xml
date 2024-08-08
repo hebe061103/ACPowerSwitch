@@ -213,52 +213,17 @@
                 tools:ignore="HardcodedText" />
 
             <TextView
-                android:id="@+id/textView13"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="35dp"
-                android:background="#8BC34A"
-                android:text="光伏电压(v):"
-                android:textColor="#424242"
-                android:textSize="18sp"
-                app:layout_constraintTop_toBottomOf="@+id/textView12"
-                tools:ignore="HardcodedText" />
-
-            <TextView
-                android:id="@+id/le_Voltage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="35dp"
-                android:layout_marginEnd="12dp"
-                android:hint="null"
-                android:textColorHint="#546E7A"
-                android:textSize="18sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textView12"
-                tools:ignore="HardcodedText" />
-
-            <TextView
-                android:id="@+id/textView15"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="35dp"
-                android:background="#FFEB3B"
-                android:text="光伏电能统计(kw/h):"
-                android:textSize="18sp"
-                app:layout_constraintTop_toBottomOf="@+id/textView14"
-                tools:ignore="HardcodedText" />
-
-            <TextView
                 android:id="@+id/textView14"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
                 android:background="#E91E63"
-                android:text="光伏电流(i):"
+                android:text="光伏充电电流(i):"
                 android:textColor="#000000"
                 android:textSize="18sp"
-                app:layout_constraintTop_toBottomOf="@+id/textView13"
-                tools:ignore="HardcodedText" />
+                app:layout_constraintTop_toBottomOf="@+id/textView12"
+                tools:ignore="HardcodedText"
+                tools:layout_editor_absoluteX="0dp" />
 
             <TextView
                 android:id="@+id/le_current"
@@ -270,20 +235,7 @@
                 android:textColorHint="#546E7A"
                 android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/le_Voltage"
-                tools:ignore="HardcodedText" />
-
-            <TextView
-                android:id="@+id/electrical_statistics"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="35dp"
-                android:layout_marginEnd="12dp"
-                android:hint="null"
-                android:textColorHint="#546E7A"
-                android:textSize="18sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/le_current"
+                app:layout_constraintTop_toBottomOf="@+id/textView12"
                 tools:ignore="HardcodedText" />
 
             <TextView
@@ -294,8 +246,9 @@
                 android:text="电池信息:"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                app:layout_constraintTop_toBottomOf="@+id/textView15"
-                tools:ignore="HardcodedText" />
+                app:layout_constraintTop_toBottomOf="@+id/textView14"
+                tools:ignore="HardcodedText"
+                tools:layout_editor_absoluteX="0dp" />
 
             <TextView
                 android:layout_width="wrap_content"
