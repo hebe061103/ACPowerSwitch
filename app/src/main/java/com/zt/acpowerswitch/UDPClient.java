@@ -27,7 +27,6 @@ public class UDPClient {
                 }
                 this.serverPort = port;
                 socket = new DatagramSocket();
-                MainActivity.connect_udp=true;
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
             }

@@ -21,7 +21,6 @@ public class otherOption extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
-        MainActivity.connect_udp=false;
         handler = new Handler(Looper.getMainLooper());
         str_pro();
     }

@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     };
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
-    public static boolean connect_udp;
     public ImageView menu_bt;
     public long lastBack = 0;
     private boolean Permissions_allow;
@@ -60,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (readDate(this, "wifi_ip") == null) {
             Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
             startActivities(new Intent[]{intent});
-        } else {
+        }else{
             connect_udp_service();
         }
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -94,25 +93,27 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
             return false;
         });
-        reFresh_data();
-    }
-    public void reFresh_data(){
-        new Thread(() -> {
-            while (connect_udp) {
-                udpClient.sendMessage("get_info");
-                udp_value = udpClient.receiveMessage();
-                String modifiedString = udp_value.substring(1, udp_value.length() - 1);
-                modifiedString = modifiedString.replace("'", "");
-                modifiedString = modifiedString.replace(",", ":");
-                modifiedString = modifiedString.replace(" ", "");
-                info = modifiedString.split(":");
-                //Log.e(TAG, "Receive_data:" + modifiedString);
-                Message message = new Message();
-                message.what = 1;
-                udpProHandler.sendMessage(message);
-                sleep(500);
+        Thread thread = new Thread(() -> {
+            while (true) {
+                if (UDPClient.socket!=null){
+                    udpClient.sendMessage("get_info");
+                    udp_value = udpClient.receiveMessage();
+                    if (udp_value != null && udp_value.contains("AC_voltage")) {
+                        String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                        modifiedString = modifiedString.replace("'", "");
+                        modifiedString = modifiedString.replace(",", ":");
+                        modifiedString = modifiedString.replace(" ", "");
+                        info = modifiedString.split(":");
+                        //Log.e(TAG, "Receive_data:" + modifiedString);
+                        Message message = new Message();
+                        message.what = 1;
+                        udpProHandler.sendMessage(message);
+                        sleep(2000);
+                    }
+                }
             }
-        }).start();
+        });
+        thread.start();
     }
     @SuppressLint("HandlerLeak")
     Handler udpProHandler = new Handler() {
