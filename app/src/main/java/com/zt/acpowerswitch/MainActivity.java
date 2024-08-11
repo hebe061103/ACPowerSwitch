@@ -23,6 +23,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
+import java.text.DecimalFormat;
 import java.util.List;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
@@ -42,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public long lastBack = 0;
     private boolean Permissions_allow;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,out_frequency,out_mode,bat_Voltage,le_current;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current;
     public static String udp_value;
     public String[] info;
 
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
         power_kw = findViewById(R.id.power_kw);
+        sj_power_kw = findViewById(R.id.sj_power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         out_mode = findViewById(R.id.out_mode);
         le_current = findViewById(R.id.le_current);
@@ -108,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         Message message = new Message();
                         message.what = 1;
                         udpProHandler.sendMessage(message);
-                        sleep(2000);
+                        sleep(3000);
                     }
                 }
             }
@@ -118,13 +121,22 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("HandlerLeak")
     Handler udpProHandler = new Handler() {
         public void handleMessage(Message msg) {
+            DecimalFormat df = new DecimalFormat("#.##");
             if (msg.what == 1) {
                 //交流电压
                 out_Voltage.setText(info[1]);
+                String ac = info[1];
                 //交流电流
-                out_Current.setText(info[3]);
+                Float jl_dl = Float.parseFloat(info[3]);
+                String formattedValue_iv_Value = df.format(jl_dl);
+                out_Current.setText(formattedValue_iv_Value);
+                String iv = info[3];
                 //交流有功功率
                 power_kw.setText(info[5]);
+                //交流实际功率
+                Float sj_power = Float.parseFloat(ac)*Float.parseFloat(iv);
+                String formattedValue = df.format(sj_power);
+                sj_power_kw.setText(formattedValue);
                 //交流频率
                 out_frequency.setText(info[7]);
                 //当前输出模式
