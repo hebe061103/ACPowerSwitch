@@ -111,8 +111,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         Message message = new Message();
                         message.what = 1;
                         udpProHandler.sendMessage(message);
-                        sleep(3000);
                     }
+                    sleep(2000);
                 }
             }
         });

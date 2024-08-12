@@ -32,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#8BC34A"
-        android:text="目标模块IP(默认端口:55555):"
+        android:text="目标模块IP(默认端口:55555)"
         android:textColor="#424242"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"

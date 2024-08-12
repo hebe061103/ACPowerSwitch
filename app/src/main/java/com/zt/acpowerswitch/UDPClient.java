@@ -39,7 +39,7 @@ public class UDPClient {
         try {
             socket.send(packet);
         } catch (IOException e) {
-            //throw new RuntimeException(e);
+           // throw new RuntimeException(e);
         }
     }
     public String receiveMessage(){

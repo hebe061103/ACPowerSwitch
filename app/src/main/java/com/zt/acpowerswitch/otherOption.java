@@ -60,7 +60,7 @@ public class otherOption extends AppCompatActivity {
                         // 这里编写输入完成后想要执行的代码
                         runOnUiThread(otherOption.this::send_w_edit);
                     }
-                }, 2500); // 延时2500毫秒执行
+                }, 3000);
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -93,7 +93,7 @@ public class otherOption extends AppCompatActivity {
                         // 这里编写输入完成后想要执行的代码
                         runOnUiThread(otherOption.this::send_adc2_edit);
                     }
-                }, 2500); // 延时2500毫秒执行
+                }, 3000);
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -126,7 +126,7 @@ public class otherOption extends AppCompatActivity {
                         // 这里编写输入完成后想要执行的代码
                         runOnUiThread(otherOption.this::send_adc3_edit);
                     }
-                }, 2500); // 延时2500毫秒执行
+                }, 3000);
             }
             @Override
             public void afterTextChanged(Editable editable) {
