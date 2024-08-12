@@ -107,7 +107,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         modifiedString = modifiedString.replace(",", ":");
                         modifiedString = modifiedString.replace(" ", "");
                         info = modifiedString.split(":");
-                        //Log.e(TAG, "Receive_data:" + modifiedString);
                         Message message = new Message();
                         message.what = 1;
                         udpProHandler.sendMessage(message);

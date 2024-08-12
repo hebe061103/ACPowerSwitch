@@ -98,7 +98,7 @@
         app:layout_constraintGuide_begin="202dp" />
 
     <Button
-        android:id="@+id/shoudong_get"
+        android:id="@+id/manual_set"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"

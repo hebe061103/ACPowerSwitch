@@ -47,7 +47,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:divider="@null"
-        app:layout_constraintHeight_percent="0.75"
+        app:layout_constraintHeight_percent="0.8"
         app:layout_constraintStart_toStartOf="@+id/guideline4"
         app:layout_constraintTop_toTopOf="@+id/guideline34"
         app:layout_constraintWidth_percent="0.92" />
@@ -60,7 +60,7 @@
         app:layout_constraintGuide_begin="98dp" />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/run_log"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
@@ -71,16 +71,4 @@
         app:layout_constraintStart_toStartOf="@+id/guideline4"
         tools:ignore="HardcodedText" />
 
-    <TextView
-        android:id="@+id/clean_log"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:background="#4CAF50"
-        android:text="清理日志"
-        android:textSize="25sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="HardcodedText" />
 </androidx.constraintlayout.widget.ConstraintLayout>

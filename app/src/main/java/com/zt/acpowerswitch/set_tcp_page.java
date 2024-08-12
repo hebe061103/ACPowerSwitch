@@ -19,7 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class set_tcp_page extends AppCompatActivity {
     public static String TAG = "set_tcp_page:";
-    public Button bl_ip_get,shoudong_get,bt_clean;
+    public Button bl_ip_get,manual_set,bt_clean;
     public EditText ip_input;
     public TextView get_ip_from_bl;
     private Handler handler;
@@ -28,7 +28,7 @@ public class set_tcp_page extends AppCompatActivity {
         setContentView(R.layout.set_tcp_activity);
         handler = new Handler(Looper.getMainLooper());
         bl_ip_get = findViewById(R.id.bl_ip_get);
-        shoudong_get = findViewById(R.id.shoudong_get);
+        manual_set = findViewById(R.id.manual_set);
         bt_clean = findViewById(R.id.bt_clean);
         ip_input = findViewById(R.id.ip_input);
         get_ip_from_bl = findViewById(R.id.get_ip_from_bl);
@@ -53,7 +53,7 @@ public class set_tcp_page extends AppCompatActivity {
                     })
                     .show();
         });
-        shoudong_get.setOnClickListener(view -> new Thread(() -> {
+        manual_set.setOnClickListener(view -> new Thread(() -> {
             // 执行一些后台工作
             goAnim(set_tcp_page.this, 50);
             if (!ip_input.getText().toString().isEmpty()) {

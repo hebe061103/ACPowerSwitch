@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 
 public class about extends AppCompatActivity {
-    private TextView about_tx,clean_log;
+    private TextView about_tx,run_log;
     private static int i;
     private static final ArrayList<String> logList = new ArrayList<>();
     protected static ArrayAdapter<String> adapter;
@@ -33,7 +33,7 @@ public class about extends AppCompatActivity {
         TextView mBlueMessage = findViewById(R.id.blue_info);
         about_tx = findViewById(R.id.about);
         listView = findViewById(R.id.log_list_view);
-        clean_log = findViewById(R.id.clean_log);
+        run_log = findViewById(R.id.run_log);
         mBlueMessage.setText(getBluetoothMAC(this));
         clickEvent();
         adapter = new ArrayAdapter<>(about.this, R.layout.list_item, logList);
@@ -64,12 +64,13 @@ public class about extends AppCompatActivity {
                     startActivities(new Intent[]{intent});
                 }
             });
-            clean_log.setOnClickListener(view -> {
-                goAnim(this,50);
+            run_log.setOnLongClickListener(view -> {
+                goAnim(about.this, 50);
                 logList.clear();
                 Message msg = new Message();
                 msg.what = 1;
                 gHandler.sendMessage(msg);
+                return false;
             });
     }
     public static void log(String tag, String m) {
