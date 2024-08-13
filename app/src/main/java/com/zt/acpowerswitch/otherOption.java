@@ -137,19 +137,19 @@ public class otherOption extends AppCompatActivity {
     public void send_w_edit(){
         new Thread(() -> {
             if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this,"w"))){
-                Log.e(TAG,"功率参数巳改变,发送参数到服务端");
+                about.log(TAG,"功率参数巳改变,发送参数到服务端");
                 if(isInteger(w_edit.getText().toString())||isDecimal(w_edit.getText().toString())) {
                     saveData("w", w_edit.getText().toString());
                     udpClient.sendMessage("set_w:" + w_edit.getText().toString());
                     String save_result = udpClient.receiveMessage();
                     if (save_result.contains("save_ok")) {
-                        Log.e(TAG,"巳保存功率设置");
+                        about.log(TAG,"巳保存功率设置");
                         Looper.prepare();
                         Toast.makeText(otherOption.this, "巳保存功率设置", Toast.LENGTH_SHORT).show();
                         Looper.loop();
                     }
                 }else {
-                    Log.e(TAG,"功率设置项请输入数字类型");
+                    about.log(TAG,"功率设置项请输入数字类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "功率设置项请输入数字类型", Toast.LENGTH_SHORT).show();
                     Looper.loop();
@@ -160,19 +160,19 @@ public class otherOption extends AppCompatActivity {
     public void send_adc2_edit(){
         new Thread(() -> {
             if (!adc2_edit.getText().toString().isEmpty() && !adc2_edit.getText().toString().equals(readDate(otherOption.this,"adc2"))) {
-                Log.e(TAG,"ADC2参数巳改变,发送参数到服务端");
+                about.log(TAG,"ADC2参数巳改变,发送参数到服务端");
                 if (isInteger(adc2_edit.getText().toString()) || isDecimal(adc2_edit.getText().toString())) {
                     saveData("adc2", adc2_edit.getText().toString());
                     udpClient.sendMessage("adc2_set_value:" + adc2_edit.getText().toString());
                     String save_result = udpClient.receiveMessage();
                     if (save_result.contains("adc2_set_ok")) {
-                        Log.e(TAG,"巳保存adc2参数");
+                        about.log(TAG,"巳保存adc2参数");
                         Looper.prepare();
                         Toast.makeText(otherOption.this, "巳保存adc2参数", Toast.LENGTH_SHORT).show();
                         Looper.loop();
                     }
                 } else {
-                    Log.e(TAG,"adc2项请输入数字类型");
+                    about.log(TAG,"adc2项请输入数字类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "adc2项请输入数字类型", Toast.LENGTH_SHORT).show();
                     Looper.loop();
@@ -183,19 +183,19 @@ public class otherOption extends AppCompatActivity {
     public void send_adc3_edit(){
         new Thread(() -> {
             if (!adc3_edit.getText().toString().isEmpty() && !adc3_edit.getText().toString().equals(readDate(otherOption.this,"adc3"))) {
-                Log.e(TAG,"ADC3参数巳改变,发送参数到服务端");
+                about.log(TAG,"ADC3参数巳改变,发送参数到服务端");
                 if (isInteger(adc3_edit.getText().toString()) || isDecimal(adc3_edit.getText().toString())) {
                     saveData("adc3", adc3_edit.getText().toString());
                     udpClient.sendMessage("adc3_set_value:" + adc3_edit.getText().toString());
                     String save_result = udpClient.receiveMessage();
                     if (save_result.contains("adc3_set_ok")) {
-                        Log.e(TAG,"巳保存adc3参数");
+                        about.log(TAG,"巳保存adc3参数");
                         Looper.prepare();
                         Toast.makeText(otherOption.this, "巳保存adc3参数", Toast.LENGTH_SHORT).show();
                         Looper.loop();
                     }
                 } else {
-                    Log.e(TAG,"adc3项请输入数字类型");
+                    about.log(TAG,"adc3项请输入数字类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "adc3项请输入数字类型", Toast.LENGTH_SHORT).show();
                     Looper.loop();

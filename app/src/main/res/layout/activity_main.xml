@@ -171,11 +171,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:textColor="#CDDC39"
                 android:text="交流频率(Hz):"
+                android:textColor="#CDDC39"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView13"
-                tools:ignore="HardcodedText"
+                tools:ignore="HardcodedText,TextContrastCheck"
                 tools:layout_editor_absoluteX="0dp" />
 
             <TextView
@@ -243,12 +243,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:background="#E91E63"
                 android:text="光伏充电电流(i):"
-                android:textColor="#000000"
+                android:textColor="#E91E63"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView12"
-                tools:ignore="HardcodedText"
+                tools:ignore="HardcodedText,TextContrastCheck"
                 tools:layout_editor_absoluteX="0dp" />
 
             <TextView

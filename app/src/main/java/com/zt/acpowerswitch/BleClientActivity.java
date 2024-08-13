@@ -114,13 +114,13 @@ public class BleClientActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);//获取此时找到的远程设备对象
             if (device != null && device.getName() != null) {
-                Log.e(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
+                about.log(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
                 if (!mlist.contains(device)) {
                     mlist.add(device);
                 }
             }
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
-                Log.e(TAG, "扫描完成");
+                about.log(TAG, "扫描完成");
                 discoveryFinished = true;
             }
         }
@@ -150,7 +150,7 @@ public class BleClientActivity extends AppCompatActivity {
             }
             displayList();//刷新列表
             bluetoothAdapter.startDiscovery();
-            Log.e(TAG, "defaultDevice: 开始搜索设备");
+            about.log(TAG, "defaultDevice: 开始搜索设备");
             re_scan.setText("正在扫描");
             pd = new ProgressDialog(this);
             pd.setMessage("正在扫描,请稍等......");
@@ -235,11 +235,11 @@ public class BleClientActivity extends AppCompatActivity {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.e(TAG, "连接成功");
+                about.log(TAG, "连接成功");
                 gatt.discoverServices();
                 connect_ok = true;
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.e(TAG, "连接断开");
+                about.log(TAG, "连接断开");
                 connect_ok = false;
                 if (bluetoothDeviceName!=null){
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -252,7 +252,7 @@ public class BleClientActivity extends AppCompatActivity {
                 }
             } else if (newState == BluetoothProfile.STATE_CONNECTING) {
                 //TODO 在实际过程中，该方法并没有调用
-                Log.e(TAG, "连接中....");
+                about.log(TAG, "连接中....");
             }
         }
         //获取GATT服务发现后的回调
@@ -260,15 +260,15 @@ public class BleClientActivity extends AppCompatActivity {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.e(TAG, "GATT_SUCCESS"); //服务发现
+                about.log(TAG, "GATT_SUCCESS"); //服务发现
                 for (BluetoothGattService bluetoothGattService : gatt.getServices()) {
-                    Log.e(TAG, "Service_UUID:" + bluetoothGattService.getUuid()); // 我们可以遍历到该蓝牙设备的全部Service对象。然后通过比较Service的UUID，我们可以区分该服务是属于什么业务的
+                    about.log(TAG, "Service_UUID:" + bluetoothGattService.getUuid()); // 我们可以遍历到该蓝牙设备的全部Service对象。然后通过比较Service的UUID，我们可以区分该服务是属于什么业务的
                     if (SERVICE_UUID.equals(bluetoothGattService.getUuid().toString())) {
                         for (BluetoothGattCharacteristic characteristic : bluetoothGattService.getCharacteristics()) {
                             prepareBroadcastDataNotify(gatt, characteristic); //给满足条件的属性配置上消息通知
                             writeCharacteristic = bluetoothGattService.getCharacteristic(UUID.fromString(WRITE_UUID));
                             if (writeCharacteristic != null && writeCharacteristic.getProperties() == BluetoothGattCharacteristic.PROPERTY_WRITE) {
-                                Log.e(TAG, "找到write特征,可以写入");
+                                about.log(TAG, "找到write特征,可以写入");
                                 pd1.dismiss();
                                 ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                 List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
@@ -277,8 +277,6 @@ public class BleClientActivity extends AppCompatActivity {
                                     topActivity = runningTasks.get(0).topActivity;
                                     String packageName = Objects.requireNonNull(topActivity).getPackageName();
                                     String className = topActivity.getClassName();
-
-                                    Log.e(TAG,"Top Activity:"+topActivity+",Package Name:" + packageName + ",Class Name: " + className);
                                 }
                                 if(!topActivity.toString().equals("ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.WifiListActivity}")) {
                                     Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
@@ -290,12 +288,12 @@ public class BleClientActivity extends AppCompatActivity {
                     }
                 }
             }else {
-                Log.e(TAG, "onServicesDiscovered received: " + status);
+                about.log(TAG, "onServicesDiscovered received: " + status);
             }
         }
         @SuppressLint("MissingPermission")
         private void prepareBroadcastDataNotify(BluetoothGatt mBluetoothGatt, BluetoothGattCharacteristic characteristic) {
-            Log.e(TAG, "Characteristic_UUID:" + characteristic.getUuid().toString());
+            about.log(TAG, "Characteristic_UUID:" + characteristic.getUuid().toString());
             int charaProp = characteristic.getProperties();
             //判断属性是否支持消息通知
             if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
@@ -305,7 +303,7 @@ public class BleClientActivity extends AppCompatActivity {
                     mBluetoothGatt.setCharacteristicNotification(characteristic, true);
                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     mBluetoothGatt.writeDescriptor(descriptor);
-                    Log.e(TAG, "注册消息通知完成");
+                    about.log(TAG, "注册消息通知完成");
                 }
             }
         }
@@ -315,7 +313,7 @@ public class BleClientActivity extends AppCompatActivity {
             // readUUID 是我要链接的蓝牙设备的消息读UUID值，跟通知的特性的UUID比较。这样可以避免其他消息的污染。
             if (READ_UUID.equals(characteristic.getUuid().toString())) {
                 chara = new String(characteristic.getValue(), StandardCharsets.UTF_8);
-                Log.e(TAG, "消息内容:"+chara);
+                about.log(TAG, "消息内容:"+chara);
             }
         }
     };
@@ -325,7 +323,7 @@ public class BleClientActivity extends AppCompatActivity {
         writeCharacteristic.setValue(data);
         // 将数据写入设备
         bluetoothGatt.writeCharacteristic(writeCharacteristic);
-        Log.e(TAG, "写入:"+data);
+        about.log(TAG, "写入:"+data);
     }
     @SuppressLint("MissingPermission")
     @Override

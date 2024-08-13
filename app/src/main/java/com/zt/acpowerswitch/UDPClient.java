@@ -1,7 +1,7 @@
 package com.zt.acpowerswitch;
 
-import android.util.Log;
-
+import static com.zt.acpowerswitch.MainActivity.udPort;
+import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,21 +18,37 @@ public class UDPClient {
         new Thread(() -> {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
+                about.log(TAG, "连接服务器");
                 try {
-                    Log.e(TAG, "连接服务器......");
-                    about.log(TAG, "连接服务器......");
                     this.serverAddress = InetAddress.getByName(address);
                 } catch (UnknownHostException e) {
-                    //throw new RuntimeException(e);
+                    throw new RuntimeException(e);
                 }
                 this.serverPort = port;
                 socket = new DatagramSocket();
+                socket.connect(serverAddress, serverPort);
+                // 连接成功，可以开始发送和接收数据
+                about.log(TAG, "连接成功");
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
+                reconnect();
+                about.log(TAG, "连接失败,重新连接");
             }
         }).start();
     }
-
+    private void reconnect() {
+        new Thread(() -> {
+            while (socket == null || socket.isClosed()) {
+                try {
+                    Thread.sleep(3000); // 等待一段时间后重连
+                    udpConnect(udpServerAddress, udPort);
+                } catch (InterruptedException e) {
+                    // 处理异常，可能需要记录日志或通知上层
+                    about.log(TAG, "重新连接失败");
+                }
+            }
+        }).start();
+    }
     public void sendMessage(String message){
         byte[] data = message.getBytes();
         DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, serverPort);
@@ -40,6 +56,7 @@ public class UDPClient {
             socket.send(packet);
         } catch (IOException e) {
            // throw new RuntimeException(e);
+            about.log(TAG, "发送数据失败");
         }
     }
     public String receiveMessage(){
@@ -49,6 +66,7 @@ public class UDPClient {
             socket.receive(packet);
         } catch (IOException e) {
             //throw new RuntimeException(e);
+            about.log(TAG, "接收数据失败");
         }
         return new String(packet.getData(), 0, packet.getLength());
     }

@@ -58,8 +58,7 @@ public class set_tcp_page extends AppCompatActivity {
             goAnim(set_tcp_page.this, 50);
             if (!ip_input.getText().toString().isEmpty()) {
                 saveData("wifi_ip", ip_input.getText().toString());
-                Log.e(TAG, "IP巳保存,请返回主页");
-                about.log(TAG, "IP巳保存");
+                about.log(TAG, "IP巳保存,请返回主页");
                 Looper.prepare();
                 Toast.makeText(set_tcp_page.this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
                 Looper.loop();

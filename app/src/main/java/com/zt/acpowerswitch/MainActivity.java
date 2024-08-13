@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -47,7 +46,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current;
     public static String udp_value;
     public String[] info;
-
+    public static String udpServerAddress;
+    public static Integer udPort;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,26 +92,30 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         })
                         .show();
             }else{
-                Log.e(TAG,"wifi_ip好像是空的");
+                about.log(TAG,"目前未保存任何目标IP");
             }
             return false;
         });
         Thread thread = new Thread(() -> {
             while (true) {
-                if (UDPClient.socket!=null){
-                    udpClient.sendMessage("get_info");
-                    udp_value = udpClient.receiveMessage();
-                    if (udp_value != null && udp_value.contains("AC_voltage")) {
-                        String modifiedString = udp_value.substring(1, udp_value.length() - 1);
-                        modifiedString = modifiedString.replace("'", "");
-                        modifiedString = modifiedString.replace(",", ":");
-                        modifiedString = modifiedString.replace(" ", "");
-                        info = modifiedString.split(":");
-                        Message message = new Message();
-                        message.what = 1;
-                        udpProHandler.sendMessage(message);
+                try {
+                    if (UDPClient.socket != null) {
+                        udpClient.sendMessage("get_info");
+                        udp_value = udpClient.receiveMessage();
+                        if (udp_value != null && udp_value.contains("AC_voltage")) {
+                            String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                            modifiedString = modifiedString.replace("'", "");
+                            modifiedString = modifiedString.replace(",", ":");
+                            modifiedString = modifiedString.replace(" ", "");
+                            info = modifiedString.split(":");
+                            Message message = new Message();
+                            message.what = 1;
+                            udpProHandler.sendMessage(message);
+                        }
+                        sleep(2000);
                     }
-                    sleep(2000);
+                }catch (Exception e){
+                    about.log(TAG,"循环内错误:"+e);
                 }
             }
         });
@@ -148,7 +152,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
     };
     private void connect_udp_service() {
-        udpClient.udpConnect(readDate(this, "wifi_ip"), 55555);
+        udpServerAddress=readDate(this, "wifi_ip");
+        udPort = 55555;
+        udpClient.udpConnect(udpServerAddress, udPort);
     }
     public static String unicodeToString(String unicode) {
         StringBuilder sb = new StringBuilder();
@@ -210,6 +216,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     protected void onPause() {
         super.onPause();
+        if (UDPClient.socket!=null) {
+            udpClient.close();
+            about.log(TAG, "屏幕关闭,网络连接关闭");
+        }
     }
     protected void onDestroy() {
         super.onDestroy();
@@ -218,8 +228,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         if (UDPClient.socket!=null) {
             udpClient.close();
-            Log.e(TAG, "onDestroy网络连接关闭");
-            about.log(TAG, "onDestroy网络连接关闭");
+            about.log(TAG, "程序退出,网络连接关闭");
         }
     }
     public static void goAnim(Context context, int millisecond) {
@@ -267,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
             // 相关权限被授予，可以进行蓝牙操作
-            Log.e(TAG,"相关权限巳允许");
+            about.log(TAG,"权限巳允许");
         }
     }
 

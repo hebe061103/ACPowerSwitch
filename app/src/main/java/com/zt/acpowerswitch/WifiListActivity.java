@@ -62,7 +62,7 @@ public class WifiListActivity extends AppCompatActivity {
             String ssid = scanResult.SSID;
             String bssid = scanResult.BSSID;
             if (!ssid.isEmpty()) {
-                Log.e(TAG, "WIFI信息:" + ssid + "MAC:" + bssid);
+                about.log(TAG, "WIFI信息:" + ssid + "MAC:" + bssid);
                 // 其他信息，如BSSID、capabilities等
                 wifilist.add(ssid);
                 Message message = new Message();
@@ -98,7 +98,7 @@ public class WifiListActivity extends AppCompatActivity {
                                 if (!editText.getText().toString().isEmpty()) {
                                     String inputText = editText.getText().toString();
                                     String ble_data = "{" + "\"" + "ssid" + "\"" + ":" + "\"" + wifilist.get(position) + "\"" + "," + "\"" + "password" + "\"" + ":" + "\"" + inputText + "\"" + "}";
-                                    Log.e(TAG, "发送数据:" + ble_data);
+                                    about.log(TAG, "发送数据:" + ble_data);
                                     wifi_ap_name=wifilist.get(position);
                                     send_data(ble_data);
                                 }
@@ -146,7 +146,6 @@ public class WifiListActivity extends AppCompatActivity {
                     if (chara != null && chara.contains("IP:")){
                         String[] parts = chara.split(":");
                         saveData("wifi_ip",parts[1].replaceAll("\\s+$", ""));
-                        Log.e(TAG, "ip保存成功");
                         about.log(TAG, "ip保存成功");
                         BleClientActivity.close_ble();
                     }
@@ -163,7 +162,7 @@ public class WifiListActivity extends AppCompatActivity {
         Thread thread = new Thread(() -> {
             int readLength = 10; // 设置每次读取的字符数量
             int stringLength = data.length(); // 获取字符串的总长度
-            Log.e(TAG, "发送字符的总长度:" + stringLength);
+            about.log(TAG, "发送字符的总长度:" + stringLength);
             write_data_ble("len:"+ stringLength);
             sleep(1000);
             for (int i = 0; i < stringLength; i += readLength) {
@@ -179,7 +178,7 @@ public class WifiListActivity extends AppCompatActivity {
                 sleep(1000);
             }
             write_data_ble("&");
-            Log.e(TAG, "分包发送完成");
+            about.log(TAG, "分包发送完成");
             sleep(1000);
             state_refresh(); //刷新连接状态
         });
@@ -194,25 +193,25 @@ public class WifiListActivity extends AppCompatActivity {
                     }
                 }
                 if (chara != null && chara.contains("rec_ok")) {
-                    Log.e(TAG, "接收成功");
+                    about.log(TAG, "接收成功");
                     Message message = new Message();
                     message.what = 2;
                     myHandler.sendMessage(message);
                     chara = "";
                 }else if (chara != null && chara.contains("rec_error")) {
-                    Log.e(TAG, "接收失败");
+                    about.log(TAG, "接收失败");
                     Message message = new Message();
                     message.what = 3;
                     myHandler.sendMessage(message);
                     chara = "";
                 }else if (chara != null && chara.contains("pass_err")) {
-                    Log.e(TAG, "密码错误");
+                    about.log(TAG, "密码错误");
                     Message message = new Message();
                     message.what = 4;
                     myHandler.sendMessage(message);
                     chara = "";
                 }else if (chara != null && chara.contains("IP:")) {
-                    Log.e(TAG, "WIFI启动成功");
+                    about.log(TAG, "WIFI启动成功");
                     Message message = new Message();
                     message.what = 5;
                     myHandler.sendMessage(message);
