@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         super.onPause();
         if (UDPClient.socket!=null) {
             udpClient.close();
-            about.log(TAG, "屏幕关闭,网络连接关闭");
+            about.log(TAG, "网络连接中断");
         }
     }
     protected void onDestroy() {
