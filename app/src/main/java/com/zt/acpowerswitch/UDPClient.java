@@ -56,7 +56,6 @@ public class UDPClient {
             socket.send(packet);
         } catch (IOException e) {
            // throw new RuntimeException(e);
-            about.log(TAG, "发送数据失败");
         }
     }
     public String receiveMessage(){
@@ -66,7 +65,6 @@ public class UDPClient {
             socket.receive(packet);
         } catch (IOException e) {
             //throw new RuntimeException(e);
-            about.log(TAG, "接收数据失败");
         }
         return new String(packet.getData(), 0, packet.getLength());
     }
