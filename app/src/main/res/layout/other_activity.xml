@@ -7,6 +7,27 @@
     android:layout_height="match_parent">
 
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="35dp"
+        android:text="低电压点设置"
+        android:textColor="#DD2C00"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView17"
+        tools:ignore="HardcodedText" />
+
+    <EditText
+        android:id="@+id/low_voltage_set"
+        android:layout_width="85dp"
+        android:layout_height="39dp"
+        android:layout_marginTop="16dp"
+        android:hint="0"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toBottomOf="@+id/adc3_edit"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+
+    <TextView
         android:id="@+id/textView17"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

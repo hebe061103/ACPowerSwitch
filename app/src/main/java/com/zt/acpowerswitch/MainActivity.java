@@ -62,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
             startActivities(new Intent[]{intent});
         }else{
+            udpServerAddress=readDate(this, "wifi_ip");
+            udPort = 55555;
             connect_udp_service();
         }
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -103,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         udpClient.sendMessage("get_info");
                         udp_value = udpClient.receiveMessage();
                         if (udp_value != null && udp_value.contains("AC_voltage")) {
+                            about.log(TAG,"UDP_INFO:拆分接收到的数据"+udp_value);
                             String modifiedString = udp_value.substring(1, udp_value.length() - 1);
                             modifiedString = modifiedString.replace("'", "");
                             modifiedString = modifiedString.replace(",", ":");
@@ -126,34 +129,36 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
             if (msg.what == 1) {
-                //交流电压
-                out_Voltage.setText(info[1]);
-                String ac = info[1];
-                //交流电流
-                Float jl_dl = Float.parseFloat(info[3]);
-                String formattedValue_iv_Value = df.format(jl_dl);
-                out_Current.setText(formattedValue_iv_Value);
-                String iv = info[3];
-                //交流有功功率
-                power_kw.setText(info[5]);
-                //交流实际功率
-                Float sj_power = Float.parseFloat(ac)*Float.parseFloat(iv);
-                String formattedValue = df.format(sj_power);
-                sj_power_kw.setText(formattedValue);
-                //交流频率
-                out_frequency.setText(info[7]);
-                //当前输出模式
-                out_mode.setText(unicodeToString(info[9]));
-                //为电池电压
-                bat_Voltage.setText(info[11]);
-                //为太阳能电流
-                le_current.setText(info[13]);
+                try {
+                    //交流电压
+                    out_Voltage.setText(info[1]);
+                    String ac = info[1];
+                    //交流电流
+                    Float jl_dl = Float.parseFloat(info[3]);
+                    String formattedValue_iv_Value = df.format(jl_dl);
+                    out_Current.setText(formattedValue_iv_Value);
+                    String iv = info[3];
+                    //交流有功功率
+                    power_kw.setText(info[5]);
+                    //交流实际功率
+                    Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    String formattedValue = df.format(sj_power);
+                    sj_power_kw.setText(formattedValue);
+                    //交流频率
+                    out_frequency.setText(info[7]);
+                    //当前输出模式
+                    out_mode.setText(unicodeToString(info[9]));
+                    //为电池电压
+                    bat_Voltage.setText(info[11]);
+                    //为太阳能电流
+                    le_current.setText(info[13]);
+                }catch (Exception e){
+                    about.log(TAG,"拆分数据时接收到空数据");
+                }
             }
         }
     };
-    private void connect_udp_service() {
-        udpServerAddress=readDate(this, "wifi_ip");
-        udPort = 55555;
+    public static void connect_udp_service() {
         udpClient.udpConnect(udpServerAddress, udPort);
     }
     public static String unicodeToString(String unicode) {

@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,10 +21,11 @@ import java.util.TimerTask;
 public class otherOption extends AppCompatActivity {
     public static String TAG = "otherOption:";
     public TextView target_ip;
-    public EditText w_edit,adc2_edit,adc3_edit;
+    public EditText w_edit,adc2_edit,adc3_edit,low_voltage_set;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
+        MainActivity.connect_udp_service();
         str_pro();
     }
 
@@ -58,9 +58,12 @@ public class otherOption extends AppCompatActivity {
                     @Override
                     public void run() {
                         // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(otherOption.this::send_w_edit);
+                        runOnUiThread(() -> {
+                            w_edit.clearFocus();
+                            send_w_edit();
+                        });
                     }
-                }, 3000);
+                }, 2500);
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -91,9 +94,12 @@ public class otherOption extends AppCompatActivity {
                     @Override
                     public void run() {
                         // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(otherOption.this::send_adc2_edit);
+                        runOnUiThread(() -> {
+                            adc2_edit.clearFocus();
+                            send_adc2_edit();
+                        });
                     }
-                }, 3000);
+                }, 2500);
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -124,9 +130,47 @@ public class otherOption extends AppCompatActivity {
                     @Override
                     public void run() {
                         // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(otherOption.this::send_adc3_edit);
+                        runOnUiThread(() -> {
+                            adc3_edit.clearFocus();
+                            send_adc3_edit();
+                        });
                     }
-                }, 3000);
+                }, 2500);
+            }
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        low_voltage_set = findViewById(R.id.low_voltage_set);
+        if (MainActivity.readDate(otherOption.this,"low_voltage")!=null) {
+            low_voltage_set.setText(MainActivity.readDate(otherOption.this, "low_voltage"));
+        }
+        low_voltage_set.addTextChangedListener(new TextWatcher() {
+            private Timer timer;
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // 如果已经有一个延时任务在执行，则取消它
+                if (timer != null) {
+                    timer.cancel();
+                }
+                // 创建一个新的延时任务
+                timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 这里编写输入完成后想要执行的代码
+                        runOnUiThread(() -> {
+                            low_voltage_set.clearFocus();
+                            lo_voltage_set();
+                        });
+                    }
+                }, 2500);
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -141,13 +185,6 @@ public class otherOption extends AppCompatActivity {
                 if(isInteger(w_edit.getText().toString())||isDecimal(w_edit.getText().toString())) {
                     saveData("w", w_edit.getText().toString());
                     udpClient.sendMessage("set_w:" + w_edit.getText().toString());
-                    String save_result = udpClient.receiveMessage();
-                    if (save_result.contains("save_ok")) {
-                        about.log(TAG,"巳保存功率设置");
-                        Looper.prepare();
-                        Toast.makeText(otherOption.this, "巳保存功率设置", Toast.LENGTH_SHORT).show();
-                        Looper.loop();
-                    }
                 }else {
                     about.log(TAG,"功率设置项请输入数字类型");
                     Looper.prepare();
@@ -164,13 +201,6 @@ public class otherOption extends AppCompatActivity {
                 if (isInteger(adc2_edit.getText().toString()) || isDecimal(adc2_edit.getText().toString())) {
                     saveData("adc2", adc2_edit.getText().toString());
                     udpClient.sendMessage("adc2_set_value:" + adc2_edit.getText().toString());
-                    String save_result = udpClient.receiveMessage();
-                    if (save_result.contains("adc2_set_ok")) {
-                        about.log(TAG,"巳保存adc2参数");
-                        Looper.prepare();
-                        Toast.makeText(otherOption.this, "巳保存adc2参数", Toast.LENGTH_SHORT).show();
-                        Looper.loop();
-                    }
                 } else {
                     about.log(TAG,"adc2项请输入数字类型");
                     Looper.prepare();
@@ -187,17 +217,27 @@ public class otherOption extends AppCompatActivity {
                 if (isInteger(adc3_edit.getText().toString()) || isDecimal(adc3_edit.getText().toString())) {
                     saveData("adc3", adc3_edit.getText().toString());
                     udpClient.sendMessage("adc3_set_value:" + adc3_edit.getText().toString());
-                    String save_result = udpClient.receiveMessage();
-                    if (save_result.contains("adc3_set_ok")) {
-                        about.log(TAG,"巳保存adc3参数");
-                        Looper.prepare();
-                        Toast.makeText(otherOption.this, "巳保存adc3参数", Toast.LENGTH_SHORT).show();
-                        Looper.loop();
-                    }
                 } else {
                     about.log(TAG,"adc3项请输入数字类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "adc3项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Looper.loop();
+                }
+            }
+        }).start();
+    }
+
+    public void lo_voltage_set(){
+        new Thread(() -> {
+            if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this,"low_voltage"))) {
+                about.log(TAG,"最低电压值巳改变,发送参数到服务端");
+                if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString())) {
+                    saveData("low_voltage", low_voltage_set.getText().toString());
+                    udpClient.sendMessage("low_voltage:" + low_voltage_set.getText().toString());
+                } else {
+                    about.log(TAG,"最低电压值项请输入数字类型");
+                    Looper.prepare();
+                    Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", Toast.LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }

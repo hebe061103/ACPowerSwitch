@@ -25,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -59,7 +58,7 @@ public class BleClientActivity extends AppCompatActivity {
     public static BluetoothGattCharacteristic writeCharacteristic;
     public boolean discoveryFinished,BLE_ON;
     private static ProgressDialog pd1;
-    public ComponentName topActivity;
+    private ComponentName topActivity;
     @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
