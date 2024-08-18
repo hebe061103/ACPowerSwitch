@@ -160,7 +160,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
                 android:background="#8BC34A"
-                android:text="实际功率(W):"
+                android:text="视在功率(W):"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView9"
                 tools:ignore="HardcodedText,TextContrastCheck"

@@ -15,7 +15,6 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AlertDialog;
@@ -29,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WifiListActivity extends AppCompatActivity {
-    public static String TAG = "WifiListActivity:";
+    private static final String TAG = "WifiListActivity:";
     public static List<String> wifilist = new ArrayList<>();
     public static AlertDialog.Builder builder;
     private RecyclerView mRecyclerViewList;

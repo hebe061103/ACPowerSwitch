@@ -2,6 +2,8 @@ package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.udPort;
 import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
+import static com.zt.acpowerswitch.MainActivity.udp_connect;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,7 +12,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class UDPClient {
-    public static String TAG = "UDPClient:";
+    private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
     private InetAddress serverAddress;
     private int serverPort;
@@ -18,17 +20,20 @@ public class UDPClient {
         new Thread(() -> {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
-                about.log(TAG, "连接服务器");
-                try {
-                    this.serverAddress = InetAddress.getByName(address);
-                } catch (UnknownHostException e) {
-                    throw new RuntimeException(e);
+                if (!udp_connect) {
+                    udp_connect = true;
+                    about.log(TAG, "连接服务器");
+                    try {
+                        this.serverAddress = InetAddress.getByName(address);
+                    } catch (UnknownHostException e) {
+                        throw new RuntimeException(e);
+                    }
+                    this.serverPort = port;
+                    socket = new DatagramSocket();
+                    socket.connect(serverAddress, serverPort);
+                    // 连接成功，可以开始发送和接收数据
+                    about.log(TAG, "连接成功");
                 }
-                this.serverPort = port;
-                socket = new DatagramSocket();
-                socket.connect(serverAddress, serverPort);
-                // 连接成功，可以开始发送和接收数据
-                about.log(TAG, "连接成功");
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
                 reconnect();
@@ -70,5 +75,6 @@ public class UDPClient {
     }
     public void close() {
         socket.close();
+        udp_connect=false;
     }
 }

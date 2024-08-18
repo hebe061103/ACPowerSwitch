@@ -2,7 +2,9 @@ package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
+import static com.zt.acpowerswitch.MainActivity.udPort;
 import static com.zt.acpowerswitch.MainActivity.udpClient;
+import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -19,19 +21,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class otherOption extends AppCompatActivity {
-    public static String TAG = "otherOption:";
-    public TextView target_ip;
-    public EditText w_edit,adc2_edit,adc3_edit,low_voltage_set;
+    private static final String TAG = "otherOption:";
+    private EditText w_edit,adc2_edit,adc3_edit,low_voltage_set;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
-        MainActivity.connect_udp_service();
+        udpClient.udpConnect(udpServerAddress, udPort);
         str_pro();
     }
 
     @SuppressLint("ClickableViewAccessibility")
     public void str_pro(){
-        target_ip = findViewById(R.id.target_ip);
+        TextView target_ip = findViewById(R.id.target_ip);
         if (MainActivity.readDate(otherOption.this,"wifi_ip")!=null){
             target_ip.setText(MainActivity.readDate(otherOption.this,"wifi_ip"));
         }
@@ -258,6 +259,13 @@ public class otherOption extends AppCompatActivity {
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+    protected void onPause() {
+        super.onPause();
+        if (UDPClient.socket!=null) {
+            udpClient.close();
+            about.log(TAG, "网络连接中断");
         }
     }
     protected void onDestroy() {

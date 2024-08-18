@@ -30,7 +30,7 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
-    public static String TAG = "MainActivity:";
+    private final String TAG = "MainActivity:";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
             android.Manifest.permission.BLUETOOTH_ADMIN,
@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public String[] info;
     public static String udpServerAddress;
     public static Integer udPort;
+    public static boolean udp_connect;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,14 +59,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         requestBluetoothPermissions();
     }
     private void init(){
-        if (readDate(this, "wifi_ip") == null) {
-            Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
-            startActivities(new Intent[]{intent});
-        }else{
-            udpServerAddress=readDate(this, "wifi_ip");
-            udPort = 55555;
-            connect_udp_service();
-        }
+        connect_udp_service();
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
         power_kw = findViewById(R.id.power_kw);
@@ -101,11 +95,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
-                    if (UDPClient.socket != null) {
+                    if (UDPClient.socket != null && udp_connect) {
                         udpClient.sendMessage("get_info");
                         udp_value = udpClient.receiveMessage();
                         if (udp_value != null && udp_value.contains("AC_voltage")) {
-                            about.log(TAG,"UDP_INFO:拆分接收到的数据"+udp_value);
+                            about.log(TAG,"待拆分的数据:"+ udp_value);
                             String modifiedString = udp_value.substring(1, udp_value.length() - 1);
                             modifiedString = modifiedString.replace("'", "");
                             modifiedString = modifiedString.replace(",", ":");
@@ -118,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         sleep(2000);
                     }
                 }catch (Exception e){
-                    about.log(TAG,"循环内错误:"+e);
+                    about.log(TAG,"内部循环错误:"+e);
                 }
             }
         });
@@ -146,20 +140,27 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     sj_power_kw.setText(formattedValue);
                     //交流频率
                     out_frequency.setText(info[7]);
-                    //当前输出模式
-                    out_mode.setText(unicodeToString(info[9]));
                     //为电池电压
-                    bat_Voltage.setText(info[11]);
+                    bat_Voltage.setText(info[9]);
                     //为太阳能电流
-                    le_current.setText(info[13]);
+                    le_current.setText(info[11]);
+                    //当前输出模式
+                    out_mode.setText(unicodeToString(info[13]));
                 }catch (Exception e){
                     about.log(TAG,"拆分数据时接收到空数据");
                 }
             }
         }
     };
-    public static void connect_udp_service() {
-        udpClient.udpConnect(udpServerAddress, udPort);
+    public void connect_udp_service() {
+        if (readDate(this, "wifi_ip") == null) {
+            Intent intent = new Intent(this, set_tcp_page.class);
+            startActivities(new Intent[]{intent});
+        }else{
+            udpServerAddress=readDate(this, "wifi_ip");
+            udPort = 55555;
+            udpClient.udpConnect(udpServerAddress, udPort);
+        }
     }
     public static String unicodeToString(String unicode) {
         StringBuilder sb = new StringBuilder();

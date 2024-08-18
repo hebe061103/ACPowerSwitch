@@ -37,12 +37,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 /** @noinspection deprecation*/
 public class BleClientActivity extends AppCompatActivity {
-    public static String TAG = "BleClientActivity:";
+    private static final String TAG = "BleClientActivity:";
     public static String chara;
     public static List<BluetoothDevice> mlist = new ArrayList<>();
     private RecyclerView mRecyclerView;
@@ -274,10 +273,8 @@ public class BleClientActivity extends AppCompatActivity {
 
                                 if (runningTasks != null && !runningTasks.isEmpty()) {
                                     topActivity = runningTasks.get(0).topActivity;
-                                    String packageName = Objects.requireNonNull(topActivity).getPackageName();
-                                    String className = topActivity.getClassName();
                                 }
-                                if(!topActivity.toString().equals("ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.WifiListActivity}")) {
+                                if(topActivity!=null && !topActivity.toString().equals("ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.WifiListActivity}")) {
                                     Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
                                     startActivities(new Intent[]{intent});
                                 }
