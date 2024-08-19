@@ -21,7 +21,6 @@ public class UDPClient {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
                 if (!udp_connect) {
-                    udp_connect = true;
                     about.log(TAG, "连接服务器");
                     try {
                         this.serverAddress = InetAddress.getByName(address);
@@ -31,8 +30,11 @@ public class UDPClient {
                     this.serverPort = port;
                     socket = new DatagramSocket();
                     socket.connect(serverAddress, serverPort);
-                    // 连接成功，可以开始发送和接收数据
-                    about.log(TAG, "连接成功");
+                    if (socket.isConnected()){
+                        udp_connect = true;
+                        // 连接成功，可以开始发送和接收数据
+                        about.log(TAG, "连接成功");
+                    }
                 }
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
@@ -43,15 +45,12 @@ public class UDPClient {
     }
     private void reconnect() {
         new Thread(() -> {
-            while (socket == null || socket.isClosed()) {
-                try {
-                    Thread.sleep(3000); // 等待一段时间后重连
-                    udpConnect(udpServerAddress, udPort);
-                } catch (InterruptedException e) {
-                    // 处理异常，可能需要记录日志或通知上层
-                    about.log(TAG, "重新连接失败");
-                }
+            try {
+                Thread.sleep(3000); // 等待一段时间后重连
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+            udpConnect(udpServerAddress, udPort);
         }).start();
     }
     public void sendMessage(String message){

@@ -120,26 +120,27 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     @SuppressLint("HandlerLeak")
     Handler udpProHandler = new Handler() {
+        @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
             if (msg.what == 1) {
                 try {
                     //交流电压
-                    out_Voltage.setText(info[1]);
+                    out_Voltage.setText(info[1]+" v");
                     String ac = info[1];
                     //交流电流
                     Float jl_dl = Float.parseFloat(info[3]);
                     String formattedValue_iv_Value = df.format(jl_dl);
-                    out_Current.setText(formattedValue_iv_Value);
+                    out_Current.setText(formattedValue_iv_Value+" a");
                     String iv = info[3];
                     //交流有功功率
-                    power_kw.setText(info[5]);
+                    power_kw.setText(info[5]+" w");
                     //交流实际功率
                     Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
                     String formattedValue = df.format(sj_power);
-                    sj_power_kw.setText(formattedValue);
+                    sj_power_kw.setText(formattedValue+" w");
                     //交流频率
-                    out_frequency.setText(info[7]);
+                    out_frequency.setText(info[7]+" hz");
                     //为电池电压
                     bat_Voltage.setText(info[9]);
                     //为太阳能电流

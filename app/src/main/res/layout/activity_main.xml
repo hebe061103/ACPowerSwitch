@@ -138,7 +138,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
                 android:background="#C54ADA"
-                android:text="输出电流(IA):"
+                android:text="输出电流(out-A):"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView6"
                 tools:ignore="HardcodedText,TextContrastCheck" />
@@ -149,7 +149,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
                 android:textColor="#E84A3F"
-                android:text="有功功率(W):"
+                android:text="有功功率(P/W):"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView8"
                 tools:ignore="HardcodedText,TextContrastCheck" />
@@ -160,7 +160,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
                 android:background="#8BC34A"
-                android:text="视在功率(W):"
+                android:text="视在功率(S/W):"
                 android:textSize="18sp"
                 app:layout_constraintTop_toBottomOf="@+id/textView9"
                 tools:ignore="HardcodedText,TextContrastCheck"
