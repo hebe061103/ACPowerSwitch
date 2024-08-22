@@ -22,7 +22,7 @@ import java.util.TimerTask;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    private EditText w_edit,adc2_edit,adc3_edit,low_voltage_set;
+    private EditText w_edit,adc2_edit,adc3_edit,low_voltage_set,refresh_time_set ;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
@@ -178,6 +178,42 @@ public class otherOption extends AppCompatActivity {
 
             }
         });
+        //刷新时间设置
+        refresh_time_set = findViewById(R.id.refresh_time_set);
+        if (readDate(otherOption.this,"refresh_time")!=null) {
+            refresh_time_set.setText(MainActivity.readDate(otherOption.this, "refresh_time"));
+        }
+        refresh_time_set.addTextChangedListener(new TextWatcher() {
+            private Timer timer;
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // 如果已经有一个延时任务在执行，则取消它
+                if (timer != null) {
+                    timer.cancel();
+                }
+                // 创建一个新的延时任务
+                timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 这里编写输入完成后想要执行的代码
+                        runOnUiThread(() -> {
+                            refresh_time_set.clearFocus();
+                            refresh_time_set();
+                        });
+                    }
+                }, 2500);
+            }
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
     }
     public void send_w_edit(){
         new Thread(() -> {
@@ -239,6 +275,22 @@ public class otherOption extends AppCompatActivity {
                     about.log(TAG,"最低电压值项请输入数字类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Looper.loop();
+                }
+            }
+        }).start();
+    }
+
+    public void refresh_time_set(){
+        new Thread(() -> {
+            if (!refresh_time_set.getText().toString().isEmpty() && !refresh_time_set.getText().toString().equals(readDate(otherOption.this,"refresh_time"))){
+                about.log(TAG,"页面刷新时间巳改变");
+                if(isInteger(refresh_time_set.getText().toString())) {
+                    saveData("refresh_time", refresh_time_set.getText().toString());
+                }else {
+                    about.log(TAG,"页面刷新项请输入整数类型");
+                    Looper.prepare();
+                    Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", Toast.LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }

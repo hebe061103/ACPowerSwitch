@@ -10,6 +10,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="35dp"
+        android:text="页面刷新时间设置(秒)"
+        android:textColor="#DD2C00"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView"
+        tools:ignore="HardcodedText" />
+
+    <EditText
+        android:id="@+id/refresh_time_set"
+        android:layout_width="85dp"
+        android:layout_height="39dp"
+        android:layout_marginTop="16dp"
+        android:hint="0"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toBottomOf="@+id/low_voltage_set"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="35dp"
         android:text="低电压点设置"
         android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"

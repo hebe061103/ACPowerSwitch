@@ -94,25 +94,24 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
         Thread thread = new Thread(() -> {
             while (true) {
-                try {
-                    if (UDPClient.socket != null && udp_connect) {
-                        udpClient.sendMessage("get_info");
-                        udp_value = udpClient.receiveMessage();
-                        if (udp_value != null && udp_value.contains("AC_voltage")) {
-                            about.log(TAG,"待拆分的数据:"+ udp_value);
-                            String modifiedString = udp_value.substring(1, udp_value.length() - 1);
-                            modifiedString = modifiedString.replace("'", "");
-                            modifiedString = modifiedString.replace(",", ":");
-                            modifiedString = modifiedString.replace(" ", "");
-                            info = modifiedString.split(":");
-                            Message message = new Message();
-                            message.what = 1;
-                            udpProHandler.sendMessage(message);
-                        }
-                        sleep(2000);
+                if (UDPClient.socket != null && udp_connect) {
+                    udpClient.sendMessage("get_info");
+                    udp_value = udpClient.receiveMessage();
+                    if (udp_value != null && udp_value.contains("AC_voltage")) {
+                        String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                        modifiedString = modifiedString.replace("'", "");
+                        modifiedString = modifiedString.replace(",", ":");
+                        modifiedString = modifiedString.replace(" ", "");
+                        info = modifiedString.split(":");
+                        Message message = new Message();
+                        message.what = 1;
+                        udpProHandler.sendMessage(message);
                     }
-                }catch (Exception e){
-                    about.log(TAG,"内部循环错误:"+e);
+                    if (readDate(this,"refresh_time")!=null) {
+                        sleep(Integer.parseInt(readDate(this, "refresh_time")) * 1000);
+                    }else {
+                        sleep(1000);//默认延时1s
+                    }
                 }
             }
         });

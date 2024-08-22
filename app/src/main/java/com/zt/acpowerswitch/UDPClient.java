@@ -30,16 +30,16 @@ public class UDPClient {
                     this.serverPort = port;
                     socket = new DatagramSocket();
                     socket.connect(serverAddress, serverPort);
-                    if (socket.isConnected()){
+                    if (socket.isConnected()&&!socket.isClosed()){
                         udp_connect = true;
                         // 连接成功，可以开始发送和接收数据
-                        about.log(TAG, "连接成功");
+                        about.log(TAG, "创建套接字成功");
                     }
                 }
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
                 reconnect();
-                about.log(TAG, "连接失败,重新连接");
+                about.log(TAG, "创建套接字失败");
             }
         }).start();
     }
@@ -59,7 +59,7 @@ public class UDPClient {
         try {
             socket.send(packet);
         } catch (IOException e) {
-           // throw new RuntimeException(e);
+            // throw new RuntimeException(e);
         }
     }
     public String receiveMessage(){
