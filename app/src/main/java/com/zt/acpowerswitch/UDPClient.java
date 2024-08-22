@@ -21,7 +21,7 @@ public class UDPClient {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
                 if (!udp_connect) {
-                    about.log(TAG, "连接服务器");
+                    about.log(TAG, "连接至服务器");
                     try {
                         this.serverAddress = InetAddress.getByName(address);
                     } catch (UnknownHostException e) {
@@ -60,6 +60,7 @@ public class UDPClient {
             socket.send(packet);
         } catch (IOException e) {
             // throw new RuntimeException(e);
+            about.log(TAG,"发送信息错误:"+ e);
         }
     }
     public String receiveMessage(){
@@ -69,6 +70,7 @@ public class UDPClient {
             socket.receive(packet);
         } catch (IOException e) {
             //throw new RuntimeException(e);
+            about.log(TAG,"接受信息错误:"+ e);
         }
         return new String(packet.getData(), 0, packet.getLength());
     }

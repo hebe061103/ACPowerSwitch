@@ -96,8 +96,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             while (true) {
                 if (UDPClient.socket != null && udp_connect) {
                     udpClient.sendMessage("get_info");
+                    about.log(TAG,"发送请求信息");
                     udp_value = udpClient.receiveMessage();
                     if (udp_value != null && udp_value.contains("AC_voltage")) {
+                        about.log(TAG,"请求返回信息:"+ udp_value);
                         String modifiedString = udp_value.substring(1, udp_value.length() - 1);
                         modifiedString = modifiedString.replace("'", "");
                         modifiedString = modifiedString.replace(",", ":");
