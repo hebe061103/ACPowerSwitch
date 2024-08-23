@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="无线网络列表"
-        android:textColor="#3333ff"
+        android:textColor="#8BC34A"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintWidth_percent="0.5"

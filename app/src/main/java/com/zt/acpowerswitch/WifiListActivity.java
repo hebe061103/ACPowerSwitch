@@ -35,6 +35,7 @@ public class WifiListActivity extends AppCompatActivity {
     public  wifiListAdapter mRecycler;
     public String wifi_ap_name;
     public ProgressDialog pd;
+    private boolean wifi_online_finish,wifi_pass_error;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,10 +64,12 @@ public class WifiListActivity extends AppCompatActivity {
             if (!ssid.isEmpty()) {
                 about.log(TAG, "WIFI信息:" + ssid + "MAC:" + bssid);
                 // 其他信息，如BSSID、capabilities等
-                wifilist.add(ssid);
-                Message message = new Message();
-                message.what = 1;
-                myHandler.sendMessage(message);
+                if (!wifilist.contains(ssid)) {
+                    wifilist.add(ssid);
+                    Message message = new Message();
+                    message.what = 1;
+                    myHandler.sendMessage(message);
+                }
             }
         }
     }
@@ -112,13 +115,12 @@ public class WifiListActivity extends AppCompatActivity {
                 pd.show();
                 pd.setCancelable(false);
                 Thread thread = new Thread(() -> {
-                    for(int i=0;i<10;i++){
+                    while(!wifi_online_finish && !wifi_pass_error){
                         write_data_ble("local_ip");
-                        sleep(3000);
-                        if(chara!=null&&chara.equals("IP:")){
-                            break;
-                        }
+                        sleep(1000);
                     }
+                    wifi_online_finish=false;
+                    wifi_pass_error=false;
                 });
                 thread.start();
             }
@@ -163,7 +165,7 @@ public class WifiListActivity extends AppCompatActivity {
             int stringLength = data.length(); // 获取字符串的总长度
             about.log(TAG, "发送字符的总长度:" + stringLength);
             write_data_ble("len:"+ stringLength);
-            sleep(1000);
+            sleep(2000);
             for (int i = 0; i < stringLength; i += readLength) {
                 // 计算还剩多少字符可以读取
                 int remaining = stringLength - i;
@@ -205,11 +207,13 @@ public class WifiListActivity extends AppCompatActivity {
                     chara = "";
                 }else if (chara != null && chara.contains("pass_err")) {
                     about.log(TAG, "密码错误");
+                    wifi_pass_error=true;
                     Message message = new Message();
                     message.what = 4;
                     myHandler.sendMessage(message);
                     chara = "";
                 }else if (chara != null && chara.contains("IP:")) {
+                    wifi_online_finish=true;
                     about.log(TAG, "WIFI启动成功");
                     Message message = new Message();
                     message.what = 5;
