@@ -16,7 +16,7 @@
         android:layout_marginTop="4dp"
         android:text="光伏逆变市电转换系统:"
         android:textColor="#FF9800"
-        android:textSize="20sp"
+        android:textSize="25sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -56,6 +56,31 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/le_voltage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="35dp"
+                android:layout_marginEnd="16dp"
+                android:hint="null"
+                android:textColorHint="#37373F"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView12"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/textView14"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="35dp"
+                android:text="光伏充电电流(i):"
+                android:textColor="#E91E63"
+                android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView20"
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
                 android:id="@+id/power_kw"
@@ -114,6 +139,7 @@
                 android:id="@+id/menu_img"
                 android:layout_width="32dp"
                 android:layout_height="29dp"
+                android:layout_marginTop="25dp"
                 android:layout_marginEnd="12dp"
                 android:contentDescription="菜单"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -126,9 +152,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:textColor="#00BCD4"
                 android:text="输出电压(AC/v):"
+                android:textColor="#00BCD4"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView5"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
@@ -140,6 +167,7 @@
                 android:background="#C54ADA"
                 android:text="输出电流(out-A):"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView6"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
@@ -148,9 +176,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:textColor="#E84A3F"
                 android:text="有功功率(P/W):"
+                android:textColor="#E84A3F"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView8"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
@@ -162,9 +191,9 @@
                 android:background="#8BC34A"
                 android:text="视在功率(S/W):"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView9"
-                tools:ignore="HardcodedText,TextContrastCheck"
-                tools:layout_editor_absoluteX="1dp" />
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
                 android:id="@+id/textView10"
@@ -174,9 +203,9 @@
                 android:text="交流频率(Hz):"
                 android:textColor="#CDDC39"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView13"
-                tools:ignore="HardcodedText,TextContrastCheck"
-                tools:layout_editor_absoluteX="0dp" />
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
                 android:id="@+id/out_Voltage"
@@ -195,10 +224,13 @@
                 android:id="@+id/textView5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="输出信息:"
+                android:layout_marginTop="25dp"
+                android:text="市电输出信息:"
                 android:textColor="#78909C"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
@@ -210,6 +242,7 @@
                 android:text="当前输出模式:"
                 android:textColor="#212121"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView10"
                 tools:ignore="HardcodedText" />
 
@@ -235,32 +268,33 @@
                 android:textColor="#78909C"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView11"
                 tools:ignore="HardcodedText" />
 
             <TextView
-                android:id="@+id/textView14"
+                android:id="@+id/textView20"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:text="光伏充电电流(i):"
-                android:textColor="#E91E63"
+                android:text="光伏充电电压(v):"
+                android:background="#00BCD4"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView12"
-                tools:ignore="HardcodedText,TextContrastCheck"
-                tools:layout_editor_absoluteX="0dp" />
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
                 android:id="@+id/le_current"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
-                android:layout_marginEnd="12dp"
+                android:layout_marginEnd="16dp"
                 android:hint="null"
                 android:textColorHint="#37373F"
                 android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textView12"
+                app:layout_constraintTop_toBottomOf="@+id/textView20"
                 tools:ignore="HardcodedText" />
 
             <TextView
@@ -272,11 +306,12 @@
                 android:textColor="#78909C"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView14"
-                tools:ignore="HardcodedText"
-                tools:layout_editor_absoluteX="0dp" />
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
+                android:id="@+id/textView19"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="35dp"
@@ -284,6 +319,7 @@
                 android:text="电池电压(v):"
                 android:textColor="#424242"
                 android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView16"
                 tools:ignore="HardcodedText,VisualLintOverlap" />
 
@@ -301,8 +337,27 @@
                 app:layout_constraintTop_toBottomOf="@+id/textView16"
                 tools:ignore="HardcodedText,VisualLintOverlap" />
 
+            <TextView
+                android:id="@+id/bat_chart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="35dp"
+                android:text="电池充放电曲线图表:"
+                android:textColor="#32B748"
+                android:textSize="18sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView19"
+                tools:ignore="HardcodedText,TextContrastCheck" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/line_chart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/chart_shape"
+                app:layout_constraintTop_toBottomOf="@+id/bat_chart"
+                tools:layout_editor_absoluteX="0dp" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

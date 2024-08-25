@@ -23,6 +23,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.github.mikephil.charting.charts.LineChart;
+
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -49,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public static String udpServerAddress;
     public static Integer udPort;
     public static boolean udp_connect;
+
+    public LineChart line_chart;
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         out_mode = findViewById(R.id.out_mode);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
-
+        line_chart = findViewById(R.id.line_chart);
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -79,16 +83,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             goAnim(MainActivity.this,50);
             if (readDate(this,"wifi_ip")!=null) {
                 new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("提 示")
-                        .setMessage("该操作会清空数据，将无法连接到指定设备")
-                        .setPositiveButton("取消", null)
-                        .setNegativeButton("确定", (dialog, which) -> {
-                            goAnim(MainActivity.this, 50);
-                            MainActivity.deleteData("wifi_ip");
-                        })
-                        .show();
-            }else{
-                about.log(TAG,"目前未保存任何目标IP");
+                .setTitle("提 示")
+                .setMessage("该操作会清空数据，将无法连接到指定设备")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (dialog, which) -> {
+                    goAnim(MainActivity.this, 50);
+                    MainActivity.deleteData("wifi_ip");
+                })
+                .show();
             }
             return false;
         });
