@@ -3,11 +3,13 @@ package com.zt.acpowerswitch;
 import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,8 +26,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
@@ -35,9 +43,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private final String TAG = "MainActivity:";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
-            android.Manifest.permission.BLUETOOTH_ADMIN,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
     };
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
@@ -50,9 +58,13 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public String[] info;
     public static String udpServerAddress;
     public static Integer udPort;
-    public static boolean udp_connect;
-
+    public static boolean udp_connect,min_rec_finish;
+    public List<String> _month_value = new ArrayList<>();
+    public List<String> _day_value = new ArrayList<>();
+    public List<String> _time_value = new ArrayList<>();
+    public ArrayList <Entry> _bat_list = new ArrayList<>();
     public LineChart line_chart;
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     private void init(){
         connect_udp_service();
+        min_rec_finish=false;
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
         power_kw = findViewById(R.id.power_kw);
@@ -73,6 +86,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         line_chart = findViewById(R.id.line_chart);
+        TextView _min = findViewById(R.id._min);
+        TextView _day = findViewById(R.id._day);
+        TextView _month = findViewById(R.id._month);
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -94,27 +110,54 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
             return false;
         });
+        _min.setOnClickListener(view -> new Thread(() -> {
+            goAnim(MainActivity.this, 50);
+            line_chart.clear();
+            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
+            line_chart.invalidate(); // 请求图表重绘
+            min_rec_finish=false;
+            pro_min_data("get_minute_file","分时电压值");
+        }).start());
+        _day.setOnClickListener(view -> new Thread(() -> {
+            goAnim(MainActivity.this, 50);
+            line_chart.clear();
+            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
+            line_chart.invalidate(); // 请求图表重绘
+            min_rec_finish=false;
+            pro_min_data("get_day_file","日期电压值");
+        }).start());
+        _month.setOnClickListener(view -> new Thread(() -> {
+            goAnim(MainActivity.this, 50);
+            line_chart.clear();
+            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
+            line_chart.invalidate(); // 请求图表重绘
+            min_rec_finish=false;
+            pro_min_data("get_month_file","月度电压值");
+        }).start());
         Thread thread = new Thread(() -> {
             while (true) {
-                if (UDPClient.socket != null && udp_connect) {
-                    udpClient.sendMessage("get_info");
-                    about.log(TAG,"发送请求信息");
-                    udp_value = udpClient.receiveMessage();
-                    if (udp_value != null && udp_value.contains("AC_voltage")) {
-                        about.log(TAG,"请求返回信息:"+ udp_value);
-                        String modifiedString = udp_value.substring(1, udp_value.length() - 1);
-                        modifiedString = modifiedString.replace("'", "");
-                        modifiedString = modifiedString.replace(",", ":");
-                        modifiedString = modifiedString.replace(" ", "");
-                        info = modifiedString.split(":");
-                        Message message = new Message();
-                        message.what = 1;
-                        udpProHandler.sendMessage(message);
-                    }
-                    if (readDate(this,"refresh_time")!=null) {
-                        sleep(Integer.parseInt(readDate(this, "refresh_time")) * 1000);
-                    }else {
-                        sleep(1000);//默认延时1s
+                while (udp_connect) {
+                    if (UDPClient.socket != null) {
+                        udpClient.sendMessage("get_info");
+                        about.log(TAG, "发送请求信息");
+                        udp_value = udpClient.receiveMessage();
+                        if (udp_value != null && udp_value.contains("AC_voltage")) {
+                            about.log(TAG, "请求返回信息:" + udp_value);
+                            String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                            modifiedString = modifiedString.replace("'", "");
+                            modifiedString = modifiedString.replace(",", ":");
+                            modifiedString = modifiedString.replace(" ", "");
+                            info = modifiedString.split(":");
+                            Message message = new Message();
+                            message.what = 1;
+                            udpProHandler.sendMessage(message);
+                        }
+                        if (!min_rec_finish && line_chart.getData() == null) pro_min_data("get_minute_file","分时电压值");
+                        if (readDate(this, "refresh_time") != null) {
+                            sleep(Integer.parseInt(readDate(this, "refresh_time")) * 1000);
+                        } else {
+                            sleep(1000);//默认延时1s
+                        }
                     }
                 }
             }
@@ -156,6 +199,66 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         }
     };
+    public void pro_min_data(String _sd,String value_type){ //分时图可见时请求分时数据
+        about.log(TAG, "发送请求统计数据命令");
+        udpClient.sendMessage(_sd);
+        _month_value.clear();
+        _bat_list.clear();
+        _time_value.clear();
+        while (!min_rec_finish) {
+            udp_value = udpClient.receiveMessage();
+            if (udp_value != null && udp_value.contains("line>")) {
+                String[] _l = udp_value.split(">");
+                if (!_l[1].isEmpty()) {
+                    String[] _e = _l[1].split(" ");
+                    String _data = _e[0]; //提取空格分隔的第1个值为日期
+                    String [] _month_ = _data.split("-"); //年月日按"-"分隔
+                    String _year_month = _month_[0]+"-"+_month_[1]; //获取年份+月份
+                    String _year = _month_[0]; //获取年份
+                    String _time = _e[1]; //提取空格分隔的第2个值为时间
+                    String[] _split_bat_value = _e[2].split(":"); //分隔空格分隔的第3个值
+                    _month_value.add(_month_[1]);
+                    _day_value.add(_month_[2]);
+                    _time_value.add(_time);
+                    _bat_list.add(new Entry(_bat_list.size()-1, Float.parseFloat(_split_bat_value[1])));
+                    switch (value_type) {
+                        case "分时电压值":
+                            displayToChart(_time_value, _bat_list, _data, value_type);
+                            break;
+                        case "日期电压值":
+                            displayToChart(_day_value, _bat_list, _year_month, value_type);
+                            break;
+                        case "月度电压值":
+                            displayToChart(_month_value, _bat_list, _year, value_type);
+                            break;
+                    }
+                }
+            } else if (udp_value != null && udp_value.contains("min_send_finish")) {
+                about.log(TAG, "分时文件接收完成");
+                min_rec_finish = true;
+            } else {
+                min_rec_finish = true;
+            }
+        }
+    }
+    public void displayToChart(List<String> time_value,ArrayList <Entry> bat_list,String d,String des){
+        try{
+            LineDataSet lineDataSet = new LineDataSet(bat_list, des);
+            lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
+            lineDataSet.setCircleColor(Color.GREEN);
+            lineDataSet.setValueTextSize(8f);
+            LineData data = new LineData(lineDataSet);
+
+            line_chart.getXAxis().setValueFormatter(new MyXAxisValueFormatter(time_value));
+            line_chart.getDescription().setText(d);
+            line_chart.setData(data);
+            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
+            line_chart.invalidate(); // 请求图表重绘
+        } catch (Exception e){
+            about.log(TAG,"MPAndroidChart异常:"+e);
+            min_rec_finish = false;
+        }
+    }
     public void connect_udp_service() {
         if (readDate(this, "wifi_ip") == null) {
             Intent intent = new Intent(this, set_tcp_page.class);
@@ -266,10 +369,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         } else {
             // 没有获得权限，请求权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     EasyPermissions.requestPermissions(this, "需要蓝牙权限以扫描周围的蓝牙设备",
-                            REQUEST_CODE_BLUETOOTH_PERMISSIONS, android.Manifest.permission.BLUETOOTH_CONNECT,
-                            android.Manifest.permission.BLUETOOTH_SCAN);
+                            REQUEST_CODE_BLUETOOTH_PERMISSIONS, Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.BLUETOOTH_SCAN);
                 }
             }
             EasyPermissions.requestPermissions(this, "需要蓝牙权限以扫描周围的蓝牙设备", REQUEST_CODE_BLUETOOTH_PERMISSIONS, BLUETOOTH_PERMISSIONS);
@@ -296,5 +399,22 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             // 权限被拒绝，可以适当处理
             finish();
         }
+    }
+}
+
+class MyXAxisValueFormatter  implements IAxisValueFormatter {
+    private final List<String> labels;
+
+    public MyXAxisValueFormatter(List<String> labels) {
+        this.labels = labels;
+    }
+
+    @Override
+    public String getFormattedValue(float value, AxisBase axis) {
+        int index = (int) value;
+        if (index < 0 || index >= labels.size()) {
+            return "";
+        }
+        return labels.get(index);
     }
 }

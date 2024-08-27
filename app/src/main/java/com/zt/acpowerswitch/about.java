@@ -1,6 +1,9 @@
 package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.goAnim;
+import static com.zt.acpowerswitch.MainActivity.udPort;
+import static com.zt.acpowerswitch.MainActivity.udpClient;
+import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -31,6 +34,7 @@ public class about extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.about);
+        udpClient.udpConnect(udpServerAddress, udPort);
         TextView mBlueMessage = findViewById(R.id.blue_info);
         about_tx = findViewById(R.id.about);
         listView = findViewById(R.id.log_list_view);
@@ -95,6 +99,14 @@ public class about extends AppCompatActivity {
             }
         }
     };
+    protected void onPause() {
+        super.onPause();
+        if (UDPClient.socket!=null) {
+            udpClient.close();
+            String TAG = "about:";
+            about.log(TAG, "网络连接中断");
+        }
+    }
     protected void onDestroy() {
         super.onDestroy();
     }

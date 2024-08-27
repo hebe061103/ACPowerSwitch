@@ -60,7 +60,6 @@ public class UDPClient {
             socket.send(packet);
         } catch (IOException e) {
             // throw new RuntimeException(e);
-            about.log(TAG,"发送信息错误:"+ e);
         }
     }
     public String receiveMessage(){
@@ -70,7 +69,6 @@ public class UDPClient {
             socket.receive(packet);
         } catch (IOException e) {
             //throw new RuntimeException(e);
-            about.log(TAG,"接受信息错误:"+ e);
         }
         return new String(packet.getData(), 0, packet.getLength());
     }

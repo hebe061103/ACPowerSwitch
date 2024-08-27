@@ -16,7 +16,7 @@
         android:layout_marginTop="4dp"
         android:text="光伏逆变市电转换系统:"
         android:textColor="#FF9800"
-        android:textSize="25sp"
+        android:textSize="22sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -352,11 +352,52 @@
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/line_chart"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginTop="10dp"
+                android:layout_height="280dp"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/chart_shape"
-                app:layout_constraintTop_toBottomOf="@+id/bat_chart"
+                app:layout_constraintTop_toBottomOf="@+id/_min"
                 tools:layout_editor_absoluteX="0dp" />
+
+            <TextView
+                android:id="@+id/_min"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="#8BC34A"
+                android:textColor="#EFE6E9"
+                android:text="  分 时  "
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/bat_chart"
+                tools:ignore="HardcodedText,TextContrastCheck" />
+
+            <TextView
+                android:id="@+id/_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:background="#8BC34A"
+                android:text="     日     "
+                android:textColor="#EFE6E9"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/_min"
+                app:layout_constraintTop_toBottomOf="@+id/bat_chart"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/_month"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:background="#8BC34A"
+                android:textColor="#EFE6E9"
+                android:text="     月     "
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/_day"
+                app:layout_constraintTop_toBottomOf="@+id/bat_chart"
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
