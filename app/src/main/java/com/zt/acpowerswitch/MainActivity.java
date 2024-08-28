@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.data.Entry;
@@ -90,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         TextView _min = findViewById(R.id._min);
         TextView _day = findViewById(R.id._day);
         TextView _month = findViewById(R.id._month);
+        line_chart.setNoDataText("暂无数据!");
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -314,14 +314,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));
             line_chart.getDescription().setText(des);
-            line_chart.setExtraTopOffset(10f); // 设置额外的顶部偏移量为10dp
+            line_chart.setExtraTopOffset(10f);
             line_chart.getAxisLeft().setAxisMinimum(10f);
             line_chart.getAxisLeft().setAxisMaximum(30f);
             line_chart.getAxisRight().setAxisMinimum(10f);
             line_chart.getAxisRight().setAxisMaximum(30f);
             line_chart.setData(data);
-        } catch (NullPointerException | IndexOutOfBoundsException ex){
-            ex.printStackTrace();
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
     public void connect_udp_service() {
