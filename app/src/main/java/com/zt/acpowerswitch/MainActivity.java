@@ -58,11 +58,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public String[] info;
     public static String udpServerAddress;
     public static Integer udPort;
-    public static boolean udp_connect,min_rec_finish;
-    public List<String> _month_value = new ArrayList<>();
-    public List<String> _day_value = new ArrayList<>();
-    public List<String> _time_value = new ArrayList<>();
-    public ArrayList <Entry> _bat_list = new ArrayList<>();
+    public static boolean udp_connect,data_rec_finish;
+    public List<String> _min_bat_list = new ArrayList<>();
+    public List<String> _date_bat_list = new ArrayList<>();
+    public List<String> _month_bat_list = new ArrayList<>();
+    public ArrayList<String> _time_value = new ArrayList<>();
+    public ArrayList<Entry> _bat_list = new ArrayList<>();
     public LineChart line_chart;
 
     @SuppressLint("MissingPermission")
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     private void init(){
         connect_udp_service();
-        min_rec_finish=false;
+        data_rec_finish=false;
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
         power_kw = findViewById(R.id.power_kw);
@@ -105,35 +106,61 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(MainActivity.this, 50);
                     MainActivity.deleteData("wifi_ip");
-                })
-                .show();
+                }).show();
             }
             return false;
         });
         _min.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
-            line_chart.clear();
-            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
-            line_chart.invalidate(); // 请求图表重绘
-            min_rec_finish=false;
-            pro_min_data("get_minute_file","分时电压值");
+            about.log(TAG, "查询分时电压值");
+            if (line_chart.getData() != null && line_chart.getData().getDataSetCount() > 0) {
+                line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
+            }
+            pro_time_data(_min_bat_list,"分时电压值");
         }).start());
+        _min.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("提 示")
+                .setMessage("该操作将清除分时数据,无法恢复!")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_minute_file")).start()).show();
+            return false;
+        });
         _day.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
-            line_chart.clear();
-            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
-            line_chart.invalidate(); // 请求图表重绘
-            min_rec_finish=false;
-            pro_min_data("get_day_file","日期电压值");
+            about.log(TAG, "查询日期电压值");
+            if (line_chart.getData() != null && line_chart.getData().getDataSetCount() > 0) {
+                line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
+            }
+            pro_time_data(_date_bat_list,"日期电压值");
         }).start());
+        _day.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("提 示")
+                    .setMessage("该操作将清除日期数据,无法恢复!")
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_date_file")).start()).show();
+            return false;
+        });
         _month.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
-            line_chart.clear();
-            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
-            line_chart.invalidate(); // 请求图表重绘
-            min_rec_finish=false;
-            pro_min_data("get_month_file","月度电压值");
+            about.log(TAG, "查询月份电压值");
+            if (line_chart.getData() != null && line_chart.getData().getDataSetCount() > 0) {
+                line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
+            }
+            pro_time_data(_month_bat_list,"月份电压值");
         }).start());
+        _month.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("提 示")
+                    .setMessage("该操作将清除月份数据,无法恢复!")
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_month_file")).start()).show();
+            return false;
+        });
         Thread thread = new Thread(() -> {
             while (true) {
                 while (udp_connect) {
@@ -152,7 +179,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                             message.what = 1;
                             udpProHandler.sendMessage(message);
                         }
-                        if (!min_rec_finish && line_chart.getData() == null) pro_min_data("get_minute_file","分时电压值");
+                        if (!data_rec_finish && line_chart.getData() == null) pro_data_request();
+                        if (line_chart.getData() == null) pro_time_data(_min_bat_list,"分时电压值");
                         if (readDate(this, "refresh_time") != null) {
                             sleep(Integer.parseInt(readDate(this, "refresh_time")) * 1000);
                         } else {
@@ -172,19 +200,19 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             if (msg.what == 1) {
                 try {
                     //交流电压
-                    out_Voltage.setText(info[1]+" v");
+                    out_Voltage.setText(info[1]);
                     String ac = info[1];
                     //交流电流
                     Float jl_dl = Float.parseFloat(info[3]);
                     String formattedValue_iv_Value = df.format(jl_dl);
-                    out_Current.setText(formattedValue_iv_Value+" a");
+                    out_Current.setText(formattedValue_iv_Value);
                     String iv = info[3];
                     //交流有功功率
-                    power_kw.setText(info[5]+" w");
+                    power_kw.setText(info[5]);
                     //交流实际功率
                     Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
                     String formattedValue = df.format(sj_power);
-                    sj_power_kw.setText(formattedValue+" w");
+                    sj_power_kw.setText(formattedValue);
                     //交流频率
                     out_frequency.setText(info[7]+" hz");
                     //为电池电压
@@ -199,64 +227,101 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         }
     };
-    public void pro_min_data(String _sd,String value_type){ //分时图可见时请求分时数据
-        about.log(TAG, "发送请求统计数据命令");
-        udpClient.sendMessage(_sd);
-        _month_value.clear();
-        _bat_list.clear();
-        _time_value.clear();
-        while (!min_rec_finish) {
+    public void pro_data_request(){
+        about.log(TAG, "发送请求全部数据命令");
+        udpClient.sendMessage("get_all_file");
+        while (!data_rec_finish) {
             udp_value = udpClient.receiveMessage();
-            if (udp_value != null && udp_value.contains("line>")) {
-                String[] _l = udp_value.split(">");
+            if (udp_value != null && udp_value.contains("min>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                about.log(TAG, _l[1]);
                 if (!_l[1].isEmpty()) {
-                    String[] _e = _l[1].split(" ");
-                    String _data = _e[0]; //提取空格分隔的第1个值为日期
-                    String [] _month_ = _data.split("-"); //年月日按"-"分隔
-                    String _year_month = _month_[0]+"-"+_month_[1]; //获取年份+月份
-                    String _year = _month_[0]; //获取年份
-                    String _time = _e[1]; //提取空格分隔的第2个值为时间
-                    String[] _split_bat_value = _e[2].split(":"); //分隔空格分隔的第3个值
-                    _month_value.add(_month_[1]);
-                    _day_value.add(_month_[2]);
-                    _time_value.add(_time);
-                    _bat_list.add(new Entry(_bat_list.size()-1, Float.parseFloat(_split_bat_value[1])));
-                    switch (value_type) {
-                        case "分时电压值":
-                            displayToChart(_time_value, _bat_list, _data, value_type);
-                            break;
-                        case "日期电压值":
-                            displayToChart(_day_value, _bat_list, _year_month, value_type);
-                            break;
-                        case "月度电压值":
-                            displayToChart(_month_value, _bat_list, _year, value_type);
-                            break;
-                    }
+                    _min_bat_list.add(_l[1]);
                 }
-            } else if (udp_value != null && udp_value.contains("min_send_finish")) {
-                about.log(TAG, "分时文件接收完成");
-                min_rec_finish = true;
+            } else if (udp_value != null && udp_value.contains("date>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                about.log(TAG, _l[1]);
+                if (!_l[1].isEmpty()) {
+                    _date_bat_list.add(_l[1]);
+                }
+            }else if (udp_value != null && udp_value.contains("month>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                about.log(TAG, _l[1]);
+                if (!_l[1].isEmpty()) {
+                    _month_bat_list.add(_l[1]);
+                }
+            }else if (udp_value != null && udp_value.contains("all_file_send_finish")) {
+                about.log(TAG, "所有数据接收完成,分时数据:"+ _min_bat_list.size()+" 日期数据:"
+                        + _date_bat_list.size()+" 月份数据:" + _month_bat_list.size());
+                data_rec_finish = true;
             } else {
-                min_rec_finish = true;
+                data_rec_finish = true;
             }
         }
     }
-    public void displayToChart(List<String> time_value,ArrayList <Entry> bat_list,String d,String des){
+    public void pro_time_data(List<String> _sd,String time){
+        _time_value.clear();
+        _bat_list.clear();
+        switch (time) {
+            case "分时电压值":
+                for (int i = 0; i < _sd.size(); i++) {
+                    String[] _e = _sd.get(i).split(" ");
+                    String[] _u = _e[1].split(":");
+                    _time_value.add(_u[0]+":"+_u[1]);
+                    String[] _split_bat_value = _e[2].split(":");
+                    String _bat_value = _split_bat_value[1]; //截取电压值
+                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    displayToChart(_time_value, _bat_list, _e[0], time);
+                }
+                line_chart.notifyDataSetChanged();
+                line_chart.invalidate();
+                break;
+            case "日期电压值":
+                for (int i = 0; i < _sd.size(); i++) {
+                    String[] _e = _sd.get(i).split(" ");
+                    String[] _s = _e[0].split("-");
+                    _time_value.add(_s[2]+"日");
+                    String[] _split_bat_value = _e[2].split(":");
+                    String _bat_value = _split_bat_value[1]; //截取电压值
+                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    displayToChart(_time_value, _bat_list, _s[0]+"-"+_s[1], time);
+                }
+                line_chart.notifyDataSetChanged();
+                line_chart.invalidate();
+                break;
+            case "月份电压值":
+                for (int i = 0; i < _sd.size(); i++) {
+                    String[] _e = _sd.get(i).split(" ");
+                    String[] _s = _e[0].split("-");
+                    _time_value.add(_s[1]+"月");
+                    String[] _split_bat_value = _e[2].split(":");
+                    String _bat_value = _split_bat_value[1]; //截取电压值
+                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    displayToChart(_time_value, _bat_list, _s[0], time);
+                }
+                line_chart.notifyDataSetChanged();
+                line_chart.invalidate();
+                break;
+        }
+    }
+    public void displayToChart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String title){
         try{
-            LineDataSet lineDataSet = new LineDataSet(bat_list, des);
+            LineDataSet lineDataSet = new LineDataSet(bat_list_value, title);
             lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
             lineDataSet.setCircleColor(Color.GREEN);
             lineDataSet.setValueTextSize(8f);
             LineData data = new LineData(lineDataSet);
 
-            line_chart.getXAxis().setValueFormatter(new MyXAxisValueFormatter(time_value));
-            line_chart.getDescription().setText(d);
+            line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));
+            line_chart.getDescription().setText(des);
+            line_chart.setExtraTopOffset(10f); // 设置额外的顶部偏移量为10dp
+            line_chart.getAxisLeft().setAxisMinimum(10f);
+            line_chart.getAxisLeft().setAxisMaximum(30f);
+            line_chart.getAxisRight().setAxisMinimum(10f);
+            line_chart.getAxisRight().setAxisMaximum(30f);
             line_chart.setData(data);
-            line_chart.notifyDataSetChanged(); // 通知图表数据集已更新
-            line_chart.invalidate(); // 请求图表重绘
-        } catch (Exception e){
-            about.log(TAG,"MPAndroidChart异常:"+e);
-            min_rec_finish = false;
+        } catch (NullPointerException | IndexOutOfBoundsException ex){
+            ex.printStackTrace();
         }
     }
     public void connect_udp_service() {
@@ -402,19 +467,22 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 }
 
-class MyXAxisValueFormatter  implements IAxisValueFormatter {
-    private final List<String> labels;
+class ExamModelOneXValueFormatter implements IAxisValueFormatter {
+    private final ArrayList<String> list;
 
-    public MyXAxisValueFormatter(List<String> labels) {
-        this.labels = labels;
+    public ExamModelOneXValueFormatter(ArrayList<String> list){
+        this.list = list;
     }
 
     @Override
     public String getFormattedValue(float value, AxisBase axis) {
-        int index = (int) value;
-        if (index < 0 || index >= labels.size()) {
-            return "";
+        int values = (int) value;
+        if(values<0){
+            values = 0;
         }
-        return labels.get(index);
+        if(values>=list.size()){
+            values = list.size()-1;
+        }
+        return list.get(values%list.size());
     }
 }
