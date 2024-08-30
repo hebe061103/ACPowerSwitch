@@ -57,20 +57,23 @@ public class UDPClient {
         byte[] data = message.getBytes();
         DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, serverPort);
         try {
-            socket.send(packet);
+            if (socket != null) {
+                socket.send(packet);
+            }
         } catch (IOException e) {
             // throw new RuntimeException(e);
-            about.log(TAG, "发送数据异常");
         }
     }
     public String receiveMessage(){
         byte[] buffer = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         try {
-            socket.receive(packet);
+            if (socket != null) {
+                socket.receive(packet);
+            }
         } catch (IOException e) {
             //throw new RuntimeException(e);
-            about.log(TAG, "接收数据异常");
+            reconnect();
         }
         return new String(packet.getData(), 0, packet.getLength());
     }

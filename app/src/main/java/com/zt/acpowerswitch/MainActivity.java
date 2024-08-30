@@ -5,15 +5,17 @@ import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.view.View;
 import android.widget.ImageView;
@@ -30,6 +32,8 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.IValueFormatter;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -40,6 +44,7 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
     private final String TAG = "MainActivity:";
+    public final String top_a = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
     private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
     private static final String[] BLUETOOTH_PERMISSIONS = {
             Manifest.permission.BLUETOOTH_ADMIN,
@@ -67,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
     public LineChart line_chart;
     public int cycle_size=0;
+    private ComponentName topActivity;
+    public LineDataSet lineDataSet;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -128,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
             }
             pro_time_data(_min_bat_list,"分时电压值");
-            click_minute_confirm=false;
         }).start());
         _min.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -136,7 +142,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 .setTitle("提 示")
                 .setMessage("该操作将清除分时数据,无法恢复!")
                 .setPositiveButton("取消", null)
-                .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_minute_file")).start()).show();
+                .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
+                    goAnim(MainActivity.this, 50);
+                    udpClient.sendMessage("clean_minute_file");
+                }).start()).show();
             return false;
         });
         _day.setOnClickListener(view -> new Thread(() -> {
@@ -155,7 +164,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     .setTitle("提 示")
                     .setMessage("该操作将清除日期数据,无法恢复!")
                     .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_date_file")).start()).show();
+                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
+                        goAnim(MainActivity.this, 50);
+                        udpClient.sendMessage("clean_date_file");
+                    }).start()).show();
             return false;
         });
         _month.setOnClickListener(view -> new Thread(() -> {
@@ -174,7 +186,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     .setTitle("提 示")
                     .setMessage("该操作将清除月份数据,无法恢复!")
                     .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> udpClient.sendMessage("clean_month_file")).start()).show();
+                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
+                        goAnim(MainActivity.this, 50);
+                        udpClient.sendMessage("clean_month_file");
+                    }).start()).show();
             return false;
         });
         mem_use_status.setOnClickListener(view -> {
@@ -187,32 +202,34 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
         Thread thread = new Thread(() -> {
             while (true) {
-                while (udp_connect) {
-                    if (UDPClient.socket != null) {
-                        if (!click_minute_confirm) {udpClient.sendMessage("get_info");about.log(TAG, "发送请求信息");}
-                        udp_value = udpClient.receiveMessage();
-                        if (udp_value != null && udp_value.contains("AC_voltage")) {
-                            about.log(TAG, "请求返回信息:" + udp_value);
-                            String modifiedString = udp_value.substring(1, udp_value.length() - 1);
-                            modifiedString = modifiedString.replace("'", "");
-                            modifiedString = modifiedString.replace(",", ":");
-                            modifiedString = modifiedString.replace(" ", "");
-                            info = modifiedString.split(":");
-                            Message message = new Message();
-                            message.what = 1;
-                            udpProHandler.sendMessage(message);
-                        } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm) {
-//                           处理内存使用量动态刷新到chart
-                            pro_mem_use_status();
+                if (udp_connect) {
+                    if (!click_minute_confirm && checkScreenStatus()) {udpClient.sendMessage("get_info");about.log(TAG, "发送请求信息");sleep(request_delay_ms());}
+                    udp_value = udpClient.receiveMessage();
+                    if (udp_value != null && udp_value.contains("['AC_voltage")) {
+                        about.log(TAG, "请求返回信息:" + udp_value);
+                        String modifiedString = udp_value.substring(1, udp_value.length() - 1);
+                        modifiedString = modifiedString.replace("'", "");
+                        modifiedString = modifiedString.replace(",", ":");
+                        modifiedString = modifiedString.replace(" ", "");
+                        info = modifiedString.split(":");
+                        Message message = new Message();
+                        message.what = 1;
+                        udpProHandler.sendMessage(message);
+                    } else if (udp_value != null && udp_value.contains("min>") && !click_minute_confirm
+                            && checkScreenStatus() && getTopActivity().toString().equals(top_a) && lineDataSet.getLabel().equals("分时电压值")) {
+                        String[] _l = udp_value.split(">"); //按>进行分隔
+                        if (_l[1] != null && !_l[1].isEmpty()) {
+                            about.log(TAG, _l[1]);
+                            _min_bat_list.add(_l[1]);
+                            pro_time_data(_min_bat_list, "分时电压值");
                         }
-                        if (!data_rec_finish && line_chart.getData() == null && !click_minute_confirm) pro_data_request();
-                        if (line_chart.getData() == null) pro_time_data(_min_bat_list,"分时电压值");
-                        if (readDate(this, "refresh_time") != null) {
-                            sleep(Integer.parseInt(readDate(this, "refresh_time")) * 1000);
-                        } else {
-                            sleep(1000);//默认延时1s
-                        }
+                    } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm) {
+//                  处理内存使用量动态刷新到chart
+                        pro_mem_use_status();
                     }
+                    if (!data_rec_finish && line_chart.getData() == null && !click_minute_confirm && checkScreenStatus() )
+                        pro_data_request();
+                    if (line_chart.getData() == null) pro_time_data(_min_bat_list, "分时电压值");
                 }
             }
         });
@@ -254,85 +271,100 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
     };
     public void pro_data_request(){
-        about.log(TAG, "发送请求全部数据命令");
+        about.log(TAG, "请求全部数据命令");
+        udpClient.sendMessage("get_all_file");
         if (click_minute_confirm) data_rec_finish = false;
-        for (int i=0; i<10; i++) {
-            cycle_size++;
-            udpClient.sendMessage("get_all_file");
-            while (!data_rec_finish) {
-                udp_value = udpClient.receiveMessage();
-                if (udp_value != null && udp_value.contains("min>")) {
-                    String[] _l = udp_value.split(">"); //按>进行分隔
-                    if (!_l[1].isEmpty()) {
-                        about.log(TAG, _l[1]);
-                        _min_bat_list.add(_l[1]);
-                    }
-                } else if (udp_value != null && udp_value.contains("date>")) {
-                    String[] _l = udp_value.split(">"); //按>进行分隔
-                    if (!_l[1].isEmpty()) {
-                        about.log(TAG, _l[1]);
-                        _date_bat_list.add(_l[1]);
-                    }
-                } else if (udp_value != null && udp_value.contains("month>")) {
-                    String[] _l = udp_value.split(">"); //按>进行分隔
-                    if (!_l[1].isEmpty()) {
-                        about.log(TAG, _l[1]);
-                        _month_bat_list.add(_l[1]);
-                    }
-                } else if (udp_value != null && udp_value.contains("all_file_send_finish")) {
-                    about.log(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
-                            + _date_bat_list.size() + " 月份数据:" + _month_bat_list.size());
-                    data_rec_finish = true;
+        while (!data_rec_finish) {
+            udp_value = udpClient.receiveMessage();
+            if (udp_value != null && udp_value.contains("min>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                if (_l[1]!=null && !_l[1].isEmpty()) {
+                    about.log(TAG, _l[1]);
+                    _min_bat_list.add(_l[1]);
                 }
-                if (cycle_size == 10){
-                    data_rec_finish = true;
-                    cycle_size=0;
+            } else if (udp_value != null && udp_value.contains("date>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                if (_l[1]!=null && !_l[1].isEmpty()) {
+                    about.log(TAG, _l[1]);
+                    _date_bat_list.add(_l[1]);
                 }
+            } else if (udp_value != null && udp_value.contains("month>")) {
+                String[] _l = udp_value.split(">"); //按>进行分隔
+                if (_l[1]!=null && !_l[1].isEmpty()) {
+                    about.log(TAG, _l[1]);
+                    _month_bat_list.add(_l[1]);
+                }
+            } else if (udp_value != null && udp_value.contains("all_file_send_finish")) {
+                about.log(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
+                        + _date_bat_list.size() + " 月份数据:" + _month_bat_list.size());
+                data_rec_finish = true;
+                click_minute_confirm=false;
+                cycle_size=0;
+            } else if(cycle_size == 10){
+                data_rec_finish = true;
+                click_minute_confirm=false;
+                cycle_size=0;
+            } else{
+                udpClient.sendMessage("get_all_file");
+                cycle_size++;
             }
         }
     }
-    public void pro_time_data(List<String> _sd,String time){
+    public void pro_time_data(List<String> _sd,String label){
         _time_value.clear();
         _bat_list.clear();
-        switch (time) {
+        String minute_des = "";
+        String date_des = "";
+        String month_des = "";
+        switch (label) {
             case "分时电压值":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    String[] _u = _e[1].split(":");
-                    _time_value.add(_u[0]+":"+_u[1]);
-                    String[] _split_bat_value = _e[2].split(":");
-                    String _bat_value = _split_bat_value[1]; //截取电压值
-                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-                    displayToChart(_time_value, _bat_list, _e[0], time);
+                    minute_des = _e[0];
+                    if (_e[1] != null && !_e[1].isEmpty()) {
+                        String[] _u = _e[1].split(":");
+                        _time_value.add(_u[0] + ":" + _u[1]);
+                        String[] _split_bat_value = _e[2].split(":");
+                        String _bat_value = _split_bat_value[1]; //截取电压值
+                        _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    }
                 }
-                line_chart.notifyDataSetChanged();
-                line_chart.invalidate();
+                displayToChart(_time_value, _bat_list, minute_des, label);
+                line_chart.notifyDataSetChanged();//通知数据巳改变
+                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
             case "日期电压值":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    String[] _s = _e[0].split("-");
-                    _time_value.add(_s[2]+"日");
-                    String[] _split_bat_value = _e[2].split(":");
-                    String _bat_value = _split_bat_value[1]; //截取电压值
-                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-                    displayToChart(_time_value, _bat_list, _s[0]+"-"+_s[1], time);
+                    if (_e[1] != null && !_e[1].isEmpty()) {
+                        String[] _s = _e[0].split("-");
+                        date_des = _s[0] + "-" + _s[1];
+                        _time_value.add(_s[2] + "日");
+                        String[] _split_bat_value = _e[2].split(":");
+                        String _bat_value = _split_bat_value[1]; //截取电压值
+                        _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    }
                 }
-                line_chart.notifyDataSetChanged();
-                line_chart.invalidate();
+                displayToChart(_time_value, _bat_list, date_des, label);
+                line_chart.notifyDataSetChanged();//通知数据巳改变
+                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
             case "月份电压值":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    String[] _s = _e[0].split("-");
-                    _time_value.add(_s[1]+"月");
-                    String[] _split_bat_value = _e[2].split(":");
-                    String _bat_value = _split_bat_value[1]; //截取电压值
-                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-                    displayToChart(_time_value, _bat_list, _s[0], time);
+                    if (_e[1] != null && !_e[1].isEmpty()) {
+                        String[] _s = _e[0].split("-");
+                        month_des = _s[0];
+                        _time_value.add(_s[1] + "月");
+                        String[] _split_bat_value = _e[2].split(":");
+                        String _bat_value = _split_bat_value[1]; //截取电压值
+                        _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+
+                    }
                 }
-                line_chart.notifyDataSetChanged();
-                line_chart.invalidate();
+                displayToChart(_time_value, _bat_list, month_des, label);
+                line_chart.notifyDataSetChanged();//通知数据巳改变
+                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
         }
     }
@@ -340,42 +372,83 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         about.log(TAG, "收到内存使用信息");
         String [] mem = udp_value.split(">");
         float _mem = Float.parseFloat(mem[1]);
-        _mem_value.add(String.valueOf(_mem));
+        _mem_value.add("");
         _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
-        LineDataSet lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(单位:KB)");
+        lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(单位:"+_mem+" kb)");
+        lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
         lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-        lineDataSet.setCircleColor(Color.GREEN);
-        lineDataSet.setValueTextSize(6f);
+        lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+        /*lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
+        lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+        lineDataSet.setLineWidth(1f);//设置线条的宽度，最大10f,最小0.2f
+        lineDataSet.setDrawFilled(true);//设置是否填充
         LineData data = new LineData(lineDataSet);
-        line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(_mem_value));
-        line_chart.getDescription().setText("esp32c3");
-        line_chart.setExtraTopOffset(10f);
-        line_chart.getAxisLeft().setAxisMinimum(0f);
-        line_chart.getAxisLeft().setAxisMaximum(400f);
-        line_chart.getAxisRight().setAxisMinimum(0f);
-        line_chart.getAxisRight().setAxisMaximum(400f);
-        line_chart.setData(data);
-        line_chart.notifyDataSetChanged();
-        line_chart.invalidate();
+        line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(_mem_value));//顶部X轴显示
+        line_chart.getDescription().setText("esp32c3");//右下角描述
+        line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
+        line_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
+        line_chart.getAxisLeft().setAxisMaximum(400f);//左侧Y轴最大值
+        line_chart.getAxisRight().setAxisMinimum(0f);//右侧Y轴最小值
+        line_chart.getAxisRight().setAxisMaximum(400f);//右侧Y轴最大值
+        line_chart.setData(data);//调置数据
+        line_chart.notifyDataSetChanged();//通知数据巳改变
+        line_chart.invalidate();//清理无效数据,用于动态刷新
     }
-    public void displayToChart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String title){
+    public void displayToChart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
         try{
-            LineDataSet lineDataSet = new LineDataSet(bat_list_value, title);
+            if (_bat_list.isEmpty()){
+                return;
+            }
+            String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
+            lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
+            lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
             lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-            lineDataSet.setCircleColor(Color.GREEN);
-            lineDataSet.setValueTextSize(6f);
+            lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+            /*lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
+            lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+            lineDataSet.setLineWidth(1f);//设置线条的宽度，最大10f,最小0.2f
             LineData data = new LineData(lineDataSet);
-
-            line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));
-            line_chart.getDescription().setText(des);
-            line_chart.setExtraTopOffset(10f);
-            line_chart.getAxisLeft().setAxisMinimum(10f);
-            line_chart.getAxisLeft().setAxisMaximum(30f);
-            line_chart.getAxisRight().setAxisMinimum(10f);
-            line_chart.getAxisRight().setAxisMaximum(30f);
-            line_chart.setData(data);
+            line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
+            line_chart.getDescription().setText(des);//右下角描述
+            line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
+            line_chart.getAxisLeft().setAxisMinimum(10f);//左侧Y轴最小值
+            line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
+            line_chart.getAxisRight().setAxisMinimum(10f);//右侧Y轴最小值
+            line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
+            line_chart.setData(data);//调置数据
         } catch (Exception e){
             e.printStackTrace();
+        }
+    }
+    /* 获取屏幕状态通过PowerManager */
+    @SuppressLint("ObsoleteSdkInt")
+    public boolean checkScreenStatus() {
+        PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+        boolean isScreenOn;
+        // Android 4.4W (KitKat Wear)系统及以上使用新接口获取亮屏状态
+        if (Build.VERSION.SDK_INT >= 20) {
+            isScreenOn = pm.isInteractive();
+        } else {
+            isScreenOn = pm.isScreenOn();
+        }
+        return isScreenOn;
+    }
+    /*获取最上层activity*/
+    public ComponentName getTopActivity(){
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
+
+        if (runningTasks != null && !runningTasks.isEmpty()) {
+            topActivity = runningTasks.get(0).topActivity;
+        }
+        return topActivity;
+    }
+    /*发送请求数据延时*/
+    public int request_delay_ms(){
+        if (readDate(this, "refresh_time") != null) {
+            return Integer.parseInt(readDate(this, "refresh_time"));
+        } else {
+            return 1000;
         }
     }
     public void connect_udp_service() {
@@ -538,5 +611,12 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
             values = list.size()-1;
         }
         return list.get(values%list.size());
+    }
+}
+/*数据值格式化器*/
+class NoValueFormatter implements IValueFormatter {
+    @Override
+    public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+        return ""; // 返回空字符串，不显示任何值
     }
 }
