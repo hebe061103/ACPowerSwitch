@@ -85,5 +85,6 @@ public class UDPClient {
     public void close() {
         socket.close();
         udp_connect=false;
+        about.log(TAG, "程序退出,网络连接关闭");
     }
 }

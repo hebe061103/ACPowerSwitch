@@ -240,6 +240,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     if (udp_connect  && line_chart.getData() == null && getTopActivity().toString().equals(top_a) && checkScreenStatus()){
                         pro_time_data(_min_bat_list, "分时电压值");
                     }
+                    if (!checkScreenStatus()){
+                        about.log(TAG, "屏幕关闭");
+                        udpClient.close();
+                    }
                 }
             }
         });
@@ -552,7 +556,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         if (UDPClient.socket!=null) {
             udpClient.close();
-            about.log(TAG, "程序退出,网络连接关闭");
         }
     }
     public static void goAnim(Context context, int millisecond) {
