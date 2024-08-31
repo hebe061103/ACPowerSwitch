@@ -95,17 +95,13 @@ public class about extends AppCompatActivity {
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
                 listView.setAdapter(adapter);
-                listView.setSelection(listView.getCount() - 1);
+                listView.setSelection(listView.getCount());
+                adapter.notifyDataSetChanged();
             }
         }
     };
     protected void onPause() {
         super.onPause();
-        if (UDPClient.socket!=null) {
-            udpClient.close();
-            String TAG = "about:";
-            about.log(TAG, "网络连接中断");
-        }
     }
     protected void onDestroy() {
         super.onDestroy();

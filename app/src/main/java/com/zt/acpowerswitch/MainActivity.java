@@ -63,9 +63,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public static String udpServerAddress;
     public static Integer udPort;
     public static boolean udp_connect,data_rec_finish,click_minute_confirm,click_mem_confirm;
-    public List<String> _min_bat_list = new ArrayList<>();
-    public List<String> _date_bat_list = new ArrayList<>();
-    public List<String> _month_bat_list = new ArrayList<>();
+    public ArrayList<String> _min_bat_list = new ArrayList<>();
+    public ArrayList<String> _date_bat_list = new ArrayList<>();
+    public ArrayList<String> _month_bat_list = new ArrayList<>();
     public ArrayList<String> _time_value = new ArrayList<>();
     public ArrayList<String> _mem_value = new ArrayList<>();
     public ArrayList<Entry> _bat_list = new ArrayList<>();
@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public int cycle_size=0;
     private ComponentName topActivity;
     public LineDataSet lineDataSet;
+    public Thread data_pro_thread;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         editor = sp.edit(); // 获取编辑器对象
         requestBluetoothPermissions();
     }
-    private void init(){
+    private void init_module(){
         connect_udp_service();
         data_rec_finish=false;
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -126,9 +127,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             about.log(TAG, "查询分时电压值");
             click_mem_confirm=false;//用于停止显示内存使用情况
             _mem_use_list.clear();//清理内存数组
-            _min_bat_list.clear();
-            _date_bat_list.clear();
-            _month_bat_list.clear();
             click_minute_confirm=true;
             pro_data_request();
             if (line_chart.getData() != null && line_chart.getData().getDataSetCount() > 0) {
@@ -200,10 +198,19 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
             }
         });
-        Thread thread = new Thread(() -> {
-            while (true) {
-                if (udp_connect) {
-                    if (!click_minute_confirm && checkScreenStatus()) {udpClient.sendMessage("get_info");about.log(TAG, "发送请求信息");sleep(request_delay_ms());}
+        if (data_pro_thread==null || !data_pro_thread.isAlive()) {
+            data_refresh_pro();
+        }
+    }
+    public void data_refresh_pro(){
+        data_pro_thread = new Thread(() -> {
+            while(true) {
+                while (udp_connect) {
+                    if (!click_minute_confirm && checkScreenStatus()) {
+                        udpClient.sendMessage("get_info");
+                        about.log(TAG, "发送请求信息");
+                        sleep(request_delay_ms());
+                    }
                     udp_value = udpClient.receiveMessage();
                     if (udp_value != null && udp_value.contains("['AC_voltage")) {
                         about.log(TAG, "请求返回信息:" + udp_value);
@@ -215,25 +222,28 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         Message message = new Message();
                         message.what = 1;
                         udpProHandler.sendMessage(message);
-                    } else if (udp_value != null && udp_value.contains("min>") && !click_minute_confirm
-                            && checkScreenStatus() && getTopActivity().toString().equals(top_a) && lineDataSet.getLabel().equals("分时电压值")) {
+                    } else if (udp_value != null && udp_value.contains("min>") && data_rec_finish && !click_minute_confirm && checkScreenStatus()
+                            && getTopActivity().toString().equals(top_a) && lineDataSet.getLabel().contains("分时电压值")) {
                         String[] _l = udp_value.split(">"); //按>进行分隔
                         if (_l[1] != null && !_l[1].isEmpty()) {
-                            about.log(TAG, _l[1]);
+                            about.log(TAG, "动态分时数据:"+_l[1]);
                             _min_bat_list.add(_l[1]);
                             pro_time_data(_min_bat_list, "分时电压值");
                         }
-                    } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm) {
+                    } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
 //                  处理内存使用量动态刷新到chart
                         pro_mem_use_status();
                     }
-                    if (!data_rec_finish && line_chart.getData() == null && !click_minute_confirm && checkScreenStatus() )
+                    if (udp_connect  && !data_rec_finish && line_chart.getData() == null && !click_minute_confirm && checkScreenStatus()){
                         pro_data_request();
-                    if (line_chart.getData() == null) pro_time_data(_min_bat_list, "分时电压值");
+                    }
+                    if (udp_connect  && line_chart.getData() == null && getTopActivity().toString().equals(top_a) && checkScreenStatus()){
+                        pro_time_data(_min_bat_list, "分时电压值");
+                    }
                 }
             }
         });
-        thread.start();
+        data_pro_thread.start();
     }
     @SuppressLint("HandlerLeak")
     Handler udpProHandler = new Handler() {
@@ -274,24 +284,30 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         about.log(TAG, "请求全部数据命令");
         udpClient.sendMessage("get_all_file");
         if (click_minute_confirm) data_rec_finish = false;
+        _min_bat_list.clear();
+        _date_bat_list.clear();
+        _month_bat_list.clear();
         while (!data_rec_finish) {
             udp_value = udpClient.receiveMessage();
             if (udp_value != null && udp_value.contains("min>")) {
+                about.log(TAG, udp_value);
                 String[] _l = udp_value.split(">"); //按>进行分隔
-                if (_l[1]!=null && !_l[1].isEmpty()) {
-                    about.log(TAG, _l[1]);
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
                     _min_bat_list.add(_l[1]);
                 }
             } else if (udp_value != null && udp_value.contains("date>")) {
+                about.log(TAG, udp_value);
                 String[] _l = udp_value.split(">"); //按>进行分隔
-                if (_l[1]!=null && !_l[1].isEmpty()) {
-                    about.log(TAG, _l[1]);
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
                     _date_bat_list.add(_l[1]);
                 }
             } else if (udp_value != null && udp_value.contains("month>")) {
+                about.log(TAG, udp_value);
                 String[] _l = udp_value.split(">"); //按>进行分隔
-                if (_l[1]!=null && !_l[1].isEmpty()) {
-                    about.log(TAG, _l[1]);
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
                     _month_bat_list.add(_l[1]);
                 }
             } else if (udp_value != null && udp_value.contains("all_file_send_finish")) {
@@ -300,11 +316,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 data_rec_finish = true;
                 click_minute_confirm=false;
                 cycle_size=0;
-            } else if(cycle_size == 10){
+            } else if(cycle_size == 5){
                 data_rec_finish = true;
                 click_minute_confirm=false;
                 cycle_size=0;
-            } else{
+            } else if (!data_rec_finish) {
+                _min_bat_list.clear();
+                _date_bat_list.clear();
+                _month_bat_list.clear();
+                about.log(TAG, "请求失败,再来一次");
                 udpClient.sendMessage("get_all_file");
                 cycle_size++;
             }
@@ -321,7 +341,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
                     minute_des = _e[0];
-                    if (_e[1] != null && !_e[1].isEmpty()) {
+                    int _e_length = _e.length;
+                    if (_e_length > 1) {
                         String[] _u = _e[1].split(":");
                         _time_value.add(_u[0] + ":" + _u[1]);
                         String[] _split_bat_value = _e[2].split(":");
@@ -336,7 +357,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             case "日期电压值":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    if (_e[1] != null && !_e[1].isEmpty()) {
+                    int _e_length = _e.length;
+                    if (_e_length > 1) {
                         String[] _s = _e[0].split("-");
                         date_des = _s[0] + "-" + _s[1];
                         _time_value.add(_s[2] + "日");
@@ -352,7 +374,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             case "月份电压值":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    if (_e[1] != null && !_e[1].isEmpty()) {
+                    int _e_length = _e.length;
+                    if (_e_length > 1) {
                         String[] _s = _e[0].split("-");
                         month_des = _s[0];
                         _time_value.add(_s[1] + "月");
@@ -396,14 +419,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     public void displayToChart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
         try{
-            if (_bat_list.isEmpty()){
+            if (_bat_list.get(_bat_list.size()-1)==null){
                 return;
             }
             String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
             lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
             lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
             lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-            lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+            lineDataSet.setDrawCircles(true);//在点上画圆 默认true
             /*lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
             lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
             lineDataSet.setLineWidth(1f);//设置线条的宽度，最大10f,最小0.2f
@@ -423,15 +446,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     /* 获取屏幕状态通过PowerManager */
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkScreenStatus() {
-        PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
-        boolean isScreenOn;
-        // Android 4.4W (KitKat Wear)系统及以上使用新接口获取亮屏状态
-        if (Build.VERSION.SDK_INT >= 20) {
-            isScreenOn = pm.isInteractive();
-        } else {
-            isScreenOn = pm.isScreenOn();
-        }
-        return isScreenOn;
+            PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+            boolean isScreenOn;
+            // Android 4.4W (KitKat Wear)系统及以上使用新接口获取亮屏状态
+            if (Build.VERSION.SDK_INT >= 20) {
+                isScreenOn = pm.isInteractive();
+            } else {
+                isScreenOn = pm.isScreenOn();
+            }
+            return isScreenOn;
     }
     /*获取最上层activity*/
     public ComponentName getTopActivity(){
@@ -516,15 +539,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     protected void onResume() {
         super.onResume();
         if (Permissions_allow){
-            init();
+            init_module();
         }
     }
     protected void onPause() {
         super.onPause();
-        if (UDPClient.socket!=null) {
-            udpClient.close();
-            about.log(TAG, "网络连接中断");
-        }
     }
     protected void onDestroy() {
         super.onDestroy();

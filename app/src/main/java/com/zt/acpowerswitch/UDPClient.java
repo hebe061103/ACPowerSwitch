@@ -32,7 +32,6 @@ public class UDPClient {
                     socket.connect(serverAddress, serverPort);
                     if (socket.isConnected()&&!socket.isClosed()){
                         udp_connect = true;
-                        // 连接成功，可以开始发送和接收数据
                         about.log(TAG, "创建套接字成功");
                     }
                 }
@@ -46,7 +45,8 @@ public class UDPClient {
     private void reconnect() {
         new Thread(() -> {
             try {
-                Thread.sleep(3000); // 等待一段时间后重连
+                about.log(TAG, "连接失败,重新连接");
+                Thread.sleep(5000); // 等待一段时间后重连
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -62,6 +62,9 @@ public class UDPClient {
             }
         } catch (IOException e) {
             // throw new RuntimeException(e);
+            about.log(TAG, "发送数据异常");
+            close();
+            reconnect();
         }
     }
     public String receiveMessage(){
@@ -73,6 +76,8 @@ public class UDPClient {
             }
         } catch (IOException e) {
             //throw new RuntimeException(e);
+            about.log(TAG, "接收数据异常");
+            close();
             reconnect();
         }
         return new String(packet.getData(), 0, packet.getLength());

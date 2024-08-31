@@ -2,9 +2,7 @@ package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
-import static com.zt.acpowerswitch.MainActivity.udPort;
 import static com.zt.acpowerswitch.MainActivity.udpClient;
-import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -26,7 +24,6 @@ public class otherOption extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
-        udpClient.udpConnect(udpServerAddress, udPort);
         str_pro();
     }
 
@@ -315,10 +312,6 @@ public class otherOption extends AppCompatActivity {
     }
     protected void onPause() {
         super.onPause();
-        if (UDPClient.socket!=null) {
-            udpClient.close();
-            about.log(TAG, "网络连接中断");
-        }
     }
     protected void onDestroy() {
         super.onDestroy();
