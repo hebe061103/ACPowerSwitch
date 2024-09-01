@@ -35,7 +35,6 @@ public class WifiListActivity extends AppCompatActivity {
     public  wifiListAdapter mRecycler;
     public String wifi_ap_name;
     public ProgressDialog pd;
-    private boolean wifi_online_finish,wifi_pass_error;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,15 +113,6 @@ public class WifiListActivity extends AppCompatActivity {
                 pd.setMessage("设置成功，正在重启模块，请稍后......");
                 pd.show();
                 pd.setCancelable(false);
-                Thread thread = new Thread(() -> {
-                    while(!wifi_online_finish && !wifi_pass_error){
-                        write_data_ble("local_ip");
-                        sleep(1000);
-                    }
-                    wifi_online_finish=false;
-                    wifi_pass_error=false;
-                });
-                thread.start();
             }
             if (msg.what == 3) {
                 pd.dismiss();
@@ -207,13 +197,11 @@ public class WifiListActivity extends AppCompatActivity {
                     chara = "";
                 }else if (chara != null && chara.contains("pass_err")) {
                     about.log(TAG, "密码错误");
-                    wifi_pass_error=true;
                     Message message = new Message();
                     message.what = 4;
                     myHandler.sendMessage(message);
                     chara = "";
                 }else if (chara != null && chara.contains("IP:")) {
-                    wifi_online_finish=true;
                     about.log(TAG, "WIFI启动成功");
                     Message message = new Message();
                     message.what = 5;

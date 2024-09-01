@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         data_pro_thread = new Thread(() -> {
             while(true) {
                 while (udp_connect) {
-                    if (!click_minute_confirm && checkScreenStatus()) {
+                    if (!click_minute_confirm && checkScreenStatus() && getTopActivity().toString().equals(top_a)) {
                         udpClient.sendMessage("get_info");
                         about.log(TAG, "发送请求信息");
                         sleep(request_delay_ms());
