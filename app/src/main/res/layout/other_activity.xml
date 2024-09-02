@@ -7,6 +7,7 @@
     android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/textView23"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="35dp"
@@ -72,10 +73,11 @@
         tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
 
     <TextView
+        android:id="@+id/textView21"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#8BC34A"
-        android:text="目标模块IP(默认端口:55555)"
+        android:text="远程控制器IP:"
         android:textColor="#424242"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
@@ -90,7 +92,7 @@
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="@+id/guideline33"
-        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,DuplicateSpeakableTextCheck,TextContrastCheck" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline21"
@@ -120,22 +122,17 @@
     <TextView
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:background="#4CAF50"
         android:text="在此处设置双电源切换时的阈值，默认情况下输入为太阳能逆变电源，当输出功率达到设定功率时，切换为市电电源做为输入电源,以此达到自动切换的目的."
         android:textColor="#263238"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
-        app:layout_constraintTop_toTopOf="@+id/guideline24"
+        app:layout_constraintTop_toBottomOf="@+id/textView22"
         app:layout_constraintWidth_percent="0.92"
         tools:ignore="HardcodedText,VisualLintBounds" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline24"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_begin="58dp" />
 
     <TextView
         android:id="@+id/textView7"
@@ -154,7 +151,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="146dp" />
+        app:layout_constraintGuide_begin="177dp" />
 
     <TextView
         android:id="@+id/textView15"
@@ -184,5 +181,28 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_begin="396dp" />
+
+    <TextView
+        android:id="@+id/textView22"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="#8BC34A"
+        android:textColor="#424242"
+        android:text="端口:"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView21"
+        tools:ignore="HardcodedText,TextContrastCheck" />
+
+    <TextView
+        android:id="@+id/target_port"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="55555"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toBottomOf="@+id/target_ip"
+        tools:ignore="HardcodedText,TextContrastCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

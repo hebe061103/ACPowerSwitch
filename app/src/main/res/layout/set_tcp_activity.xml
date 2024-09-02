@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="在止页面配置目标设备IP,请选择配置方式."
+        android:text="配置目标设备网络"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
@@ -25,7 +25,7 @@
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline18"
-        tools:ignore="HardcodedText,TextFields,TextContrastCheck" />
+        tools:ignore="HardcodedText,TextFields,TextContrastCheck,DuplicateSpeakableTextCheck" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline13"
@@ -44,7 +44,8 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="蓝牙方式获取:"
+        android:layout_marginTop="12dp"
+        android:text="配置目标设备网络:"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
@@ -55,7 +56,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="66dp" />
+        app:layout_constraintGuide_begin="55dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline16"
@@ -76,7 +77,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
-        android:text="点击"
+        android:text="配置网络"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
         tools:ignore="HardcodedText" />
@@ -84,7 +85,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="手动配置:"
+        android:text="手动配置目标IP地址:"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline17"
@@ -140,12 +141,11 @@
         app:layout_constraintGuide_begin="338dp" />
 
     <TextView
-        android:id="@+id/get_ip_from_bl"
-        android:layout_width="150dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="0.0.0.0"
-        android:textSize="16sp"
+        android:text="使用蓝牙设备配置目标设备的网络,需要本机与目标设备靠近."
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline16"
         tools:ignore="HardcodedText" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

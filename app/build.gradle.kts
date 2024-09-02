@@ -42,7 +42,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     //noinspection UseTomlInstead
-    implementation ("pub.devrel:easypermissions:3.0.0")
-    //noinspection UseTomlInstead
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0-alpha")
 }

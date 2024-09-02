@@ -22,10 +22,13 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.data.Entry;
@@ -39,30 +42,20 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import pub.devrel.easypermissions.AfterPermissionGranted;
-import pub.devrel.easypermissions.EasyPermissions;
-
-public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
+public class MainActivity extends AppCompatActivity{
     private final String TAG = "MainActivity:";
     public final String top_a = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
-    private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 123;
-    private static final String[] BLUETOOTH_PERMISSIONS = {
-            Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-    };
+
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
     public long lastBack = 0;
-    private boolean Permissions_allow;
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current;
     public static String udp_value;
     public String[] info;
     public static String udpServerAddress;
-    public static Integer udPort;
-    public static boolean udp_connect,data_rec_finish,click_minute_confirm,click_mem_confirm;
+    public static boolean udp_connect,data_rec_finish,click_minute_confirm,click_mem_confirm,stop_send;
     public ArrayList<String> _min_bat_list = new ArrayList<>();
     public ArrayList<String> _date_bat_list = new ArrayList<>();
     public ArrayList<String> _month_bat_list = new ArrayList<>();
@@ -81,12 +74,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        sp = getSharedPreferences("WIFI_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
-        editor = sp.edit(); // 获取编辑器对象
-        requestBluetoothPermissions();
     }
     private void init_module(){
-        connect_udp_service();
+        udpServerAddress = readDate(this, "wifi_ip");
+        if (readDate(this,"port")!=null) {
+            udpClient.udpConnect(udpServerAddress, Integer.parseInt(readDate(this,"port")));
+        }else {
+            udpClient.udpConnect(udpServerAddress, 55555);
+        }
         data_rec_finish=false;
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -110,14 +105,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this,50);
+            stop_send=true;
             if (readDate(this,"wifi_ip")!=null) {
                 new AlertDialog.Builder(MainActivity.this)
-                .setTitle("提 示")
-                .setMessage("该操作会清空数据，将无法连接到指定设备")
-                .setPositiveButton("取消", null)
+                .setTitle("网络切换")
+                .setMessage("确定要切换目标设备的网络吗?")
+                .setPositiveButton("取消", (dialogInterface, i) -> stop_send=false)
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(MainActivity.this, 50);
-                    MainActivity.deleteData("wifi_ip");
+                    udpClient.sendMessage("del_wifi_config");
+                    stop_send=false;
                 }).show();
             }
             return false;
@@ -125,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         _min.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
             about.log(TAG, "查询分时电压值");
+            stop_send=true;
             click_mem_confirm=false;//用于停止显示内存使用情况
             _mem_use_list.clear();//清理内存数组
             click_minute_confirm=true;
@@ -133,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
             }
             pro_time_data(_min_bat_list,"分时电压值");
+            stop_send=false;
         }).start());
         _min.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -206,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         data_pro_thread = new Thread(() -> {
             while(true) {
                 while (udp_connect) {
-                    if (!click_minute_confirm && checkScreenStatus() && getTopActivity().toString().equals(top_a)) {
+                    if (!click_minute_confirm && checkScreenStatus() && getTopActivity().toString().equals(top_a) && !stop_send) {
                         udpClient.sendMessage("get_info");
                         about.log(TAG, "发送请求信息");
                         sleep(request_delay_ms());
@@ -231,8 +230,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                             pro_time_data(_min_bat_list, "分时电压值");
                         }
                     } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
-//                  处理内存使用量动态刷新到chart
                         pro_mem_use_status();
+                    } else if (udp_value != null && udp_value.contains("del_wifi_finish")) {
+                        udpClient.close();
+                        deleteData("wifi_ip");
+                        finish();
                     }
                     if (udp_connect  && !data_rec_finish && line_chart.getData() == null && !click_minute_confirm && checkScreenStatus()){
                         pro_data_request();
@@ -423,9 +425,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
     public void displayToChart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
         try{
-            if (_bat_list.get(_bat_list.size()-1)==null){
-                return;
-            }
             String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
             lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
             lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
@@ -478,16 +477,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             return 1000;
         }
     }
-    public void connect_udp_service() {
-        if (readDate(this, "wifi_ip") == null) {
-            Intent intent = new Intent(this, set_tcp_page.class);
-            startActivities(new Intent[]{intent});
-        }else{
-            udpServerAddress=readDate(this, "wifi_ip");
-            udPort = 55555;
-            udpClient.udpConnect(udpServerAddress, udPort);
-        }
-    }
     public static String unicodeToString(String unicode) {
         StringBuilder sb = new StringBuilder();
         String[] hex = unicode.split("\\\\u");
@@ -520,7 +509,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         popupMenu.show();
     }
     public static String readDate(Context context, String s) {
-        sp = context.getSharedPreferences("WIFI_INFO", MODE_PRIVATE);
+        sp = context.getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);
         return sp.getString(s, null);
     }
     public static void saveData(String l, String s) {//l为保存的名字，s为要保存的字符串
@@ -542,9 +531,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
-        if (Permissions_allow){
-            init_module();
-        }
+        check_request_permissions();
     }
     protected void onPause() {
         super.onPause();
@@ -575,43 +562,67 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         super.onBackPressed();
     }
-    @AfterPermissionGranted(REQUEST_CODE_BLUETOOTH_PERMISSIONS)
-    private void requestBluetoothPermissions() {
-        if  (EasyPermissions.hasPermissions(this, BLUETOOTH_PERMISSIONS)) {
-            //从这里进入主程序
-            Permissions_allow=true;
-        } else {
-            // 没有获得权限，请求权限
+
+    // 请求多个权限
+    private void check_request_permissions() {
+        // 创建一个权限列表，把需要使用而没用授权的的权限存放在这里
+        List<String> permissionList = new ArrayList<>();
+
+        // 判断权限是否已经授予，没有就把该权限添加到列表中
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.BLUETOOTH_ADMIN);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    EasyPermissions.requestPermissions(this, "需要蓝牙权限以扫描周围的蓝牙设备",
-                            REQUEST_CODE_BLUETOOTH_PERMISSIONS, Manifest.permission.BLUETOOTH_CONNECT,
-                            Manifest.permission.BLUETOOTH_SCAN);
-                }
+                permissionList.add(Manifest.permission.BLUETOOTH_SCAN);
             }
-            EasyPermissions.requestPermissions(this, "需要蓝牙权限以扫描周围的蓝牙设备", REQUEST_CODE_BLUETOOTH_PERMISSIONS, BLUETOOTH_PERMISSIONS);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                permissionList.add(Manifest.permission.BLUETOOTH_CONNECT);
+            }
+        }
+        // 如果列表为空，就是全部权限都获取了，不用再次获取了。不为空就去申请权限
+        if (!permissionList.isEmpty()) {
+            ActivityCompat.requestPermissions(this,
+                    permissionList.toArray(new String[0]), 1002);
+        } else {
+            sp = getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
+            editor = sp.edit(); // 获取编辑器对象
+            if (readDate(this, "wifi_ip") == null) {
+                Intent intent = new Intent(this, set_tcp_page.class);
+                startActivities(new Intent[]{intent});
+            }else{
+                init_module();
+            }
         }
     }
+
+    // 请求权限回调方法
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // 将结果传递给EasyPermissions处理
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
-    }
-
-    @Override
-    public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
-        if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
-            // 相关权限被授予，可以进行蓝牙操作
-            about.log(TAG,"权限巳允许");
-        }
-    }
-
-    @Override
-    public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
-        if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
-            // 权限被拒绝，可以适当处理
-            finish();
+        if (requestCode == 1002) {// 1002请求码对应的是申请多个权限
+            // 因为是多个权限，所以需要一个循环获取每个权限的获取情况
+            for (int grantResult : grantResults) {
+                // PERMISSION_DENIED 这个值代表是没有授权，我们可以把被拒绝授权的权限显示出来
+                if (grantResult == PackageManager.PERMISSION_DENIED) {
+                    finish();
+                }
+            }
         }
     }
 }

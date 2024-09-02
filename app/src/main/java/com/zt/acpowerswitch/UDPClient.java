@@ -1,6 +1,5 @@
 package com.zt.acpowerswitch;
 
-import static com.zt.acpowerswitch.MainActivity.udPort;
 import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
@@ -43,6 +42,7 @@ public class UDPClient {
         }).start();
     }
     private void reconnect() {
+
         new Thread(() -> {
             try {
                 about.log(TAG, "连接失败,重新连接");
@@ -50,7 +50,7 @@ public class UDPClient {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            udpConnect(udpServerAddress, udPort);
+            udpConnect(udpServerAddress, serverPort);
         }).start();
     }
     public void sendMessage(String message){

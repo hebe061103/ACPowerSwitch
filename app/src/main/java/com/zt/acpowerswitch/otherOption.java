@@ -1,5 +1,7 @@
 package com.zt.acpowerswitch;
 
+import static android.widget.Toast.LENGTH_SHORT;
+import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
 import static com.zt.acpowerswitch.MainActivity.udpClient;
@@ -13,6 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Timer;
@@ -27,12 +30,39 @@ public class otherOption extends AppCompatActivity {
         str_pro();
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     public void str_pro(){
         TextView target_ip = findViewById(R.id.target_ip);
         if (MainActivity.readDate(otherOption.this,"wifi_ip")!=null){
             target_ip.setText(MainActivity.readDate(otherOption.this,"wifi_ip"));
         }
+        TextView target_port = findViewById(R.id.target_port);
+        if (MainActivity.readDate(otherOption.this,"port")!=null){
+            target_port.setText(MainActivity.readDate(otherOption.this,"port"));
+        }else {
+            target_port.setText("55555");
+        }
+        target_port.setOnClickListener(view -> {
+            goAnim(otherOption.this,50);
+            EditText portText = new EditText(otherOption.this);
+            new AlertDialog.Builder(otherOption.this)
+                    .setTitle("请输入端口号:")
+                    .setView(portText)
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (dialog, which) -> {
+                        if (!portText.getText().toString().isEmpty()) {
+                            if (Integer.parseInt(portText.getText().toString())>0 && Integer.parseInt(portText.getText().toString()) < 65536) {
+                                String inputText = portText.getText().toString();
+                                MainActivity.saveData("port", inputText);
+                                target_port.setText(inputText);
+                                udpClient.close();
+                            }else{
+                                Toast.makeText(otherOption.this, "输入的端口不合法", LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .show();
+        });
         //功率设置
         w_edit= findViewById(R.id.w_edit);
         if (readDate(otherOption.this,"w")!=null) {
