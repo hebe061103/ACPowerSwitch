@@ -1,9 +1,11 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
+import static com.zt.acpowerswitch.MainActivity.delete_udp_finish;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
+import static com.zt.acpowerswitch.MainActivity.sleep;
 import static com.zt.acpowerswitch.MainActivity.udpClient;
 
 import android.annotation.SuppressLint;
@@ -33,15 +35,9 @@ public class otherOption extends AppCompatActivity {
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     public void str_pro(){
         TextView target_ip = findViewById(R.id.target_ip);
-        if (MainActivity.readDate(otherOption.this,"wifi_ip")!=null){
-            target_ip.setText(MainActivity.readDate(otherOption.this,"wifi_ip"));
-        }
+        target_ip.setText(readDate(otherOption.this,"wifi_ip"));
         TextView target_port = findViewById(R.id.target_port);
-        if (MainActivity.readDate(otherOption.this,"port")!=null){
-            target_port.setText(MainActivity.readDate(otherOption.this,"port"));
-        }else {
-            target_port.setText("55555");
-        }
+        target_port.setText(readDate(otherOption.this,"port"));
         target_port.setOnClickListener(view -> {
             goAnim(otherOption.this,50);
             EditText portText = new EditText(otherOption.this);
@@ -53,9 +49,30 @@ public class otherOption extends AppCompatActivity {
                         if (!portText.getText().toString().isEmpty()) {
                             if (Integer.parseInt(portText.getText().toString())>0 && Integer.parseInt(portText.getText().toString()) < 65536) {
                                 String inputText = portText.getText().toString();
-                                MainActivity.saveData("port", inputText);
-                                target_port.setText(inputText);
-                                udpClient.close();
+                                udpClient.sendMessage("set_udp_port:"+inputText);
+                                int num = 0;
+                                while(num <5) {
+                                    sleep(1000);
+                                    if (delete_udp_finish) {
+                                        delete_udp_finish = false;
+                                        new AlertDialog.Builder(this)
+                                                .setTitle("提示:")
+                                                .setMessage("设置成功")
+                                                .setNegativeButton("完成", (dialogInterface, i) -> {
+                                                    udpClient.close();
+                                                    saveData("port", inputText);
+                                                    target_port.setText(inputText);
+                                                })
+                                                .show();
+                                    } else {
+                                        new AlertDialog.Builder(this)
+                                                .setTitle("提示:")
+                                                .setMessage("网络连接失败,请再试一次!")
+                                                .setNegativeButton("确定", null)
+                                                .show();
+                                    }
+                                    num++;
+                                }
                             }else{
                                 Toast.makeText(otherOption.this, "输入的端口不合法", LENGTH_SHORT).show();
                             }
@@ -66,7 +83,7 @@ public class otherOption extends AppCompatActivity {
         //功率设置
         w_edit= findViewById(R.id.w_edit);
         if (readDate(otherOption.this,"w")!=null) {
-            w_edit.setText(MainActivity.readDate(otherOption.this, "w"));
+            w_edit.setText(readDate(otherOption.this, "w"));
         }
         w_edit.addTextChangedListener(new TextWatcher() {
             private Timer timer;
@@ -100,8 +117,8 @@ public class otherOption extends AppCompatActivity {
         });
         //ADC2设置
         adc2_edit= findViewById(R.id.adc2_edit);
-        if (MainActivity.readDate(otherOption.this,"adc2")!=null) {
-            adc2_edit.setText(MainActivity.readDate(otherOption.this, "adc2"));
+        if (readDate(otherOption.this,"adc2")!=null) {
+            adc2_edit.setText(readDate(otherOption.this, "adc2"));
         }
         adc2_edit.addTextChangedListener(new TextWatcher() {
             private Timer timer;
@@ -136,8 +153,8 @@ public class otherOption extends AppCompatActivity {
         });
         //ADC3设置
         adc3_edit= findViewById(R.id.adc3_edit);
-        if (MainActivity.readDate(otherOption.this,"adc3")!=null) {
-            adc3_edit.setText(MainActivity.readDate(otherOption.this, "adc3"));
+        if (readDate(otherOption.this,"adc3")!=null) {
+            adc3_edit.setText(readDate(otherOption.this, "adc3"));
         }
         adc3_edit.addTextChangedListener(new TextWatcher() {
             private Timer timer;
@@ -171,8 +188,8 @@ public class otherOption extends AppCompatActivity {
             }
         });
         low_voltage_set = findViewById(R.id.low_voltage_set);
-        if (MainActivity.readDate(otherOption.this,"low_voltage")!=null) {
-            low_voltage_set.setText(MainActivity.readDate(otherOption.this, "low_voltage"));
+        if (readDate(otherOption.this,"low_voltage")!=null) {
+            low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
         }
         low_voltage_set.addTextChangedListener(new TextWatcher() {
             private Timer timer;
@@ -208,7 +225,7 @@ public class otherOption extends AppCompatActivity {
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
         if (readDate(otherOption.this,"refresh_time")!=null) {
-            refresh_time_set.setText(MainActivity.readDate(otherOption.this, "refresh_time"));
+            refresh_time_set.setText(readDate(otherOption.this, "refresh_time"));
         }
         refresh_time_set.addTextChangedListener(new TextWatcher() {
             private Timer timer;
@@ -252,7 +269,7 @@ public class otherOption extends AppCompatActivity {
                 }else {
                     about.log(TAG,"功率设置项请输入数字类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "功率设置项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
@@ -268,7 +285,7 @@ public class otherOption extends AppCompatActivity {
                 } else {
                     about.log(TAG,"adc2项请输入数字类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "adc2项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "adc2项请输入数字类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
@@ -284,7 +301,7 @@ public class otherOption extends AppCompatActivity {
                 } else {
                     about.log(TAG,"adc3项请输入数字类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "adc3项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "adc3项请输入数字类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
@@ -301,7 +318,7 @@ public class otherOption extends AppCompatActivity {
                 } else {
                     about.log(TAG,"最低电压值项请输入数字类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
@@ -317,7 +334,7 @@ public class otherOption extends AppCompatActivity {
                 }else {
                     about.log(TAG,"页面刷新项请输入整数类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }

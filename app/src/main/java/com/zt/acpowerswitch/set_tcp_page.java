@@ -18,8 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class set_tcp_page extends AppCompatActivity {
     public static String TAG = "set_tcp_page:";
-    public Button bl_ip_get,manual_set,bt_clean;
-    public EditText ip_input;
+    public Button bl_ip_get,manual_set,bt_clean,manual_que_port;
+    public EditText ip_input,def_port;
     private Handler handler;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,6 +29,8 @@ public class set_tcp_page extends AppCompatActivity {
         manual_set = findViewById(R.id.manual_set);
         bt_clean = findViewById(R.id.bt_clean);
         ip_input = findViewById(R.id.ip_input);
+        def_port = findViewById(R.id.def_port);
+        manual_que_port = findViewById(R.id.manual_que_port);
         bl_ip_get.setOnClickListener((View view) -> {
             goAnim(set_tcp_page.this,50);
             Intent intent = new Intent(set_tcp_page.this, BleClientActivity.class);
@@ -53,7 +55,7 @@ public class set_tcp_page extends AppCompatActivity {
                 saveData("wifi_ip", ip_input.getText().toString());
                 about.log(TAG, "IP巳保存,请返回主页");
                 Looper.prepare();
-                Toast.makeText(this, "巳保存,请返回主页", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "IP巳保存,请返回主页", Toast.LENGTH_SHORT).show();
                 Looper.loop();
             } else {
                 Looper.prepare();
@@ -65,6 +67,29 @@ public class set_tcp_page extends AppCompatActivity {
                 //在这里执行要刷新的操作
                 if (readDate(this, "wifi_ip") != null) {
                     ip_input.setText(readDate(this, "wifi_ip"));
+                }
+            });
+        }).start());
+        manual_que_port.setOnClickListener(view -> new Thread(() -> {
+            // 执行一些后台工作
+            goAnim(this, 50);
+            if (!def_port.getText().toString().isEmpty() && Integer.parseInt(def_port.getText().toString()) > 0 &&
+                    Integer.parseInt(def_port.getText().toString()) < 65536) {
+                saveData("port", def_port.getText().toString());
+                about.log(TAG, "端口巳保存,请返回主页");
+                Looper.prepare();
+                Toast.makeText(this, "端口巳保存,请返回主页", Toast.LENGTH_SHORT).show();
+                Looper.loop();
+            } else {
+                Looper.prepare();
+                Toast.makeText(this, "请输入一个正确端口号", Toast.LENGTH_SHORT).show();
+                Looper.loop();
+            }
+            // 更新UI
+            handler.post(() -> {
+                //在这里执行要刷新的操作
+                if (readDate(this, "port") != null) {
+                    def_port.setText(readDate(this, "port"));
                 }
             });
         }).start());

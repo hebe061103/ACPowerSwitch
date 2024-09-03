@@ -44,8 +44,8 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity{
     private final String TAG = "MainActivity:";
-    public final String top_a = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
-
+    public final String top_m = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
+    public final String top_a = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.about}";
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity{
     public static String udp_value;
     public String[] info;
     public static String udpServerAddress;
-    public static boolean udp_connect,data_rec_finish,click_minute_confirm,click_mem_confirm,stop_send;
+    public static int udpServerPort;
+    public static boolean udp_connect,data_rec_finish,click_mem_confirm,stop_send,delete_wifi_finish,delete_udp_finish;
     public ArrayList<String> _min_bat_list = new ArrayList<>();
     public ArrayList<String> _date_bat_list = new ArrayList<>();
     public ArrayList<String> _month_bat_list = new ArrayList<>();
@@ -77,11 +78,8 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         udpServerAddress = readDate(this, "wifi_ip");
-        if (readDate(this,"port")!=null) {
-            udpClient.udpConnect(udpServerAddress, Integer.parseInt(readDate(this,"port")));
-        }else {
-            udpClient.udpConnect(udpServerAddress, 55555);
-        }
+        udpServerPort = Integer.parseInt(readDate(this, "port"));
+        udpClient.udpConnect(udpServerAddress, udpServerPort);
         data_rec_finish=false;
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -114,7 +112,22 @@ public class MainActivity extends AppCompatActivity{
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(MainActivity.this, 50);
                     udpClient.sendMessage("del_wifi_config");
-                    stop_send=false;
+                    int num = 0;
+                    while(num <5) {
+                        sleep(1000);
+                        if (delete_wifi_finish) {
+                            delete_wifi_finish = false;
+                            Intent intent = new Intent(this, set_tcp_page.class);
+                            startActivities(new Intent[]{intent});
+                        } else {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提示:")
+                                    .setMessage("网络连接失败,请再试一次!")
+                                    .setNegativeButton("确定", null)
+                                    .show();
+                        }
+                        num++;
+                    }
                 }).show();
             }
             return false;
@@ -122,16 +135,12 @@ public class MainActivity extends AppCompatActivity{
         _min.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
             about.log(TAG, "查询分时电压值");
-            stop_send=true;
             click_mem_confirm=false;//用于停止显示内存使用情况
-            _mem_use_list.clear();//清理内存数组
-            click_minute_confirm=true;
-            pro_data_request();
+            _mem_use_list.clear(); //清理内存数组
             if (line_chart.getData() != null && line_chart.getData().getDataSetCount() > 0) {
                 line_chart.getData().removeDataSet(line_chart.getData().getDataSetByIndex(0));
             }
             pro_time_data(_min_bat_list,"分时电压值");
-            stop_send=false;
         }).start());
         _min.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -205,7 +214,8 @@ public class MainActivity extends AppCompatActivity{
         data_pro_thread = new Thread(() -> {
             while(true) {
                 while (udp_connect) {
-                    if (!click_minute_confirm && checkScreenStatus() && getTopActivity().toString().equals(top_a) && !stop_send) {
+                    if (checkScreenStatus() && getTopActivity().toString().equals(top_m) ||
+                            getTopActivity().toString().equals(top_a) && !stop_send) {
                         udpClient.sendMessage("get_info");
                         about.log(TAG, "发送请求信息");
                         sleep(request_delay_ms());
@@ -221,25 +231,31 @@ public class MainActivity extends AppCompatActivity{
                         Message message = new Message();
                         message.what = 1;
                         udpProHandler.sendMessage(message);
-                    } else if (udp_value != null && udp_value.contains("min>") && data_rec_finish && !click_minute_confirm && checkScreenStatus()
-                            && getTopActivity().toString().equals(top_a) && lineDataSet.getLabel().contains("分时电压值")) {
+                    }
+                    if (udp_value != null && udp_value.contains("min>") && data_rec_finish && !stop_send && checkScreenStatus()
+                            && getTopActivity().toString().equals(top_m) && lineDataSet.getLabel().contains("分时电压值")) {
                         String[] _l = udp_value.split(">"); //按>进行分隔
                         if (_l[1] != null && !_l[1].isEmpty()) {
                             about.log(TAG, "动态分时数据:"+_l[1]);
                             _min_bat_list.add(_l[1]);
                             pro_time_data(_min_bat_list, "分时电压值");
                         }
-                    } else if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
-                        pro_mem_use_status();
-                    } else if (udp_value != null && udp_value.contains("del_wifi_finish")) {
-                        udpClient.close();
-                        deleteData("wifi_ip");
-                        finish();
                     }
-                    if (udp_connect  && !data_rec_finish && line_chart.getData() == null && !click_minute_confirm && checkScreenStatus()){
+                    if (udp_value != null && udp_value.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
+                        pro_mem_use_status();
+                    }
+                    if (udp_value != null && udp_value.contains("del_wifi_finish")) {
+                        about.log(TAG, "重置WIFI完成");
+                        delete_wifi_finish=true;
+                    }
+                    if (udp_value != null && udp_value.contains("set_udp_finish")) {
+                        about.log(TAG, "重置UDP端口完成");
+                        delete_udp_finish=true;
+                    }
+                    if (!data_rec_finish && line_chart.getData() == null && !stop_send && checkScreenStatus()){
                         pro_data_request();
                     }
-                    if (udp_connect  && line_chart.getData() == null && getTopActivity().toString().equals(top_a) && checkScreenStatus()){
+                    if (line_chart.getData() == null && getTopActivity().toString().equals(top_m) && checkScreenStatus()){
                         pro_time_data(_min_bat_list, "分时电压值");
                     }
                     if (!checkScreenStatus()){
@@ -256,11 +272,17 @@ public class MainActivity extends AppCompatActivity{
         @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
+            String ac = null;
             if (msg.what == 1) {
                 try {
                     //交流电压
-                    out_Voltage.setText(info[1]);
-                    String ac = info[1];
+                    if (unicodeToString(info[13]).equals("市电供电") || unicodeToString(info[13]).equals("电池电压过低")){
+                        out_Voltage.setText(info[1]);
+                        ac = info[1];
+                    }else if (unicodeToString(info[13]).equals("逆变供电")){
+                        out_Voltage.setText(String.valueOf(220));
+                        ac = String.valueOf(220);
+                    }
                     //交流电流
                     Float jl_dl = Float.parseFloat(info[3]);
                     String formattedValue_iv_Value = df.format(jl_dl);
@@ -269,7 +291,10 @@ public class MainActivity extends AppCompatActivity{
                     //交流有功功率
                     power_kw.setText(info[5]);
                     //交流实际功率
-                    Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    Float sj_power = null;
+                    if (ac != null) {
+                        sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    }
                     String formattedValue = df.format(sj_power);
                     sj_power_kw.setText(formattedValue);
                     //交流频率
@@ -289,7 +314,7 @@ public class MainActivity extends AppCompatActivity{
     public void pro_data_request(){
         about.log(TAG, "请求全部数据命令");
         udpClient.sendMessage("get_all_file");
-        if (click_minute_confirm) data_rec_finish = false;
+        if (stop_send) data_rec_finish = false;
         _min_bat_list.clear();
         _date_bat_list.clear();
         _month_bat_list.clear();
@@ -320,11 +345,11 @@ public class MainActivity extends AppCompatActivity{
                 about.log(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
                         + _date_bat_list.size() + " 月份数据:" + _month_bat_list.size());
                 data_rec_finish = true;
-                click_minute_confirm=false;
+                stop_send=false;
                 cycle_size=0;
-            } else if(cycle_size == 5){
+            } else if(cycle_size == 3){
                 data_rec_finish = true;
-                click_minute_confirm=false;
+                stop_send=false;
                 cycle_size=0;
             } else if (!data_rec_finish) {
                 _min_bat_list.clear();
@@ -521,7 +546,7 @@ public class MainActivity extends AppCompatActivity{
         editor.remove(l); // 根据l删除数据
         editor.apply();
     }
-    public void sleep(int s){
+    public static void sleep(int s){
         try {
             Thread.sleep(s);
         } catch (InterruptedException e) {
@@ -602,7 +627,7 @@ public class MainActivity extends AppCompatActivity{
         } else {
             sp = getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
             editor = sp.edit(); // 获取编辑器对象
-            if (readDate(this, "wifi_ip") == null) {
+            if (readDate(this, "wifi_ip") == null || readDate(this, "port") == null) {
                 Intent intent = new Intent(this, set_tcp_page.class);
                 startActivities(new Intent[]{intent});
             }else{

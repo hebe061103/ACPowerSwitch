@@ -1,9 +1,6 @@
 package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.goAnim;
-import static com.zt.acpowerswitch.MainActivity.readDate;
-import static com.zt.acpowerswitch.MainActivity.udpClient;
-import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -34,11 +31,6 @@ public class about extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.about);
-        /*if (readDate(this,"port")!=null) {
-            udpClient.udpConnect(udpServerAddress, Integer.parseInt(readDate(this,"port")));
-        }else {
-            udpClient.udpConnect(udpServerAddress, 55555);
-        }*/
         TextView mBlueMessage = findViewById(R.id.blue_info);
         about_tx = findViewById(R.id.about);
         listView = findViewById(R.id.log_list_view);

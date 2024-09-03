@@ -1,6 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
+import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class UDPClient {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            udpConnect(udpServerAddress, serverPort);
+            udpConnect(udpServerAddress, udpServerPort);
         }).start();
     }
     public void sendMessage(String message){
