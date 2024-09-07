@@ -9,7 +9,6 @@ import static com.zt.acpowerswitch.MainActivity.saveData;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -19,7 +18,6 @@ import android.widget.EditText;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,17 +44,7 @@ public class WifiListActivity extends AppCompatActivity {
             wifiManager.setWifiEnabled(true);
         }
         display_wifiList();
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        List<android.net.wifi.ScanResult> scanResults = wifiManager.getScanResults();
+        @SuppressLint("MissingPermission") List<android.net.wifi.ScanResult> scanResults = wifiManager.getScanResults();
         for (ScanResult scanResult : scanResults) {
             String ssid = scanResult.SSID;
             String bssid = scanResult.BSSID;
@@ -135,9 +123,11 @@ public class WifiListActivity extends AppCompatActivity {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     if (chara != null && chara.contains("IP:")){
+                        about.log(TAG, "蓝牙返回的IP端口:"+chara);
                         String[] parts = chara.split(":");
-                        saveData("wifi_ip",parts[1].replaceAll("\\s+$", ""));
-                        about.log(TAG, "ip保存成功");
+                        saveData("wifi_ip",parts[1]);
+                        saveData("port",parts[2]);
+                        about.log(TAG, "IP端口保存成功");
                         BleClientActivity.close_ble();
                     }
                     chara = "";

@@ -4,7 +4,8 @@ import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
-import java.io.IOException;
+import android.util.Log;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,58 +15,38 @@ import java.net.UnknownHostException;
 public class UDPClient {
     private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
-    private InetAddress serverAddress;
-    private int serverPort;
-    public void udpConnect(String address,int port) {
+    public static boolean rec_fail;
+    public void udpConnect() {
         new Thread(() -> {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
-                if (!udp_connect) {
-                    about.log(TAG, "连接至服务器");
-                    try {
-                        this.serverAddress = InetAddress.getByName(address);
-                    } catch (UnknownHostException e) {
-                        throw new RuntimeException(e);
-                    }
-                    this.serverPort = port;
+                if (!udp_connect ) {
                     socket = new DatagramSocket();
-                    socket.connect(serverAddress, serverPort);
-                    if (socket.isConnected()&&!socket.isClosed()){
-                        udp_connect = true;
-                        about.log(TAG, "创建套接字成功");
-                    }
+                    udp_connect = true;
+                    about.log(TAG, "创建套接字成功");
                 }
             } catch (SocketException e) {
                 //throw new RuntimeException(e);
-                reconnect();
                 about.log(TAG, "创建套接字失败");
             }
         }).start();
     }
-    private void reconnect() {
-
-        new Thread(() -> {
-            try {
-                about.log(TAG, "连接失败,重新连接");
-                Thread.sleep(5000); // 等待一段时间后重连
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            udpConnect(udpServerAddress, udpServerPort);
-        }).start();
-    }
     public void sendMessage(String message){
         byte[] data = message.getBytes();
-        DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, serverPort);
+        DatagramPacket packet;
+        try {
+            packet = new DatagramPacket(data, data.length, InetAddress.getByName(udpServerAddress), udpServerPort);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
         try {
             if (socket != null) {
                 socket.send(packet);
+                socket.setSoTimeout(3000);
             }
-        } catch (IOException e) {
-            // throw new RuntimeException(e);
-            about.log(TAG, "发送数据异常");
-            close();
-            reconnect();
+        } catch (Exception e) {
+            // 这里捕获所有send方法可能抛出的异常
+            e.printStackTrace();
         }
     }
     public String receiveMessage(){
@@ -75,17 +56,17 @@ public class UDPClient {
             if (socket != null) {
                 socket.receive(packet);
             }
-        } catch (IOException e) {
-            //throw new RuntimeException(e);
-            about.log(TAG, "接收数据异常");
-            close();
-            reconnect();
+        } catch (Exception e) {
+            // 这里捕获所有send方法可能抛出的异常
+            //e.printStackTrace();
+            Log.i(TAG,"接收超时");
+            rec_fail = true;
         }
         return new String(packet.getData(), 0, packet.getLength());
     }
     public void close() {
         socket.close();
-        udp_connect=false;
-        about.log(TAG, "程序退出,网络连接关闭");
+        udp_connect = false;
+        about.log(TAG, "关闭网络连接");
     }
 }

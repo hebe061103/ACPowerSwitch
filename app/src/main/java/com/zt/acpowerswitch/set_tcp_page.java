@@ -1,5 +1,7 @@
 package com.zt.acpowerswitch;
 
+import static android.widget.Toast.LENGTH_SHORT;
+import static com.zt.acpowerswitch.MainActivity.file_name;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
@@ -16,8 +18,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
+
 public class set_tcp_page extends AppCompatActivity {
-    public static String TAG = "set_tcp_page:";
     public Button bl_ip_get,manual_set,bt_clean,manual_que_port;
     public EditText ip_input,def_port;
     private Handler handler;
@@ -40,11 +43,23 @@ public class set_tcp_page extends AppCompatActivity {
             goAnim(this,50);
             new AlertDialog.Builder(this)
                     .setTitle("提 示")
-                    .setMessage("该操作会清空数据，将无法连接到指定设备")
+                    .setMessage("该操作会清空巳保存的连接信息，将无法连接到指定设备")
                     .setPositiveButton("取消", null)
                     .setNegativeButton("确定", (dialog, which) -> {
                         goAnim(this,50);
                         MainActivity.deleteData("wifi_ip");
+                        MainActivity.deleteData("port");
+                        File file = new File(getFilesDir(), file_name);
+                        if (file.exists()) {
+                            boolean deleted = file.delete();
+                            if (deleted){
+                                Toast.makeText(this, "删除电池历史数据成功", LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(this, "删除电池历史数据失败", LENGTH_SHORT).show();
+                            }
+                        }else {
+                            Toast.makeText(this, "电池历史数据不存在", LENGTH_SHORT).show();
+                        }
                     })
                     .show();
         });
@@ -53,14 +68,8 @@ public class set_tcp_page extends AppCompatActivity {
             goAnim(this, 50);
             if (!ip_input.getText().toString().isEmpty()) {
                 saveData("wifi_ip", ip_input.getText().toString());
-                about.log(TAG, "IP巳保存,请返回主页");
-                Looper.prepare();
-                Toast.makeText(this, "IP巳保存,请返回主页", Toast.LENGTH_SHORT).show();
-                Looper.loop();
             } else {
-                Looper.prepare();
-                Toast.makeText(this, "请输入一个正确IP地址", Toast.LENGTH_SHORT).show();
-                Looper.loop();
+                saveData("wifi_ip", ip_input.getHint().toString());
             }
             // 更新UI
             handler.post(() -> {
@@ -76,14 +85,8 @@ public class set_tcp_page extends AppCompatActivity {
             if (!def_port.getText().toString().isEmpty() && Integer.parseInt(def_port.getText().toString()) > 0 &&
                     Integer.parseInt(def_port.getText().toString()) < 65536) {
                 saveData("port", def_port.getText().toString());
-                about.log(TAG, "端口巳保存,请返回主页");
-                Looper.prepare();
-                Toast.makeText(this, "端口巳保存,请返回主页", Toast.LENGTH_SHORT).show();
-                Looper.loop();
             } else {
-                Looper.prepare();
-                Toast.makeText(this, "请输入一个正确端口号", Toast.LENGTH_SHORT).show();
-                Looper.loop();
+                saveData("port", def_port.getHint().toString());
             }
             // 更新UI
             handler.post(() -> {

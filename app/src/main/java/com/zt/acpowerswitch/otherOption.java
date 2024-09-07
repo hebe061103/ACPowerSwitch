@@ -51,25 +51,29 @@ public class otherOption extends AppCompatActivity {
                                 String inputText = portText.getText().toString();
                                 udpClient.sendMessage("set_udp_port:"+inputText);
                                 int num = 0;
-                                while(num <5) {
-                                    sleep(1000);
+                                while(num <2) {
+                                    sleep(2000);
                                     if (delete_udp_finish) {
                                         delete_udp_finish = false;
                                         new AlertDialog.Builder(this)
-                                                .setTitle("提示:")
-                                                .setMessage("设置成功")
-                                                .setNegativeButton("完成", (dialogInterface, i) -> {
-                                                    udpClient.close();
-                                                    saveData("port", inputText);
-                                                    target_port.setText(inputText);
-                                                })
-                                                .show();
+                                            .setTitle("提示:")
+                                            .setMessage("设置成功")
+                                            .setNegativeButton("完成", (dialogInterface, i) -> {
+                                                udpClient.close();
+                                                saveData("port", inputText);
+                                                target_port.setText(inputText);
+                                            })
+                                            .show();
+                                        break;
                                     } else {
-                                        new AlertDialog.Builder(this)
+                                        if (num == 1) {
+                                            new AlertDialog.Builder(this)
                                                 .setTitle("提示:")
                                                 .setMessage("网络连接失败,请再试一次!")
                                                 .setNegativeButton("确定", null)
                                                 .show();
+                                        }
+
                                     }
                                     num++;
                                 }
@@ -331,6 +335,7 @@ public class otherOption extends AppCompatActivity {
                 about.log(TAG,"页面刷新时间巳改变");
                 if(isInteger(refresh_time_set.getText().toString())) {
                     saveData("refresh_time", refresh_time_set.getText().toString());
+                    MainActivity.page_refresh_time = Integer.parseInt(refresh_time_set.getText().toString());
                 }else {
                     about.log(TAG,"页面刷新项请输入整数类型");
                     Looper.prepare();
