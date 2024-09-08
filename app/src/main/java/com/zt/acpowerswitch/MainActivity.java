@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity{
     public LineChart line_chart;
     public int cycle_size=0;
     private ComponentName topActivity;
-    public LineDataSet lineDataSet;
+    public static LineDataSet lineDataSet;
     public static int page_refresh_time;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -229,7 +229,9 @@ public class MainActivity extends AppCompatActivity{
                 // 可以不做处理
             }
         });
-        read_old_bat_data();
+        if (line_chart.getData()==null) {
+            read_old_bat_data();
+        }
         udpClient.udpConnect();
         about.log(TAG, "开始调用线程");
         while (!Thread_Run) {
@@ -365,7 +367,6 @@ public class MainActivity extends AppCompatActivity{
             udp_response = udpClient.receiveMessage();
             if (udp_response != null && udp_response.contains("min>")) {
                 Log.e(TAG, udp_response);
-                writeToFile(this,file_name,udp_response+"\n");
                 String[] _l = udp_response.split(">"); //按>进行分隔
                 int length = _l.length; // 获取数组长度
                 if (length > 1) {
@@ -373,7 +374,6 @@ public class MainActivity extends AppCompatActivity{
                 }
             } else if (udp_response != null && udp_response.contains("date>")) {
                 Log.e(TAG, udp_response);
-                writeToFile(this,file_name,udp_response+"\n");
                 String[] _l = udp_response.split(">"); //按>进行分隔
                 int length = _l.length; // 获取数组长度
                 if (length > 1) {
@@ -381,7 +381,6 @@ public class MainActivity extends AppCompatActivity{
                 }
             } else if (udp_response != null && udp_response.contains("month>")) {
                 Log.e(TAG, udp_response);
-                writeToFile(this,file_name,udp_response+"\n");
                 String[] _l = udp_response.split(">"); //按>进行分隔
                 int length = _l.length; // 获取数组长度
                 if (length > 1) {
@@ -390,9 +389,19 @@ public class MainActivity extends AppCompatActivity{
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
                 Log.e(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
                         + _date_bat_list.size() + " 月份数据:" + _month_bat_list.size());
+                for (int i=0;i<_min_bat_list.size();i++){
+                    writeToFile(this, file_name, "min>"+_min_bat_list.get(i) + "\n");
+                    if (_date_bat_list.size()>i){
+                        writeToFile(this,file_name,"date>"+_date_bat_list.get(i)+"\n");
+                    }
+                    if (_month_bat_list.size()>i){
+                        writeToFile(this,file_name,"month>"+_month_bat_list.get(i)+"\n");
+                    }
+                }
                 data_rec_finish = true;
                 stop_send=false;
                 cycle_size=0;
+
             } else if(cycle_size == 3){
                 data_rec_finish = true;
                 stop_send=false;
@@ -401,7 +410,6 @@ public class MainActivity extends AppCompatActivity{
                 _min_bat_list.clear();
                 _date_bat_list.clear();
                 _month_bat_list.clear();
-                about.log(TAG, "请求失败,再来一次");
                 udpClient.sendMessage("get_all_file");
                 sleep(page_refresh_time);
                 cycle_size++;
@@ -411,14 +419,11 @@ public class MainActivity extends AppCompatActivity{
     public void pro_time_data(List<String> _sd,String label){
         _time_value.clear();
         _bat_list.clear();
-        String minute_des = "";
-        String date_des = "";
-        String month_des = "";
         switch (label) {
             case "每15分钟电压":
                 for (int i = 0; i < _sd.size(); i++) {
                     String[] _e = _sd.get(i).split(" ");
-                    minute_des = _e[0];
+                    String minute_des = _e[0];
                     int _e_length = _e.length;
                     if (_e_length > 1) {
                         String[] _u = _e[1].split(":");
@@ -426,11 +431,9 @@ public class MainActivity extends AppCompatActivity{
                         String[] _split_bat_value = _e[2].split(":");
                         String _bat_value = _split_bat_value[1]; //截取电压值
                         _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                        displayToChart(_time_value, _bat_list, minute_des, label);
                     }
                 }
-                displayToChart(_time_value, _bat_list, minute_des, label);
-                line_chart.notifyDataSetChanged();//通知数据巳改变
-                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
             case "日期电压值":
                 for (int i = 0; i < _sd.size(); i++) {
@@ -438,16 +441,14 @@ public class MainActivity extends AppCompatActivity{
                     int _e_length = _e.length;
                     if (_e_length > 1) {
                         String[] _s = _e[0].split("-");
-                        date_des = _s[0] + "-" + _s[1];
+                        String date_des = _s[0] + "-" + _s[1];
                         _time_value.add(_s[2] + "日");
                         String[] _split_bat_value = _e[2].split(":");
                         String _bat_value = _split_bat_value[1]; //截取电压值
                         _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                        displayToChart(_time_value, _bat_list, date_des, label);
                     }
                 }
-                displayToChart(_time_value, _bat_list, date_des, label);
-                line_chart.notifyDataSetChanged();//通知数据巳改变
-                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
             case "月份电压值":
                 for (int i = 0; i < _sd.size(); i++) {
@@ -455,17 +456,14 @@ public class MainActivity extends AppCompatActivity{
                     int _e_length = _e.length;
                     if (_e_length > 1) {
                         String[] _s = _e[0].split("-");
-                        month_des = _s[0];
+                        String month_des = _s[0];
                         _time_value.add(_s[1] + "月");
                         String[] _split_bat_value = _e[2].split(":");
                         String _bat_value = _split_bat_value[1]; //截取电压值
                         _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-
+                        displayToChart(_time_value, _bat_list, month_des, label);
                     }
                 }
-                displayToChart(_time_value, _bat_list, month_des, label);
-                line_chart.notifyDataSetChanged();//通知数据巳改变
-                line_chart.invalidate();//清理无效数据,用于动态刷新
                 break;
         }
     }
@@ -488,10 +486,12 @@ public class MainActivity extends AppCompatActivity{
         line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(_mem_value));//顶部X轴显示
         line_chart.getDescription().setText("esp32c3");//右下角描述
         line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
+        /*line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
+        line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
         line_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
-        line_chart.getAxisLeft().setAxisMaximum(400f);//左侧Y轴最大值
+        line_chart.getAxisLeft().setAxisMaximum(160f);//左侧Y轴最大值
         line_chart.getAxisRight().setAxisMinimum(0f);//右侧Y轴最小值
-        line_chart.getAxisRight().setAxisMaximum(400f);//右侧Y轴最大值
+        line_chart.getAxisRight().setAxisMaximum(160f);//右侧Y轴最大值
         line_chart.setData(data);//调置数据
         line_chart.notifyDataSetChanged();//通知数据巳改变
         line_chart.invalidate();//清理无效数据,用于动态刷新
@@ -502,21 +502,26 @@ public class MainActivity extends AppCompatActivity{
             lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
             lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
             lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-            /*lineDataSet.setDrawCircles(false);//在点上画圆 默认true
-            lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
+            lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+            /*lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
             lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
             lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
             LineData data = new LineData(lineDataSet);
             line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
             line_chart.getDescription().setText(des);//右下角描述
             line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
+            line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
+            /*line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
+            line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
             line_chart.getXAxis().setAxisMinimum(0f);
             line_chart.getXAxis().setAxisMaximum(95f);
-            line_chart.getAxisLeft().setAxisMinimum(10f);//左侧Y轴最小值
+            line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
             line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
-            line_chart.getAxisRight().setAxisMinimum(10f);//右侧Y轴最小值
+            line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
             line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
             line_chart.setData(data);//调置数据
+            line_chart.notifyDataSetChanged();//通知数据巳改变
+            line_chart.invalidate();//清理无效数据,用于动态刷新
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -655,6 +660,8 @@ public class MainActivity extends AppCompatActivity{
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }else{
+            about.log(TAG, "读取历史数据错误,文件不存在");
         }
         return _bat;
     }
@@ -665,15 +672,15 @@ public class MainActivity extends AppCompatActivity{
                 boolean deleted = file.delete();
                 if (deleted) {
                     // 文件删除成功
-                    about.log(TAG,"delete "+fileName + " finish");
+                    about.log(TAG,"删除 "+fileName + " 完成");
                     return true;
                 } else {
                     // 文件删除失败
-                    about.log(TAG,"delete "+fileName + " fail");
+                    about.log(TAG,"删除 "+fileName + " 失败");
                 }
             }else{
                 // 文件不存在
-                about.log(TAG,fileName + " no exist");
+                about.log(TAG,fileName + " 不存在");
             }
         } catch (Exception e) {
             // 处理异常情况
@@ -824,17 +831,17 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
     public ExamModelOneXValueFormatter(ArrayList<String> list){
         this.list = list;
     }
-
     @Override
     public String getFormattedValue(float value, AxisBase axis) {
         int values = (int) value;
-        if(values<0){
-            values = 0;
+        if (values < 0 || values >= list.size()) {
+            return "";
         }
-        if(values>=list.size()){
-            values = list.size()-1;
+        if (values == 0 ){
+            return "(时间(time):";
+        } else{
+            return list.get(values);
         }
-        return list.get(values%list.size());
     }
 }
 /*数据值格式化器*/
