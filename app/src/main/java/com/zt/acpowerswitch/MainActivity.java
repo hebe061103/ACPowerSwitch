@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
@@ -120,25 +121,9 @@ public class MainActivity extends AppCompatActivity{
                 .setPositiveButton("取消", (dialogInterface, i) -> stop_send=false)
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(MainActivity.this, 50);
-                    udpClient.sendMessage("del_wifi_config");
-                    int num = 0;
-                    while(num <2) {
-                        sleep(2000);
-                        if (delete_wifi_finish) {
-                            delete_wifi_finish = false;
-                            Intent intent = new Intent(this, set_tcp_page.class);
-                            startActivities(new Intent[]{intent});
-                        } else {
-                            if (num == 1) {
-                                new AlertDialog.Builder(this)
-                                        .setTitle("提示:")
-                                        .setMessage("网络连接失败,请再试一次!")
-                                        .setNegativeButton("确定", null)
-                                        .show();
-                            }
-                        }
-                        num++;
-                    }
+                    Message message = new Message();
+                    message.what = 3;
+                    messageProHandler.sendMessage(message);
                 }).show();
             }
             return false;
@@ -309,7 +294,7 @@ public class MainActivity extends AppCompatActivity{
         about.log(TAG, "线程关闭");
     }
     @SuppressLint("HandlerLeak")
-    Handler messageProHandler = new Handler() {
+    Handler messageProHandler = new Handler(Looper.getMainLooper()) {
         @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
@@ -353,16 +338,31 @@ public class MainActivity extends AppCompatActivity{
                         pro_time_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
                     }
                 }).start();
+            }else if (msg.what == 3){
+                udpClient.sendMessage("del_wifi_config");
+                sleep(page_refresh_time);
+                if (delete_wifi_finish) {
+                    delete_wifi_finish = false;
+                    Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
+                    startActivities(new Intent[]{intent});
+                } else {
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("提示:")
+                        .setMessage("网络连接失败,请再试一次!")
+                        .setNegativeButton("确定", null)
+                        .show();
+                }
             }
         }
     };
     public void pro_data_request(){
-        about.log(TAG, "请求全部数据命令");
         stop_send = true;
-        udpClient.sendMessage("get_all_file");
         _min_bat_list.clear();
         _date_bat_list.clear();
         _month_bat_list.clear();
+        about.log(TAG, "请求全部数据命令");
+        udpClient.sendMessage("get_all_file");
+        sleep(page_refresh_time);
         while (!data_rec_finish) {
             udp_response = udpClient.receiveMessage();
             if (udp_response != null && udp_response.contains("min>")) {
@@ -401,7 +401,6 @@ public class MainActivity extends AppCompatActivity{
                 data_rec_finish = true;
                 stop_send=false;
                 cycle_size=0;
-
             } else if(cycle_size == 3){
                 data_rec_finish = true;
                 stop_send=false;
@@ -838,7 +837,7 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
             return "";
         }
         if (values == 0 ){
-            return "(时间(time):";
+            return "时间(time):";
         } else{
             return list.get(values);
         }

@@ -13,6 +13,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.widget.EditText;
 
@@ -31,7 +32,7 @@ public class WifiListActivity extends AppCompatActivity {
     public static AlertDialog.Builder builder;
     private RecyclerView mRecyclerViewList;
     public  wifiListAdapter mRecycler;
-    public String wifi_ap_name;
+    public String wifi_ap_name,IP_address,PORT;
     public ProgressDialog pd;
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,8 +70,83 @@ public class WifiListActivity extends AppCompatActivity {
         mRecyclerViewList.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL)); //添加分隔线
         mRecyclerViewList.setLayoutManager(layoutManager);
     }
+    private void send_data(String data) {
+        pd.setMessage("正在设置WIFI,请稍等......");
+        pd.show();
+        pd.setCancelable(false);
+        Thread thread = new Thread(() -> {
+            int readLength = 10; // 设置每次读取的字符数量
+            int stringLength = data.length(); // 获取字符串的总长度
+            about.log(TAG, "发送字符的总长度:" + stringLength);
+            write_data_ble("len:"+ stringLength);
+            sleep(2000);
+            for (int i = 0; i < stringLength; i += readLength) {
+                // 计算还剩多少字符可以读取
+                int remaining = stringLength - i;
+                // 如果剩余字符数少于readLength，则本次读取应该少于或等于剩余的字符数
+                if (remaining < readLength) {
+                    readLength = remaining;
+                }
+                // 使用substring方法读取字符串
+                String readString = data.substring(i, i + readLength);
+                write_data_ble(readString);
+                sleep(1000);
+            }
+            write_data_ble("&");
+            about.log(TAG, "分包发送完成");
+            sleep(1000);
+            wait_callback(); //刷新连接状态
+        });
+        thread.start();
+    }
+    public void wait_callback(){
+        Thread thread = new Thread(() -> {
+            while(true) {
+                if (!connect_ok) {
+                    if (pd !=null) {
+                        pd.dismiss();
+                    }
+                }
+                if (chara != null && chara.contains("rec_ok")) {
+                    about.log(TAG, "接收成功");
+                    Message message = new Message();
+                    message.what = 2;
+                    myHandler.sendMessage(message);
+                    chara = "";
+                }else if (chara != null && chara.contains("rec_error")) {
+                    about.log(TAG, "接收失败");
+                    Message message = new Message();
+                    message.what = 3;
+                    myHandler.sendMessage(message);
+                    chara = "";
+                }else if (chara != null && chara.contains("pass_err")) {
+                    about.log(TAG, "密码错误");
+                    Message message = new Message();
+                    message.what = 4;
+                    myHandler.sendMessage(message);
+                    chara = "";
+                }else if (chara != null && chara.contains("IP:")) {
+                    about.log(TAG, "接收IP成功");
+                    IP_address = chara;
+                    Message message = new Message();
+                    message.what = 5;
+                    myHandler.sendMessage(message);
+                    chara = "";
+                }else if (chara != null && chara.contains("PORT:")) {
+                    about.log(TAG, "接收PORT成功");
+                    PORT = chara;
+                    Message message = new Message();
+                    message.what = 6;
+                    myHandler.sendMessage(message);
+                    chara = "";
+                    break;
+                }
+            }
+        });
+        thread.start();
+    }
     @SuppressLint("HandlerLeak")
-    Handler myHandler = new Handler() {
+    Handler myHandler = new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
                 mRecycler = new wifiListAdapter(wifilist, WifiListActivity.this);
@@ -116,92 +192,29 @@ public class WifiListActivity extends AppCompatActivity {
                 builder.show();
             }
             if (msg.what == 5) {
+                if (IP_address != null && IP_address.contains("IP:")) {
+                    about.log(TAG, "蓝牙返回的IP:" + IP_address);
+                    String[] parts = IP_address.split(":");
+                    saveData("wifi_ip",parts[1].trim());
+                    about.log(TAG, "IP保存成功");
+                    IP_address="";
+                }
+            }
+            if (msg.what == 6) {
                 pd.dismiss();
                 builder.setTitle("提醒"); // 设置弹窗的标题
                 builder.setMessage("OK,成功连接到热点:"+ wifi_ap_name); // 设置弹窗的消息内容
                 builder.show();
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (chara != null && chara.contains("IP:")){
-                        about.log(TAG, "蓝牙返回的IP端口:"+chara);
-                        String[] parts = chara.split(":");
-                        saveData("wifi_ip",parts[1]);
-                        saveData("port",parts[2]);
-                        about.log(TAG, "IP端口保存成功");
-                        BleClientActivity.close_ble();
-                    }
-                    chara = "";
-                },3000);
+                if (PORT != null && PORT.contains("PORT:")){
+                    about.log(TAG, "蓝牙返回的端口:"+PORT);
+                    String[] parts = PORT.split(":");
+                    saveData("port",parts[1].trim());
+                    about.log(TAG, "端口保存成功");
+                    PORT="";
+                }
             }
         }
     };
-
-    private void send_data(String data) {
-        pd.setMessage("正在设置WIFI,请稍等......");
-        pd.show();
-        pd.setCancelable(false);
-        Thread thread = new Thread(() -> {
-            int readLength = 10; // 设置每次读取的字符数量
-            int stringLength = data.length(); // 获取字符串的总长度
-            about.log(TAG, "发送字符的总长度:" + stringLength);
-            write_data_ble("len:"+ stringLength);
-            sleep(2000);
-            for (int i = 0; i < stringLength; i += readLength) {
-                // 计算还剩多少字符可以读取
-                int remaining = stringLength - i;
-                // 如果剩余字符数少于readLength，则本次读取应该少于或等于剩余的字符数
-                if (remaining < readLength) {
-                    readLength = remaining;
-                }
-                // 使用substring方法读取字符串
-                String readString = data.substring(i, i + readLength);
-                write_data_ble(readString);
-                sleep(1000);
-            }
-            write_data_ble("&");
-            about.log(TAG, "分包发送完成");
-            sleep(1000);
-            state_refresh(); //刷新连接状态
-        });
-        thread.start();
-    }
-    public void state_refresh(){
-        Thread thread = new Thread(() -> {
-            while(true) {
-                if (!connect_ok) {
-                    if (pd !=null) {
-                        pd.dismiss();
-                    }
-                }
-                if (chara != null && chara.contains("rec_ok")) {
-                    about.log(TAG, "接收成功");
-                    Message message = new Message();
-                    message.what = 2;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("rec_error")) {
-                    about.log(TAG, "接收失败");
-                    Message message = new Message();
-                    message.what = 3;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("pass_err")) {
-                    about.log(TAG, "密码错误");
-                    Message message = new Message();
-                    message.what = 4;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("IP:")) {
-                    about.log(TAG, "WIFI启动成功");
-                    Message message = new Message();
-                    message.what = 5;
-                    myHandler.sendMessage(message);
-                    break;
-                }
-            }
-        });
-        thread.start();
-    }
     public void sleep(int s){
         try {
             Thread.sleep(s);

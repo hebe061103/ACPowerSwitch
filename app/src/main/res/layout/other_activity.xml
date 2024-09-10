@@ -205,4 +205,16 @@
         app:layout_constraintTop_toBottomOf="@+id/target_ip"
         tools:ignore="HardcodedText,TextContrastCheck" />
 
+    <TextView
+        android:id="@+id/reset_network"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="35dp"
+        android:background="#03A9F4"
+        android:text="确定重置网络"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView23"
+        tools:ignore="HardcodedText,TextContrastCheck" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

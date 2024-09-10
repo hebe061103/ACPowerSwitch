@@ -2,6 +2,7 @@ package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.MainActivity.delete_udp_finish;
+import static com.zt.acpowerswitch.MainActivity.file_name;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -42,47 +44,47 @@ public class otherOption extends AppCompatActivity {
             goAnim(otherOption.this,50);
             EditText portText = new EditText(otherOption.this);
             new AlertDialog.Builder(otherOption.this)
-                    .setTitle("请输入端口号:")
-                    .setView(portText)
-                    .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> {
-                        if (!portText.getText().toString().isEmpty()) {
-                            if (Integer.parseInt(portText.getText().toString())>0 && Integer.parseInt(portText.getText().toString()) < 65536) {
-                                String inputText = portText.getText().toString();
-                                udpClient.sendMessage("set_udp_port:"+inputText);
-                                int num = 0;
-                                while(num <2) {
-                                    sleep(2000);
-                                    if (delete_udp_finish) {
-                                        delete_udp_finish = false;
-                                        new AlertDialog.Builder(this)
-                                            .setTitle("提示:")
-                                            .setMessage("设置成功")
-                                            .setNegativeButton("完成", (dialogInterface, i) -> {
-                                                udpClient.close();
-                                                saveData("port", inputText);
-                                                target_port.setText(inputText);
-                                            })
-                                            .show();
-                                        break;
-                                    } else {
-                                        if (num == 1) {
-                                            new AlertDialog.Builder(this)
-                                                .setTitle("提示:")
-                                                .setMessage("网络连接失败,请再试一次!")
-                                                .setNegativeButton("确定", null)
-                                                .show();
-                                        }
-
-                                    }
-                                    num++;
+            .setTitle("请输入端口号:")
+            .setView(portText)
+            .setPositiveButton("取消", null)
+            .setNegativeButton("确定", (dialog, which) -> {
+                if (!portText.getText().toString().isEmpty()) {
+                    if (Integer.parseInt(portText.getText().toString())>0 && Integer.parseInt(portText.getText().toString()) < 65536) {
+                        String inputText = portText.getText().toString();
+                        udpClient.sendMessage("set_udp_port:"+inputText);
+                        int num = 0;
+                        while(num <2) {
+                            sleep(2000);
+                            if (delete_udp_finish) {
+                                delete_udp_finish = false;
+                                new AlertDialog.Builder(this)
+                                    .setTitle("提示:")
+                                    .setMessage("设置成功")
+                                    .setNegativeButton("完成", (dialogInterface, i) -> {
+                                        udpClient.close();
+                                        saveData("port", inputText);
+                                        target_port.setText(inputText);
+                                    })
+                                    .show();
+                                break;
+                            } else {
+                                if (num == 1) {
+                                    new AlertDialog.Builder(this)
+                                        .setTitle("提示:")
+                                        .setMessage("网络连接失败,请再试一次!")
+                                        .setNegativeButton("确定", null)
+                                        .show();
                                 }
-                            }else{
-                                Toast.makeText(otherOption.this, "输入的端口不合法", LENGTH_SHORT).show();
+
                             }
+                            num++;
                         }
-                    })
-                    .show();
+                    }else{
+                        Toast.makeText(otherOption.this, "输入的端口不合法", LENGTH_SHORT).show();
+                    }
+                }
+            })
+            .show();
         });
         //功率设置
         w_edit= findViewById(R.id.w_edit);
@@ -261,6 +263,31 @@ public class otherOption extends AppCompatActivity {
             public void afterTextChanged(Editable editable) {
 
             }
+        });
+        TextView reset_network = findViewById(R.id.reset_network);
+        reset_network.setOnClickListener(view -> {
+            goAnim(otherOption.this,50);
+            new AlertDialog.Builder(otherOption.this)
+                .setTitle("提 示")
+                .setMessage("该操作会清空巳保存的连接信息，将无法连接到指定设备")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (dialog, which) -> {
+                    goAnim(otherOption.this,50);
+                    MainActivity.deleteData("wifi_ip");
+                    MainActivity.deleteData("port");
+                    File file = new File(getFilesDir(), file_name);
+                    if (file.exists()) {
+                        boolean deleted = file.delete();
+                        if (deleted){
+                            Toast.makeText(otherOption.this, "删除电池历史数据成功", LENGTH_SHORT).show();
+                        }else {
+                            Toast.makeText(otherOption.this, "删除电池历史数据失败", LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Toast.makeText(otherOption.this, "电池历史数据不存在", LENGTH_SHORT).show();
+                    }
+                })
+                .show();
         });
     }
     public void send_w_edit(){

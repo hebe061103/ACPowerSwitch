@@ -32,22 +32,24 @@ public class UDPClient {
         }).start();
     }
     public void sendMessage(String message){
-        byte[] data = message.getBytes();
-        DatagramPacket packet;
-        try {
-            packet = new DatagramPacket(data, data.length, InetAddress.getByName(udpServerAddress), udpServerPort);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            if (socket != null) {
-                socket.send(packet);
-                socket.setSoTimeout(3000);
+        new Thread(() -> {
+            byte[] data = message.getBytes();
+            DatagramPacket packet;
+            try {
+                packet = new DatagramPacket(data, data.length, InetAddress.getByName(udpServerAddress), udpServerPort);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            // 这里捕获所有send方法可能抛出的异常
-            e.printStackTrace();
-        }
+            try {
+                if (socket != null) {
+                    socket.send(packet);
+                    socket.setSoTimeout(3000);
+                }
+            } catch (Exception e) {
+                // 这里捕获所有send方法可能抛出的异常
+                e.printStackTrace();
+            }
+        }).start();
     }
     public String receiveMessage(){
         byte[] buffer = new byte[1024];

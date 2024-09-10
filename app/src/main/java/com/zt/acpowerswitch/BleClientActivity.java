@@ -148,12 +148,12 @@ public class BleClientActivity extends AppCompatActivity {
             }
             displayList();//刷新列表
             bluetoothAdapter.startDiscovery();
-            about.log(TAG, "defaultDevice: 开始搜索设备");
+            about.log(TAG, "开始搜索设备");
             re_scan.setText("正在扫描");
             pd = new ProgressDialog(this);
             pd.setMessage("正在扫描,请稍等......");
-            pd.show();
             pd.setCancelable(false);
+            pd.show();
             new Thread(() -> {
                 while (!discoveryFinished) {
                     try {
@@ -309,7 +309,6 @@ public class BleClientActivity extends AppCompatActivity {
             // readUUID 是我要链接的蓝牙设备的消息读UUID值，跟通知的特性的UUID比较。这样可以避免其他消息的污染。
             if (READ_UUID.equals(characteristic.getUuid().toString())) {
                 chara = new String(characteristic.getValue(), StandardCharsets.UTF_8);
-                about.log(TAG, "消息内容:"+chara);
             }
         }
     };
