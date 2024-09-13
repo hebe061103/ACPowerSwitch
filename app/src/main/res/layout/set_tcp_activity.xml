@@ -28,20 +28,6 @@
         tools:ignore="HardcodedText,TextFields,TextContrastCheck,DuplicateSpeakableTextCheck" />
 
 
-    <EditText
-        android:id="@+id/def_port"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:autofillHints=""
-        android:hint="55555"
-        android:minHeight="48dp"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toTopOf="@+id/guideline19"
-        app:layout_constraintStart_toStartOf="@+id/guideline13"
-        app:layout_constraintTop_toBottomOf="@+id/ip_input"
-        app:layout_constraintVertical_bias="0.522"
-        tools:ignore="HardcodedText,TextFields,TextContrastCheck,DuplicateSpeakableTextCheck" />
-
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline13"
         android:layout_width="wrap_content"
@@ -100,7 +86,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="手动配置目标IP地址及端口:"
+        android:text="手动配置目标IP地址:"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline17"
@@ -123,19 +109,6 @@
         app:layout_constraintTop_toTopOf="@+id/guideline18"
         tools:ignore="HardcodedText,DuplicateSpeakableTextCheck" />
 
-    <Button
-        android:id="@+id/manual_que_port"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="38dp"
-        android:layout_marginEnd="20dp"
-        android:text="完成"
-        app:layout_constraintBottom_toTopOf="@+id/guideline19"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/manual_set"
-        app:layout_constraintVertical_bias="0.0"
-        tools:ignore="HardcodedText" />
-
     <TextView
         android:id="@+id/textView24"
         android:layout_width="wrap_content"
@@ -151,7 +124,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="365dp" />
+        app:layout_constraintGuide_begin="262dp" />
 
     <Button
         android:id="@+id/bt_clean"
@@ -167,7 +140,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="393dp" />
+        app:layout_constraintGuide_begin="301dp" />
 
     <TextView
         android:layout_width="wrap_content"

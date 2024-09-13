@@ -5,6 +5,7 @@ import static com.zt.acpowerswitch.MainActivity.file_name;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
+import static com.zt.acpowerswitch.MainActivity.udpClient;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -21,8 +22,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 
 public class set_tcp_page extends AppCompatActivity {
-    public Button bl_ip_get,manual_set,bt_clean,manual_que_port;
-    public EditText ip_input,def_port;
+    public Button bl_ip_get,manual_set,bt_clean;
+    public EditText ip_input;
     private Handler handler;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,8 +33,6 @@ public class set_tcp_page extends AppCompatActivity {
         manual_set = findViewById(R.id.manual_set);
         bt_clean = findViewById(R.id.bt_clean);
         ip_input = findViewById(R.id.ip_input);
-        def_port = findViewById(R.id.def_port);
-        manual_que_port = findViewById(R.id.manual_que_port);
         bl_ip_get.setOnClickListener((View view) -> {
             goAnim(set_tcp_page.this,50);
             Intent intent = new Intent(set_tcp_page.this, BleClientActivity.class);
@@ -48,7 +47,6 @@ public class set_tcp_page extends AppCompatActivity {
                     .setNegativeButton("确定", (dialog, which) -> {
                         goAnim(this,50);
                         MainActivity.deleteData("wifi_ip");
-                        MainActivity.deleteData("port");
                         File file = new File(getFilesDir(), file_name);
                         if (file.exists()) {
                             boolean deleted = file.delete();
@@ -60,6 +58,7 @@ public class set_tcp_page extends AppCompatActivity {
                         }else {
                             Toast.makeText(this, "电池历史数据不存在", LENGTH_SHORT).show();
                         }
+                        udpClient.close();
                     })
                     .show();
         });
@@ -76,23 +75,6 @@ public class set_tcp_page extends AppCompatActivity {
                 //在这里执行要刷新的操作
                 if (readDate(this, "wifi_ip") != null) {
                     ip_input.setText(readDate(this, "wifi_ip"));
-                }
-            });
-        }).start());
-        manual_que_port.setOnClickListener(view -> new Thread(() -> {
-            // 执行一些后台工作
-            goAnim(this, 50);
-            if (!def_port.getText().toString().isEmpty() && Integer.parseInt(def_port.getText().toString()) > 0 &&
-                    Integer.parseInt(def_port.getText().toString()) < 65536) {
-                saveData("port", def_port.getText().toString());
-            } else {
-                saveData("port", def_port.getHint().toString());
-            }
-            // 更新UI
-            handler.post(() -> {
-                //在这里执行要刷新的操作
-                if (readDate(this, "port") != null) {
-                    def_port.setText(readDate(this, "port"));
                 }
             });
         }).start());

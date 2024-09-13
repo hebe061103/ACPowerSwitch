@@ -32,7 +32,7 @@ public class WifiListActivity extends AppCompatActivity {
     public static AlertDialog.Builder builder;
     private RecyclerView mRecyclerViewList;
     public  wifiListAdapter mRecycler;
-    public String wifi_ap_name,IP_address,PORT;
+    public String wifi_ap_name,IP_address;
     public ProgressDialog pd;
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +44,6 @@ public class WifiListActivity extends AppCompatActivity {
         if (!wifiManager.isWifiEnabled()) {
             wifiManager.setWifiEnabled(true);
         }
-        display_wifiList();
         @SuppressLint("MissingPermission") List<android.net.wifi.ScanResult> scanResults = wifiManager.getScanResults();
         for (ScanResult scanResult : scanResults) {
             String ssid = scanResult.SSID;
@@ -60,6 +59,7 @@ public class WifiListActivity extends AppCompatActivity {
                 }
             }
         }
+        display_wifiList();
     }
     private void display_wifiList() {
         mRecyclerViewList = findViewById(R.id.wifi_dev_list);//设置固定大小
@@ -132,13 +132,6 @@ public class WifiListActivity extends AppCompatActivity {
                     message.what = 5;
                     myHandler.sendMessage(message);
                     chara = "";
-                }else if (chara != null && chara.contains("PORT:")) {
-                    about.log(TAG, "接收PORT成功");
-                    PORT = chara;
-                    Message message = new Message();
-                    message.what = 6;
-                    myHandler.sendMessage(message);
-                    chara = "";
                     break;
                 }
             }
@@ -160,6 +153,7 @@ public class WifiListActivity extends AppCompatActivity {
                             .setView(editText)
                             .setPositiveButton("取消", null)
                             .setNegativeButton("确定", (dialog, which) -> {
+                                goAnim(WifiListActivity.this, 50);
                                 if (!editText.getText().toString().isEmpty()) {
                                     String inputText = editText.getText().toString();
                                     String ble_data = "{" + "\"" + "ssid" + "\"" + ":" + "\"" + wifilist.get(position) + "\"" + "," + "\"" + "password" + "\"" + ":" + "\"" + inputText + "\"" + "}";
@@ -192,25 +186,16 @@ public class WifiListActivity extends AppCompatActivity {
                 builder.show();
             }
             if (msg.what == 5) {
+                pd.dismiss();
+                builder.setTitle("提醒"); // 设置弹窗的标题
+                builder.setMessage("OK,成功连接到热点:"+ wifi_ap_name); // 设置弹窗的消息内容
+                builder.show();
                 if (IP_address != null && IP_address.contains("IP:")) {
                     about.log(TAG, "蓝牙返回的IP:" + IP_address);
                     String[] parts = IP_address.split(":");
                     saveData("wifi_ip",parts[1].trim());
                     about.log(TAG, "IP保存成功");
                     IP_address="";
-                }
-            }
-            if (msg.what == 6) {
-                pd.dismiss();
-                builder.setTitle("提醒"); // 设置弹窗的标题
-                builder.setMessage("OK,成功连接到热点:"+ wifi_ap_name); // 设置弹窗的消息内容
-                builder.show();
-                if (PORT != null && PORT.contains("PORT:")){
-                    about.log(TAG, "蓝牙返回的端口:"+PORT);
-                    String[] parts = PORT.split(":");
-                    saveData("port",parts[1].trim());
-                    about.log(TAG, "端口保存成功");
-                    PORT="";
                 }
             }
         }

@@ -87,7 +87,6 @@ public class BleClientActivity extends AppCompatActivity {
             re_scan = findViewById(R.id.re_scan);
             re_scan.setOnClickListener(v -> {
                 goAnim(this,50);
-                connect_ok=false;
                 searchBluetooth();
             });
             //设置过滤器，过滤因远程蓝牙设备被找到而发送的广播 BluetoothDevice.ACTION_FOUND
@@ -110,16 +109,18 @@ public class BleClientActivity extends AppCompatActivity {
         @SuppressLint({"MissingPermission", "SetTextI18n", "UnsafeIntentLaunch"})
         @Override
         public void onReceive(Context context, Intent intent) {
-            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);//获取此时找到的远程设备对象
-            if (device != null && device.getName() != null) {
-                about.log(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
-                if (!mlist.contains(device)) {
-                    mlist.add(device);
+            if (!discoveryFinished){
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);//获取此时找到的远程设备对象
+                if (device != null && device.getName() != null) {
+                    about.log(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
+                    if (!mlist.contains(device)) {
+                        mlist.add(device);
+                    }
                 }
-            }
-            if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
-                about.log(TAG, "扫描完成");
-                discoveryFinished = true;
+                if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
+                    about.log(TAG, "扫描完成");
+                    discoveryFinished = true;
+                }
             }
         }
     };
@@ -180,13 +181,13 @@ public class BleClientActivity extends AppCompatActivity {
             }
             if (msg.what == 2) {
                 stopDiscovery();
-                discoveryFinished=false;
-                connect_ok=false;
             }
         }
     };
     @SuppressLint("MissingPermission")
     private void stopDiscovery() {
+        connect_ok=false;
+        discoveryFinished=false;
         displayList();
         pd.dismiss();
         re_scan.setTextSize(16);
@@ -353,9 +354,9 @@ public class BleClientActivity extends AppCompatActivity {
         }
     }
     protected void onDestroy() {
+        super.onDestroy();
         if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;
-        super.onDestroy();
     }
 
 }

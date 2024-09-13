@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -67,9 +68,9 @@ public class MainActivity extends AppCompatActivity{
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
-    public static int udpServerPort;
+    public static int udpServerPort=55555;
     public static boolean udp_connect,data_rec_finish,click_mem_confirm,
-            stop_send,delete_wifi_finish,delete_udp_finish,Thread_Run;
+            stop_send,Thread_Run;
     public ArrayList<String> _min_bat_list = new ArrayList<>();
     public ArrayList<String> _date_bat_list = new ArrayList<>();
     public ArrayList<String> _month_bat_list = new ArrayList<>();
@@ -89,7 +90,6 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         udpServerAddress = readDate(this, "wifi_ip");
-        udpServerPort = Integer.parseInt(readDate(this, "port"));
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -109,24 +109,6 @@ public class MainActivity extends AppCompatActivity{
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(menu_bt);
-        });
-        TextView dev_ip_port = findViewById(R.id.dev_ip_port);
-        dev_ip_port.setOnLongClickListener(view -> {
-            goAnim(MainActivity.this,50);
-            stop_send=true;
-            if (readDate(this,"wifi_ip")!=null) {
-                new AlertDialog.Builder(MainActivity.this)
-                .setTitle("网络切换")
-                .setMessage("确定要切换目标设备的网络吗?")
-                .setPositiveButton("取消", (dialogInterface, i) -> stop_send=false)
-                .setNegativeButton("确定", (dialog, which) -> {
-                    goAnim(MainActivity.this, 50);
-                    Message message = new Message();
-                    message.what = 3;
-                    messageProHandler.sendMessage(message);
-                }).show();
-            }
-            return false;
         });
         _min.setOnClickListener(view -> new Thread(() -> {
             goAnim(MainActivity.this, 50);
@@ -226,6 +208,7 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         about.log(TAG, "线程调用完成");
+
     }
     private void mData_pro_thread() {
         new Thread(() -> {
@@ -234,12 +217,12 @@ public class MainActivity extends AppCompatActivity{
                 while (udp_connect) {
                     if (checkScreenStatus() && !stop_send) {
                         udpClient.sendMessage("get_info");
-                        about.log(TAG, "发送请求信息");
+                        //about.log(TAG, "发送请求信息");
                         sleep(page_refresh_time);
                         udp_response = udpClient.receiveMessage();
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
-                        about.log(TAG, "请求返回信息:" + udp_response);
+                        about.log(TAG, "交流数据:" + udp_response);
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "");
                         modifiedString = modifiedString.replace(",", ":");
@@ -262,14 +245,6 @@ public class MainActivity extends AppCompatActivity{
                     }
                     if (udp_response != null && udp_response.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
                         pro_mem_use_status();//把内存使用信息放到折线图上
-                    }
-                    if (udp_response != null && udp_response.contains("del_wifi_finish")) {
-                        about.log(TAG, "重置WIFI完成");
-                        delete_wifi_finish = true;
-                    }
-                    if (udp_response != null && udp_response.contains("set_udp_finish")) {
-                        about.log(TAG, "重置UDP端口完成");
-                        delete_udp_finish = true;
                     }
                     if (!data_rec_finish && !stop_send && checkScreenStatus()) {
                         Message message = new Message();
@@ -334,24 +309,10 @@ public class MainActivity extends AppCompatActivity{
                 new Thread(() -> {
                     deleteFile(file_name);
                     pro_data_request();//请求拆线图数据
-                    if (line_chart.getData() == null && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                    if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                         pro_time_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
                     }
                 }).start();
-            }else if (msg.what == 3){
-                udpClient.sendMessage("del_wifi_config");
-                sleep(page_refresh_time);
-                if (delete_wifi_finish) {
-                    delete_wifi_finish = false;
-                    Intent intent = new Intent(MainActivity.this, set_tcp_page.class);
-                    startActivities(new Intent[]{intent});
-                } else {
-                    new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("提示:")
-                        .setMessage("网络连接失败,请再试一次!")
-                        .setNegativeButton("确定", null)
-                        .show();
-                }
             }
         }
     };
@@ -360,7 +321,7 @@ public class MainActivity extends AppCompatActivity{
         _min_bat_list.clear();
         _date_bat_list.clear();
         _month_bat_list.clear();
-        about.log(TAG, "请求全部数据命令");
+        about.log(TAG, "请求全部数据");
         udpClient.sendMessage("get_all_file");
         sleep(page_refresh_time);
         while (!data_rec_finish) {
@@ -387,7 +348,7 @@ public class MainActivity extends AppCompatActivity{
                     _month_bat_list.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
-                Log.e(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
+                about.log(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
                         + _date_bat_list.size() + " 月份数据:" + _month_bat_list.size());
                 for (int i=0;i<_min_bat_list.size();i++){
                     writeToFile(this, file_name, "min>"+_min_bat_list.get(i) + "\n");
@@ -468,7 +429,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     public void pro_mem_use_status(){
-        about.log(TAG, "收到内存使用信息");
+        Log.e(TAG, "收到内存使用信息");
         String [] mem = udp_response.split(">");
         float _mem = Float.parseFloat(mem[1]);
         _mem_value.add("");
@@ -501,9 +462,10 @@ public class MainActivity extends AppCompatActivity{
             lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
             lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
             lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-            lineDataSet.setDrawCircles(false);//在点上画圆 默认true
-            /*lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
-            lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+            lineDataSet.setDrawCircles(true);//在点上画圆 默认true
+            lineDataSet.setCircleRadius(2f);
+            lineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
+            /*lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
             lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
             LineData data = new LineData(lineDataSet);
             line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
@@ -660,7 +622,7 @@ public class MainActivity extends AppCompatActivity{
                 e.printStackTrace();
             }
         }else{
-            about.log(TAG, "读取历史数据错误,文件不存在");
+            about.log(TAG, "历史数据文件空");
         }
         return _bat;
     }
@@ -717,7 +679,7 @@ public class MainActivity extends AppCompatActivity{
         try {
             Thread.sleep(s);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         }
     }
     protected void onResume() {
@@ -800,7 +762,7 @@ public class MainActivity extends AppCompatActivity{
         } else {
             sp = getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
             editor = sp.edit(); // 获取编辑器对象
-            if (readDate(this, "wifi_ip") == null || readDate(this, "port") == null) {
+            if (readDate(this, "wifi_ip") == null) {
                 Intent intent = new Intent(this, set_tcp_page.class);
                 startActivities(new Intent[]{intent});
             }else{

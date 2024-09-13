@@ -189,7 +189,7 @@
         android:layout_marginTop="20dp"
         android:background="#8BC34A"
         android:textColor="#424242"
-        android:text="端口:(默认55555):"
+        android:text="端口:"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView21"
@@ -199,11 +199,11 @@
         android:id="@+id/target_port"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="25dp"
         android:hint="55555"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintTop_toBottomOf="@+id/target_ip"
-        tools:ignore="HardcodedText,TextContrastCheck" />
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,DuplicateSpeakableTextCheck,TextContrastCheck" />
 
     <TextView
         android:id="@+id/reset_network"
