@@ -10,7 +10,7 @@
         android:id="@+id/textView23"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="40dp"
         android:text="页面刷新时间设置(ms)"
         android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
@@ -21,18 +21,18 @@
         android:id="@+id/refresh_time_set"
         android:layout_width="85dp"
         android:layout_height="39dp"
-        android:layout_marginTop="16dp"
-        android:hint="0"
+        android:layout_marginTop="20dp"
+        android:hint="1000"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintTop_toBottomOf="@+id/low_voltage_set"
-        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="40dp"
         android:text="电池低于此值则市电常开"
         android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
@@ -43,34 +43,34 @@
         android:id="@+id/low_voltage_set"
         android:layout_width="85dp"
         android:layout_height="39dp"
-        android:layout_marginTop="16dp"
-        android:hint="0"
+        android:layout_marginTop="20dp"
+        android:hint="21"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toBottomOf="@+id/adc3_edit"
-        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+        app:layout_constraintTop_toBottomOf="@+id/adc3_vsens_edit"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
     <TextView
         android:id="@+id/textView17"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
-        android:text="ADC3参数校正"
+        android:layout_marginTop="40dp"
+        android:text="ADC3设置ACS758LCB-100B系数"
         android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
-        app:layout_constraintTop_toBottomOf="@+id/textView15"
+        app:layout_constraintTop_toBottomOf="@+id/textView26"
         tools:ignore="HardcodedText" />
 
     <EditText
-        android:id="@+id/adc3_edit"
+        android:id="@+id/adc3_vsens_edit"
         android:layout_width="85dp"
         android:layout_height="39dp"
-        android:layout_marginTop="16dp"
-        android:hint="0"
+        android:layout_marginTop="20dp"
+        android:hint="0.02"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toBottomOf="@+id/adc2_edit"
-        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+        app:layout_constraintTop_toBottomOf="@+id/adc3_vcc_edit"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
     <TextView
         android:id="@+id/textView21"
@@ -88,10 +88,11 @@
         android:id="@+id/w_edit"
         android:layout_width="85dp"
         android:layout_height="39dp"
-        android:hint="0"
+        android:layout_marginTop="10dp"
+        android:hint="1000"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toTopOf="@+id/guideline33"
+        app:layout_constraintTop_toBottomOf="@+id/textView18"
         tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,DuplicateSpeakableTextCheck,TextContrastCheck" />
 
     <androidx.constraintlayout.widget.Guideline
@@ -120,6 +121,7 @@
         tools:ignore="HardcodedText,TextContrastCheck" />
 
     <TextView
+        android:id="@+id/textView18"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
@@ -138,27 +140,20 @@
         android:id="@+id/textView7"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="功率设置(w):"
+        android:layout_marginTop="16dp"
+        android:text="功率阈值设置(w):"
         android:textColor="#FF5722"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
-        app:layout_constraintTop_toTopOf="@+id/guideline33"
+        app:layout_constraintTop_toBottomOf="@+id/textView18"
         tools:ignore="HardcodedText,TextContrastCheck" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline33"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_begin="194dp" />
 
     <TextView
         android:id="@+id/textView15"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
-        android:text="ADC2参数校正"
+        android:layout_marginTop="40dp"
+        android:text="ADC2设置电池电压偏移量"
         android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView7"
@@ -169,11 +164,11 @@
         android:layout_width="85dp"
         android:layout_height="39dp"
         android:layout_marginTop="20dp"
-        android:hint="0"
+        android:hint="0.6"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintTop_toBottomOf="@+id/w_edit"
-        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck" />
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -188,8 +183,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="#8BC34A"
-        android:textColor="#424242"
         android:text="端口:"
+        android:textColor="#424242"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView21"
@@ -216,5 +211,27 @@
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView23"
         tools:ignore="HardcodedText,TextContrastCheck" />
+
+    <TextView
+        android:id="@+id/textView26"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="ADC3设置ACS758LCB-100B VCC/2电压"
+        android:textColor="#DD2C00"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView15"
+        tools:ignore="HardcodedText" />
+
+    <EditText
+        android:id="@+id/adc3_vcc_edit"
+        android:layout_width="85dp"
+        android:layout_height="39dp"
+        android:layout_marginTop="20dp"
+        android:hint="1.65"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toBottomOf="@+id/adc2_edit"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

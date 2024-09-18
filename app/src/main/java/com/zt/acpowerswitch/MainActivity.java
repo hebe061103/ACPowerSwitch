@@ -78,6 +78,7 @@ public class MainActivity extends AppCompatActivity{
     public ArrayList<String> _mem_value = new ArrayList<>();
     public ArrayList<Entry> _bat_list = new ArrayList<>();
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
+    public static ArrayList<String> debugList = new ArrayList<>();
     public LineChart line_chart;
     public int cycle_size=0;
     private ComponentName topActivity;
@@ -105,6 +106,48 @@ public class MainActivity extends AppCompatActivity{
         TextView _month = findViewById(R.id._month);
         TextView mem_use_status = findViewById(R.id.mem_use_status);
         line_chart.setNoDataText("暂无数据!");
+        TextView dev_ip_port = findViewById(R.id.dev_ip_port);
+        dev_ip_port.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(this)
+                .setTitle("注意:")
+                .setMessage("该操作将重置远端设备网络,请慬慎执行!!!")
+                .setPositiveButton("取消",null)
+                .setNegativeButton("执行", (dialogInterface, i) -> {
+                    goAnim(MainActivity.this, 50);
+                    if(send_command_to_server("del_wifi_config")) {
+                        new AlertDialog.Builder(this)
+                            .setTitle("提 示")
+                            .setMessage("重置成功")
+                            .setNegativeButton("完成", (dialogInterface1, i1) -> {
+                                goAnim(MainActivity.this, 50);
+                                deleteData("wifi_ip");
+                                deleteData("power");
+                                deleteData("adc2_offset_value");
+                                deleteData("adc3_vcc_value");
+                                deleteData("adc3vsens");
+                                deleteData("low_voltage");
+                                deleteData("refresh_time");
+                                File file = new File(getFilesDir(), file_name);
+                                if (file.exists()) {
+                                    boolean deleted = file.delete();
+                                    if (deleted) {
+                                        Toast.makeText(MainActivity.this, "删除上次电池历史数据成功", LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(MainActivity.this, "删除上次电池历史数据失败", LENGTH_SHORT).show();
+                                    }
+                                }
+                                udpClient.close();
+                            }).show();
+                    }else{
+                        new AlertDialog.Builder(this)
+                            .setTitle("提 示")
+                            .setMessage("设备正忙,请稍后再试!")
+                            .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                    }
+                }).show();
+            return false;
+        });
         menu_bt = findViewById(R.id.menu_img);
         menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
@@ -126,10 +169,21 @@ public class MainActivity extends AppCompatActivity{
                 .setTitle("提 示")
                 .setMessage("该操作将清除分时数据,无法恢复!")
                 .setPositiveButton("取消", null)
-                .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
-                    goAnim(MainActivity.this, 50);
-                    udpClient.sendMessage("clean_minute_file");
-                }).start()).show();
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if (send_command_to_server("clean_minute_file")){
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("删除完成")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("设备正忙,请稍后再试!")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
             return false;
         });
         _day.setOnClickListener(view -> new Thread(() -> {
@@ -145,13 +199,23 @@ public class MainActivity extends AppCompatActivity{
         _day.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
             new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("提 示")
-                    .setMessage("该操作将清除日期数据,无法恢复!")
-                    .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
+                .setTitle("提 示")
+                .setMessage("该操作将清除日期数据,无法恢复!")
+                .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
                         goAnim(MainActivity.this, 50);
-                        udpClient.sendMessage("clean_date_file");
-                    }).start()).show();
+                        if (send_command_to_server("clean_date_file")){
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("删除完成")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("设备正忙,请稍后再试!")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
             return false;
         });
         _month.setOnClickListener(view -> new Thread(() -> {
@@ -170,10 +234,20 @@ public class MainActivity extends AppCompatActivity{
                     .setTitle("提 示")
                     .setMessage("该操作将清除月份数据,无法恢复!")
                     .setPositiveButton("取消", null)
-                    .setNegativeButton("确定", (dialog, which) -> new Thread(() -> {
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
                         goAnim(MainActivity.this, 50);
-                        udpClient.sendMessage("clean_month_file");
-                    }).start()).show();
+                        if (send_command_to_server("clean_month_file")){
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("删除完成")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("提 示")
+                                .setMessage("设备正忙,请稍后再试!")
+                                .setNegativeButton("完成", (dialogInterface13, i13) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
             return false;
         });
         mem_use_status.setOnClickListener(view -> {
@@ -210,6 +284,27 @@ public class MainActivity extends AppCompatActivity{
         about.log(TAG, "线程调用完成");
 
     }
+
+    public static boolean send_command_to_server(String data) {
+        int cycle_size = 0;
+        while (true) {
+            int num = 0;
+            udpClient.sendMessage(data);
+            while (num < 2) {
+                sleep(1000);
+                if (udp_response != null && udp_response.contains("ACK")) {
+                    return true;
+                }
+                num++;
+            }
+            if (cycle_size == 3){
+                break;
+            }
+            cycle_size++;
+        }
+        return false;
+    }
+
     private void mData_pro_thread() {
         new Thread(() -> {
             while(true) {
@@ -222,7 +317,7 @@ public class MainActivity extends AppCompatActivity{
                         udp_response = udpClient.receiveMessage();
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
-                        about.log(TAG, "交流数据:" + udp_response);
+                        about.log(TAG, "服务端返回数据:" + udp_response);
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "");
                         modifiedString = modifiedString.replace(",", ":");
@@ -242,9 +337,6 @@ public class MainActivity extends AppCompatActivity{
                             _min_bat_list.add(_l[1]);
                             pro_time_data(_min_bat_list, "每15分钟电压");
                         }
-                    }
-                    if (udp_response != null && udp_response.contains("mem>") && click_mem_confirm && checkScreenStatus()) {
-                        pro_mem_use_status();//把内存使用信息放到折线图上
                     }
                     if (!data_rec_finish && !stop_send && checkScreenStatus()) {
                         Message message = new Message();
@@ -305,6 +397,10 @@ public class MainActivity extends AppCompatActivity{
                 le_current.setText(info[11]);
                 //当前输出模式
                 out_mode.setText(unicodeToString(info[13]));
+                //内存使用信息
+                if (click_mem_confirm){
+                    pro_mem_use_status();//把内存使用信息放到折线图上
+                }
             }else if (msg.what == 2){
                 new Thread(() -> {
                     deleteFile(file_name);
@@ -346,6 +442,13 @@ public class MainActivity extends AppCompatActivity{
                 int length = _l.length; // 获取数组长度
                 if (length > 1) {
                     _month_bat_list.add(_l[1]);
+                }
+            } else if (udp_response != null && udp_response.contains("debug>")) {
+                Log.e(TAG, udp_response);
+                String[] _l = udp_response.split(">"); //按>进行分隔
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
+                    debugList.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
                 about.log(TAG, "所有数据接收完成,分时数据:" + _min_bat_list.size() + " 日期数据:"
@@ -429,9 +532,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     public void pro_mem_use_status(){
-        Log.e(TAG, "收到内存使用信息");
-        String [] mem = udp_response.split(">");
-        float _mem = Float.parseFloat(mem[1]);
+        float _mem = Float.parseFloat(info[15]);
         _mem_value.add("");
         _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
         lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (162-_mem))+"kb)");

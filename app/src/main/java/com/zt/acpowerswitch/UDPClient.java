@@ -61,7 +61,7 @@ public class UDPClient {
         } catch (Exception e) {
             // 这里捕获所有send方法可能抛出的异常
             //e.printStackTrace();
-            Log.i(TAG,"接收超时");
+            about.log(TAG,"接收超时");
             rec_fail = true;
         }
         return new String(packet.getData(), 0, packet.getLength());
