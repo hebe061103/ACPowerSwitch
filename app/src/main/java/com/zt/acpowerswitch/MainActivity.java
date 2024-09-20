@@ -290,14 +290,14 @@ public class MainActivity extends AppCompatActivity{
         while (true) {
             int num = 0;
             udpClient.sendMessage(data);
-            while (num < 2) {
-                sleep(1000);
+            while (num < 10) {
+                sleep(100);
                 if (udp_response != null && udp_response.contains("ACK")) {
                     return true;
                 }
-                num++;
+                num ++;
             }
-            if (cycle_size == 3){
+            if (cycle_size == 2){
                 break;
             }
             cycle_size++;
@@ -315,6 +315,7 @@ public class MainActivity extends AppCompatActivity{
                         //about.log(TAG, "发送请求信息");
                         sleep(page_refresh_time);
                         udp_response = udpClient.receiveMessage();
+                        //about.log(TAG, "服务端返回数据:" + udp_response);
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
                         about.log(TAG, "服务端返回数据:" + udp_response);
@@ -400,6 +401,31 @@ public class MainActivity extends AppCompatActivity{
                 //内存使用信息
                 if (click_mem_confirm){
                     pro_mem_use_status();//把内存使用信息放到折线图上
+                }
+                if (readDate(MainActivity.this,"power")!=null && !readDate(MainActivity.this,"power").equals(info[17])){
+                    saveData("power",info[17]);
+                }else{
+                    saveData("power",info[17]);
+                }
+                if (readDate(MainActivity.this,"adc2_offset_value")!=null && !readDate(MainActivity.this,"adc2_offset_value").equals(info[19])){
+                    saveData("adc2_offset_value",info[19]);
+                }else{
+                    saveData("adc2_offset_value",info[19]);
+                }
+                if (readDate(MainActivity.this,"adc3_vcc_value")!=null && !readDate(MainActivity.this,"adc3_vcc_value").equals(info[21])){
+                    saveData("adc3_vcc_value",info[21]);
+                }else{
+                    saveData("adc3_vcc_value",info[21]);
+                }
+                if (readDate(MainActivity.this,"adc3vsens")!=null && !readDate(MainActivity.this,"adc3vsens").equals(info[23])){
+                    saveData("adc3vsens",info[23]);
+                }else{
+                    saveData("adc3vsens",info[23]);
+                }
+                if (readDate(MainActivity.this,"low_voltage")!=null && !readDate(MainActivity.this,"low_voltage").equals(info[25])){
+                    saveData("low_voltage",info[25]);
+                }else{
+                    saveData("low_voltage",info[25]);
                 }
             }else if (msg.what == 2){
                 new Thread(() -> {

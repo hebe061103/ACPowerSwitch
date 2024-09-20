@@ -73,7 +73,7 @@ public class otherOption extends AppCompatActivity {
                             send_w_edit();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -111,7 +111,7 @@ public class otherOption extends AppCompatActivity {
                             send_adc2_edit();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -149,7 +149,7 @@ public class otherOption extends AppCompatActivity {
                             send_adc3_vcc_edit();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -187,7 +187,7 @@ public class otherOption extends AppCompatActivity {
                             send_adc3_vsens_edit();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -225,7 +225,7 @@ public class otherOption extends AppCompatActivity {
                             lo_voltage_set();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -263,7 +263,7 @@ public class otherOption extends AppCompatActivity {
                             refresh_time_set();
                         });
                     }
-                }, 2500);
+                }, 2000);
             }
 
             @Override
@@ -304,7 +304,7 @@ public class otherOption extends AppCompatActivity {
     public void send_w_edit() {
         if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {
             about.log(TAG, "功率参数巳改变,发送参数到服务端");
-            if (isInteger(w_edit.getText().toString()) || isDecimal(w_edit.getText().toString())) {
+            if (isInteger(w_edit.getText().toString()) || isDecimal(w_edit.getText().toString()) && Float.parseFloat(w_edit.getText().toString()) > 0) {
                 if (send_command_to_server("set_w:" + w_edit.getText().toString())){
                     new AlertDialog.Builder(otherOption.this)
                             .setTitle("提 示:")
@@ -324,9 +324,8 @@ public class otherOption extends AppCompatActivity {
                 }
             } else {
                 about.log(TAG, "功率设置项请输入数字类型");
-                Looper.prepare();
                 Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
-                Looper.loop();
+                w_edit.setText(readDate(otherOption.this, "power"));
             }
         }
     }
@@ -334,7 +333,7 @@ public class otherOption extends AppCompatActivity {
     public void send_adc2_edit() {
         if (!adc2_edit.getText().toString().isEmpty() && !adc2_edit.getText().toString().equals(readDate(otherOption.this, "adc2_offset_value"))) {
             about.log(TAG, "ADC2参数巳改变,发送参数到服务端");
-            if (isInteger(adc2_edit.getText().toString()) || isDecimal(adc2_edit.getText().toString())) {
+            if (isInteger(adc2_edit.getText().toString()) || isDecimal(adc2_edit.getText().toString()) && Float.parseFloat(adc2_edit.getText().toString()) > 0) {
                 if (send_command_to_server("adc2_set_offset:" + adc2_edit.getText().toString())){
                     new AlertDialog.Builder(otherOption.this)
                             .setTitle("提 示:")
@@ -354,16 +353,15 @@ public class otherOption extends AppCompatActivity {
                 }
             } else {
                 about.log(TAG, "adc2项请输入数字类型");
-                Looper.prepare();
                 Toast.makeText(otherOption.this, "adc2项请输入数字类型", LENGTH_SHORT).show();
-                Looper.loop();
+                adc2_edit.setText(readDate(otherOption.this, "adc2_offset_value"));
             }
         }
     }
     public void send_adc3_vcc_edit() {
         if (!adc3_vcc_edit.getText().toString().isEmpty() && !adc3_vcc_edit.getText().toString().equals(readDate(otherOption.this, "adc3_vcc_value"))) {
             about.log(TAG, "ADC3电压值参数巳改变,发送参数到服务端");
-            if (isInteger(adc3_vcc_edit.getText().toString()) || isDecimal(adc3_vcc_edit.getText().toString())) {
+            if (isInteger(adc3_vcc_edit.getText().toString()) || isDecimal(adc3_vcc_edit.getText().toString()) && Float.parseFloat(adc3_vcc_edit.getText().toString()) > 0) {
                 if (send_command_to_server("adc3_set_vcc_value:" + adc3_vcc_edit.getText().toString())){
                     new AlertDialog.Builder(otherOption.this)
                             .setTitle("提 示:")
@@ -383,16 +381,15 @@ public class otherOption extends AppCompatActivity {
                 }
             } else {
                 about.log(TAG, "adc3电压值项请输入数字类型");
-                Looper.prepare();
                 Toast.makeText(otherOption.this, "adc3电压值项请输入数字类型", LENGTH_SHORT).show();
-                Looper.loop();
+                adc3_vcc_edit.setText(readDate(otherOption.this, "adc3_vcc_value"));
             }
         }
     }
     public void send_adc3_vsens_edit() {
         if (!adc3_vsens_edit.getText().toString().isEmpty() && !adc3_vsens_edit.getText().toString().equals(readDate(otherOption.this, "adc3vsens"))) {
             about.log(TAG, "ADC3系数巳改变,发送参数到服务端");
-            if (isInteger(adc3_vsens_edit.getText().toString()) || isDecimal(adc3_vsens_edit.getText().toString())) {
+            if (isInteger(adc3_vsens_edit.getText().toString()) || isDecimal(adc3_vsens_edit.getText().toString()) && Float.parseFloat(adc3_vsens_edit.getText().toString()) > 0) {
                 if (send_command_to_server("adc3_vsens_set:" + adc3_vsens_edit.getText().toString())){
                     new AlertDialog.Builder(otherOption.this)
                             .setTitle("提 示:")
@@ -412,9 +409,8 @@ public class otherOption extends AppCompatActivity {
                 }
             } else {
                 about.log(TAG, "adc3系数项请输入数字类型");
-                Looper.prepare();
                 Toast.makeText(otherOption.this, "adc3系数项请输入数字类型", LENGTH_SHORT).show();
-                Looper.loop();
+                adc3_vsens_edit.setText(readDate(otherOption.this, "adc3vsens"));
             }
         }
     }
@@ -422,7 +418,7 @@ public class otherOption extends AppCompatActivity {
     public void lo_voltage_set() {
         if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this, "low_voltage"))) {
             about.log(TAG, "最低电压值巳改变,发送参数到服务端");
-            if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString())) {
+            if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString()) && Float.parseFloat(low_voltage_set.getText().toString()) > 0) {
                 if (send_command_to_server("low_voltage:" + low_voltage_set.getText().toString())){
                     new AlertDialog.Builder(otherOption.this)
                             .setTitle("提 示:")
@@ -442,9 +438,8 @@ public class otherOption extends AppCompatActivity {
                 }
             } else {
                 about.log(TAG, "最低电压值项请输入数字类型");
-                Looper.prepare();
                 Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", LENGTH_SHORT).show();
-                Looper.loop();
+                low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
             }
         }
     }
@@ -480,16 +475,5 @@ public class otherOption extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return false;
         }
-    }
-    protected void onPause() {
-        super.onPause();
-    }
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-    @Override
-    public void onBackPressed() {
-        // 当前面板是null时表示没有面板正在显示
-        super.onBackPressed();
     }
 }

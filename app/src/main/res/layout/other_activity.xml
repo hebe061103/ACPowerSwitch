@@ -12,7 +12,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="页面刷新时间设置(ms)"
-        android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView"
         tools:ignore="HardcodedText" />
@@ -34,7 +33,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="电池低于此值则市电常开"
-        android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView17"
         tools:ignore="HardcodedText" />
@@ -56,7 +54,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="ADC3设置ACS758LCB-100B系数"
-        android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView26"
         tools:ignore="HardcodedText" />
@@ -76,13 +73,14 @@
         android:id="@+id/textView21"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#8BC34A"
+        android:background="#03A9F4"
+        android:textStyle="bold"
         android:text="远程控制器IP:"
         android:textColor="#424242"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toTopOf="@+id/guideline21"
-        tools:ignore="HardcodedText" />
+        tools:ignore="HardcodedText,TextContrastCheck" />
 
     <EditText
         android:id="@+id/w_edit"
@@ -125,16 +123,17 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:background="#4CAF50"
-        android:text="在此处设置双电源切换时的阈值，默认情况下输入为太阳能逆变电源，当输出功率达到设定功率时，切换为市电电源做为输入电源,以此达到自动切换的目的."
-        android:textColor="#263238"
+        android:background="#03A9F4"
+        android:textStyle="bold"
+        android:text="以下为设置模块参数,包括双电源切换时的阈值，电压采集时的偏移量,ACS758的VCC/2的电压及转换系数,还有电池保护电压,默认情况下使用太阳能逆变做为主供电，当负载功率达到设定功率时，自动切换到市电做为输出,以此达到自动切换的目的."
+        android:textColor="#1A1A19"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView22"
         app:layout_constraintWidth_percent="0.92"
-        tools:ignore="HardcodedText,VisualLintBounds" />
+        tools:ignore="HardcodedText,VisualLintBounds,VisualLintLongText" />
 
     <TextView
         android:id="@+id/textView7"
@@ -142,7 +141,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="功率阈值设置(w):"
-        android:textColor="#FF5722"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView18"
@@ -154,7 +152,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="ADC2设置电池电压偏移量"
-        android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView7"
         tools:ignore="HardcodedText" />
@@ -182,7 +179,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:background="#8BC34A"
+        android:background="#03A9F4"
+        android:textStyle="bold"
         android:text="端口:"
         android:textColor="#424242"
         android:textSize="16sp"
@@ -204,11 +202,13 @@
         android:id="@+id/reset_network"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
-        android:background="#03A9F4"
-        android:text="确定重置网络"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="42dp"
+        android:background="#E51717"
+        android:textStyle="bold"
+        android:text="重置网络及参数"
         android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintStart_toEndOf="@+id/imageView"
         app:layout_constraintTop_toBottomOf="@+id/textView23"
         tools:ignore="HardcodedText,TextContrastCheck" />
 
@@ -218,7 +218,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="ADC3设置ACS758LCB-100B VCC/2电压"
-        android:textColor="#DD2C00"
         app:layout_constraintStart_toStartOf="@+id/guideline22"
         app:layout_constraintTop_toBottomOf="@+id/textView15"
         tools:ignore="HardcodedText" />
@@ -233,5 +232,15 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintTop_toBottomOf="@+id/adc2_edit"
         tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="36dp"
+        app:layout_constraintStart_toStartOf="@+id/guideline22"
+        app:layout_constraintTop_toBottomOf="@+id/textView23"
+        app:srcCompat="@drawable/warning"
+        tools:ignore="ContentDescription" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
