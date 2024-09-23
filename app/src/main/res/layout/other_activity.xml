@@ -198,16 +198,6 @@
                 app:layout_constraintTop_toBottomOf="@+id/low_voltage_set"
                 tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_marginTop="40dp"
-                app:layout_constraintTop_toBottomOf="@+id/textView23"
-                app:srcCompat="@drawable/warning"
-                tools:ignore="ContentDescription"
-                tools:layout_editor_absoluteX="0dp" />
-
             <TextView
                 android:id="@+id/reset_network"
                 android:layout_width="wrap_content"
@@ -217,9 +207,9 @@
                 android:text="重置网络及参数"
                 android:textSize="20sp"
                 android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView23"
-                tools:ignore="HardcodedText,TextContrastCheck"
-                tools:layout_editor_absoluteX="39dp" />
+                tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
                 android:id="@+id/textView18"
