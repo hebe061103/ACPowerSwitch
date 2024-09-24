@@ -3,7 +3,6 @@ package com.zt.acpowerswitch;
 import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.UDPClient.rec_fail;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -34,6 +33,7 @@ import androidx.core.content.ContextCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity{
     public static String udpServerAddress;
     public static int udpServerPort=55555;
     public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run;
-    public ArrayList<String> _min_bat_list = new ArrayList<>();
+    public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public ArrayList<String> _time_value = new ArrayList<>();
     public ArrayList<String> _mem_value = new ArrayList<>();
     public ArrayList<Entry> _bat_list = new ArrayList<>();
@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
     }
     private void init_module(){
+        CustomMarkerView mv = new CustomMarkerView(this, R.layout.custom_marker_view);
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -148,15 +149,13 @@ public class MainActivity extends AppCompatActivity{
             MainActivity.this.showPopupMenu(menu_bt);
         });
         bat_line_chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            String [] _tmp;
             @Override
             public void onValueSelected(Entry entry, Highlight highlight) {
                 /*// 显示被选中的数值
                 String selectedValue = "X-Index: " + entry.getX() + ", Y-Value: " + entry.getY();
                 Toast.makeText(getApplicationContext(), selectedValue, Toast.LENGTH_SHORT).show();*/
-                _tmp = _min_bat_list.get((int) entry.getX()).split(" ");
-                bat_line_chart.getDescription().setTextSize(10f);//设置des文字大小
-                bat_line_chart.getDescription().setText("时间:"+_tmp[1]+" 电压值:"+entry.getY());
+                //点击指示器可显示更多详情
+                bat_line_chart.setMarkerView(mv);
             }
             @Override
             public void onNothingSelected() {
@@ -197,7 +196,6 @@ public class MainActivity extends AppCompatActivity{
         }
         return false;
     }
-
     private void mData_pro_thread() {
         new Thread(() -> {
             while(true) {
@@ -425,36 +423,31 @@ public class MainActivity extends AppCompatActivity{
         mem_use_chart.invalidate();//清理无效数据,用于动态刷新
     }
     public void bat_data_display_to_chart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
-        try{
-            String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
-            batlineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
-            batlineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
-            batlineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-            batlineDataSet.setDrawCircles(false);//在点上画圆 默认true
-            /*batlineDataSet.setCircleRadius(2f);
-            batlineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
-            batlineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-            batlineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
-            LineData bat_data = new LineData(batlineDataSet);
-            bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
-            bat_line_chart.getDescription().setTextSize(10f);//设置des文字大小
-            bat_line_chart.getDescription().setText(des);//右下角描述
-            bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
-            bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
-            /*bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-            bat_line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
-            bat_line_chart.getXAxis().setAxisMinimum(0f);
-            bat_line_chart.getXAxis().setAxisMaximum(95f);
-            bat_line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
-            bat_line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
-            bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
-            bat_line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
-            bat_line_chart.setData(bat_data);//调置数据
-            bat_line_chart.notifyDataSetChanged();//通知数据巳改变
-            bat_line_chart.invalidate();//清理无效数据,用于动态刷新
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
+        batlineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
+        batlineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
+        batlineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
+        batlineDataSet.setDrawCircles(false);//在点上画圆 默认true
+        /*batlineDataSet.setCircleRadius(2f);
+        batlineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
+        batlineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+        batlineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
+        LineData bat_data = new LineData(batlineDataSet);
+        bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
+        bat_line_chart.getDescription().setText(des);//右下角描述
+        bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
+        bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
+        /*bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
+        bat_line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
+        bat_line_chart.getXAxis().setAxisMinimum(0f);
+        bat_line_chart.getXAxis().setAxisMaximum(95f);
+        bat_line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
+        bat_line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
+        bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
+        bat_line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
+        bat_line_chart.setData(bat_data);//调置数据
+        bat_line_chart.notifyDataSetChanged();//通知数据巳改变
+        bat_line_chart.invalidate();//清理无效数据,用于动态刷新
     }
     /* 获取屏幕状态通过PowerManager */
     @SuppressLint("ObsoleteSdkInt")
@@ -751,7 +744,7 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
         if (values < 0 || values >= list.size()) {
             return "";
         }
-        if (values == 0 ){
+        if (values == 0){
             return "时间(00:00):";
         } else{
             return list.get(values);
@@ -763,5 +756,27 @@ class NoValueFormatter implements IValueFormatter {
     @Override
     public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
         return ""; // 返回空字符串，不显示任何值
+    }
+}
+
+@SuppressLint("ViewConstructor")
+class CustomMarkerView extends MarkerView {
+
+    private final TextView m_year;
+    private final TextView m_time;
+    private final TextView m_value;
+    public CustomMarkerView (Context context, int layoutResource) {
+        super(context, layoutResource);
+        m_year = findViewById(R.id.m_year);
+        m_time = findViewById(R.id.m_time);
+        m_value = findViewById(R.id.m_value);
+    }
+    @SuppressLint("SetTextI18n")
+    @Override
+    public void refreshContent(Entry e, Highlight highlight) {
+        String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
+        m_year.setText("年份:" + _tmp[0]);
+        m_time.setText("时间:" + _tmp[1]);
+        m_value.setText("电压值:" + e.getY());
     }
 }

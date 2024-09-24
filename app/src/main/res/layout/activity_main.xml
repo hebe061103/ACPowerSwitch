@@ -356,7 +356,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="25dp"
-                android:text="电池充放电曲线图表:"
+                android:text="电池日充放电曲线图表:"
                 android:textColor="#85BC45"
                 android:textSize="18sp"
                 android:textStyle="bold"
