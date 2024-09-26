@@ -8,7 +8,7 @@
 
     <TextView
         android:id="@+id/m_year"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="20dp"
         android:hint="year:"
         android:textSize="10sp"
@@ -19,7 +19,7 @@
 
     <TextView
         android:id="@+id/m_time"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="20dp"
         android:hint="time:"
         android:textSize="10sp"
@@ -30,7 +30,7 @@
 
     <TextView
         android:id="@+id/m_value"
-        android:layout_width="100dp"
+        android:layout_width="80dp"
         android:layout_height="20dp"
         android:hint="value:"
         android:textSize="10sp"

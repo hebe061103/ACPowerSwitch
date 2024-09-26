@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
     }
     private void init_module(){
-        CustomMarkerView mv = new CustomMarkerView(this, R.layout.custom_marker_view);
+        CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -758,7 +758,6 @@ class NoValueFormatter implements IValueFormatter {
         return ""; // 返回空字符串，不显示任何值
     }
 }
-
 @SuppressLint("ViewConstructor")
 class CustomMarkerView extends MarkerView {
 
@@ -775,8 +774,10 @@ class CustomMarkerView extends MarkerView {
     @Override
     public void refreshContent(Entry e, Highlight highlight) {
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        m_year.setText("年份:" + _tmp[0]);
-        m_time.setText("时间:" + _tmp[1]);
+        m_year.setText(_tmp[0]);
+        m_time.setText(_tmp[1]);
         m_value.setText("电压值:" + e.getY());
+        setOffset(-((float) getWidth() /2), (-getHeight() - 50));
+        super.refreshContent(e, highlight);
     }
 }
