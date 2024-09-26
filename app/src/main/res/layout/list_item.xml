@@ -9,6 +9,6 @@
     android:padding="2dp"
     android:textColor="#4CAF50"
     android:textColorHint="#546E7A"
-    android:textSize="16sp"
+    android:textSize="14sp"
     tools:ignore="HardcodedText"> <!-- 设置行间距 -->
 </TextView>

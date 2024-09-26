@@ -42,6 +42,9 @@ public class Engineering extends AppCompatActivity {
 
         });
         ListView debug_lv = findViewById(R.id.debug_log_device);
+        if (debugList.isEmpty()) {
+            debugList.add("暂无异常!");
+        }
         adapter = new ArrayAdapter<>(Engineering.this, R.layout.list_item, debugList);
         debug_lv.setAdapter(adapter);
     }
@@ -50,7 +53,7 @@ public class Engineering extends AppCompatActivity {
     public void onBackPressed() {
         // 当前面板是null时表示没有面板正在显示
         // super.onBackPressed();
-        if (!debugList.isEmpty()) {
+        if (!debugList.isEmpty() && !debugList.get(0).equals("暂无异常!")) {
             new AlertDialog.Builder(Engineering.this)
                     .setTitle("提 示")
                     .setMessage("是否要清除所有日志?")
@@ -74,6 +77,7 @@ public class Engineering extends AppCompatActivity {
                         }
                     }).show();
         }else {
+            debugList.clear();
             finish();
         }
     }
