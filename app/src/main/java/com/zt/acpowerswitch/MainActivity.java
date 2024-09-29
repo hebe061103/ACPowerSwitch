@@ -42,6 +42,10 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.scwang.smart.refresh.footer.BallPulseFooter;
+import com.scwang.smart.refresh.header.BezierRadarHeader;
+import com.scwang.smart.refresh.layout.api.RefreshLayout;
+import com.scwang.smart.refresh.layout.constant.SpinnerStyle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -87,6 +91,19 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
+        RefreshLayout refreshLayout = findViewById(R.id.refreshLayout);
+        //设置 Header 为 贝塞尔雷达 样式
+        refreshLayout.setRefreshHeader(new BezierRadarHeader(this).setEnableHorizontalDrag(true));
+        //设置 Footer 为 球脉冲 样式
+        refreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
+        refreshLayout.setOnRefreshListener(refreshlayout -> {
+            refreshlayout.finishRefresh(2000);
+            Log.e(TAG,"刷新完成");
+        });
+        refreshLayout.setOnLoadMoreListener(refreshlayout -> {
+            refreshlayout.finishLoadMore(2000);
+            Log.e(TAG,"加载完成");
+        });
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
