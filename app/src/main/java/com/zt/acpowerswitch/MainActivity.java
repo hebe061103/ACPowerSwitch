@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,9 +32,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.MarkerView;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -60,7 +66,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity{
     public static final String TAG = "MainActivity:";
     public final String top_m = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
-    public static final String file_name = "bat_value_data.txt";
+    public static final String bat_value_data = "bat_value_data.txt";
+    public static final String D_Total_power = "D_Total_power.txt";
+    public static final String M_Total_power = "M_Total_power.txt";
+    public static final String Y_Total_power = "Y_Total_power.txt";
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
@@ -74,12 +83,17 @@ public class MainActivity extends AppCompatActivity{
     public static int udpServerPort=55555;
     public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
+    public static ArrayList<String> _D_Total_power = new ArrayList<>();
+    public static ArrayList<String> _M_Total_power = new ArrayList<>();
+    public static ArrayList<String> _Y_Total_power = new ArrayList<>();
     public ArrayList<String> _time_value = new ArrayList<>();
     public ArrayList<String> _mem_value = new ArrayList<>();
-    public ArrayList<Entry> _bat_list = new ArrayList<>();
+    public ArrayList<Entry> _value_list = new ArrayList<>();
+    public ArrayList<BarEntry> _barChart_list = new ArrayList<>();
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
     public static ArrayList<String> debugList = new ArrayList<>();
-    public LineChart bat_line_chart,power_chart,mem_use_chart;
+    public LineChart bat_line_chart,mem_use_chart;
+    public BarChart power_chart;
     public int cycle_size=0;
     private ComponentName topActivity;
     public static LineDataSet batlineDataSet,memlineDataSet;
@@ -140,7 +154,7 @@ public class MainActivity extends AppCompatActivity{
                                 deleteData("adc3vsens");
                                 deleteData("low_voltage");
                                 deleteData("refresh_time");
-                                File file = new File(getFilesDir(), file_name);
+                                File file = new File(getFilesDir(), bat_value_data);
                                 if (file.exists()) {
                                     boolean deleted = file.delete();
                                     if (deleted) {
@@ -180,7 +194,14 @@ public class MainActivity extends AppCompatActivity{
             }
         });
         if (bat_line_chart.getData()==null) {
-            read_old_bat_data();
+            read_old_bat_data(_min_bat_list,bat_value_data,"min>");
+            pro_chart_data(_min_bat_list, "每15分钟电压");
+            about.log(TAG, "折线图历史数据加载完成");
+        }
+        if (power_chart.getData()==null) {
+            read_old_bat_data(_D_Total_power,D_Total_power,"D_Total_power>");
+            pro_chart_data(_D_Total_power, "处理日期柱状图表");
+            about.log(TAG, "柱状图历史数据加载完成");
         }
         udpClient.udpConnect();
         about.log(TAG, "开始调用线程");
@@ -244,7 +265,7 @@ public class MainActivity extends AppCompatActivity{
                         if (_l[1] != null && !_l[1].isEmpty()) {
                             about.log(TAG, "动态分时数据:" + _l[1]);
                             _min_bat_list.add(_l[1]);
-                            pro_time_data(_min_bat_list, "每15分钟电压");
+                            pro_chart_data(_min_bat_list, "每15分钟电压");
                         }
                     }
                     if (!data_rec_finish && !stop_send && checkScreenStatus()) {
@@ -340,11 +361,17 @@ public class MainActivity extends AppCompatActivity{
                 }
             }else if (msg.what == 2){
                 new Thread(() -> {
-                    deleteFile(file_name);
-                    pro_data_request();//请求拆线图数据
+                    deleteFile(bat_value_data);
+                    deleteFile(D_Total_power);
+                    pro_data_request();//请求数据
                     if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                        pro_time_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
+                        pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
                     }
+                    about.log(TAG, "15分钟刷新完成");
+                    if (!_D_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                        pro_chart_data(_D_Total_power,"处理日期柱状图表");//把数据放到柱状图上
+                    }
+                    about.log(TAG, "日期刷新完成");
                 }).start();
             }
         }
@@ -352,6 +379,9 @@ public class MainActivity extends AppCompatActivity{
     public void pro_data_request(){
         stop_send = true;
         _min_bat_list.clear();
+        _D_Total_power.clear();
+        _M_Total_power.clear();
+        _Y_Total_power.clear();
         about.log(TAG, "请求全部数据");
         udpClient.sendMessage("get_all_file");
         sleep(page_refresh_time);
@@ -364,6 +394,27 @@ public class MainActivity extends AppCompatActivity{
                 if (length > 1) {
                     _min_bat_list.add(_l[1]);
                 }
+            } else if (udp_response != null && udp_response.contains("D_Total_power>")) {
+                Log.e(TAG, udp_response);
+                String[] _l = udp_response.split(">"); //按>进行分隔
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
+                    _D_Total_power.add(_l[1]);
+                }
+            } else if (udp_response != null && udp_response.contains("M_Total_power>")) {
+                Log.e(TAG, udp_response);
+                String[] _l = udp_response.split(">"); //按>进行分隔
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
+                    _M_Total_power.add(_l[1]);
+                }
+            } else if (udp_response != null && udp_response.contains("Y_Total_power>")) {
+                Log.e(TAG, udp_response);
+                String[] _l = udp_response.split(">"); //按>进行分隔
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
+                    _Y_Total_power.add(_l[1]);
+                }
             } else if (udp_response != null && udp_response.contains("debug>")) {
                 Log.e(TAG, udp_response);
                 String[] _l = udp_response.split(">"); //按>进行分隔
@@ -372,10 +423,25 @@ public class MainActivity extends AppCompatActivity{
                     debugList.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
-                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size());
+                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 日期功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 if (!_min_bat_list.isEmpty()) {
                     for (int i = 0; i < _min_bat_list.size(); i++) {
-                        writeToFile(this, file_name, "min>" + _min_bat_list.get(i) + "\n");
+                        writeToFile(this, bat_value_data, "min>" + _min_bat_list.get(i) + "\n");
+                    }
+                }
+                if (!_D_Total_power.isEmpty()) {
+                    for (int i = 0; i < _D_Total_power.size(); i++) {
+                        writeToFile(this, D_Total_power, "D_Total_power>" + _D_Total_power.get(i) + "\n");
+                    }
+                }
+                if (!_M_Total_power.isEmpty()) {
+                    for (int i = 0; i < _M_Total_power.size(); i++) {
+                        writeToFile(this, M_Total_power, "M_Total_power>" + _M_Total_power.get(i) + "\n");
+                    }
+                }
+                if (!_Y_Total_power.isEmpty()) {
+                    for (int i = 0; i < _Y_Total_power.size(); i++) {
+                        writeToFile(this, Y_Total_power, "Y_Total_power>" + _Y_Total_power.get(i) + "\n");
                     }
                 }
                 data_rec_finish = true;
@@ -387,16 +453,19 @@ public class MainActivity extends AppCompatActivity{
                 cycle_size=0;
             } else if (!data_rec_finish) {
                 _min_bat_list.clear();
+                _D_Total_power.clear();
+                _M_Total_power.clear();
+                _Y_Total_power.clear();
                 udpClient.sendMessage("get_all_file");
                 sleep(page_refresh_time);
                 cycle_size++;
             }
         }
     }
-    public void pro_time_data(List<String> _sd,String label){
-        _time_value.clear();
-        _bat_list.clear();
+    public void pro_chart_data(List<String> _sd,String label){
         if (label.equals("每15分钟电压")) {
+            _time_value.clear();
+            _value_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
                 String minute_des = _e[0];
@@ -406,9 +475,19 @@ public class MainActivity extends AppCompatActivity{
                     _time_value.add(_u[0] + ":" + _u[1]);
                     String[] _split_bat_value = _e[2].split(":");
                     String _bat_value = _split_bat_value[1]; //截取电压值
-                    _bat_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-                    bat_data_display_to_chart(_time_value, _bat_list, minute_des, label);
+                    _value_list.add(new Entry(i, Float.parseFloat(_bat_value)));
+                    bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
                 }
+            }
+        }
+        if (label.equals("处理日期柱状图表")) {
+            _time_value.clear();
+            _barChart_list.clear();
+            for (int i = 0; i < _sd.size(); i++) {
+                String[] _e = _sd.get(i).split(" ");
+                _time_value.add(_e[0]);
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+                pro_date_power_data(_barChart_list);
             }
         }
     }
@@ -440,7 +519,7 @@ public class MainActivity extends AppCompatActivity{
         mem_use_chart.invalidate();//清理无效数据,用于动态刷新
     }
     public void bat_data_display_to_chart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
-        String[] bat_value = String.valueOf(_bat_list.get(_bat_list.size()-1)).split(":");
+        String[] bat_value = String.valueOf(_value_list.get(_value_list.size()-1)).split(":");
         batlineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
         batlineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
         batlineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
@@ -466,6 +545,24 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.notifyDataSetChanged();//通知数据巳改变
         bat_line_chart.invalidate();//清理无效数据,用于动态刷新
     }
+    /**
+     * 初始化BarChart图表
+     */
+    private void pro_date_power_data(ArrayList<BarEntry> barChart) {
+        //X轴设置显示位置在底部
+        XAxis xAxis = power_chart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setAxisMinimum(0f);
+        xAxis.setGranularity(1f);
+
+        BarDataSet dataSet = new BarDataSet(barChart, "数据集");
+        dataSet.setColor(Color.GREEN); // 设置柱子的颜色
+        BarData barData = new BarData(dataSet);
+        power_chart.setData(barData);//调置数据
+        power_chart.notifyDataSetChanged();//通知数据巳改变
+        power_chart.invalidate();//清理无效数据,用于动态刷新
+    }
+
     /* 获取屏幕状态通过PowerManager */
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkScreenStatus() {
@@ -529,22 +626,20 @@ public class MainActivity extends AppCompatActivity{
         popupMenu.show();
     }
 
-    public void read_old_bat_data(){
-        _min_bat_list.clear();
-        ArrayList<String> _tmp = readFromFile(this,file_name);
+    public void read_old_bat_data(ArrayList arrayList,String filename,String contains){
+        arrayList.clear();
+        ArrayList<String> _tmp = readFromFile(this,filename);
         if (!_tmp.isEmpty()) {
             for (int i = 0; i < _tmp.size(); i++) {
                 Log.e(TAG, _tmp.get(i));
-                if (_tmp.get(i) != null && _tmp.get(i).contains("min>")) {
+                if (_tmp.get(i) != null && _tmp.get(i).contains(contains)) {
                     String[] _l = _tmp.get(i).split(">"); //按>进行分隔
                     int length = _l.length; // 获取数组长度
                     if (length > 1) {
-                        _min_bat_list.add(_l[1]);
+                        arrayList.add(_l[1]);
                     }
                 }
             }
-            pro_time_data(_min_bat_list, "每15分钟电压");
-            about.log(TAG, "历史数据加载完成");
         }
     }
     // 写入文件

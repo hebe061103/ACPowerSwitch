@@ -1,7 +1,5 @@
 package com.zt.acpowerswitch;
 
-import static android.widget.Toast.LENGTH_SHORT;
-import static com.zt.acpowerswitch.MainActivity.file_name;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
@@ -14,7 +12,6 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 
 public class set_tcp_page extends AppCompatActivity {
+    private static final String TAG = "set_tmp_page:";
     public Button bl_ip_get,manual_set,bt_clean;
     public EditText ip_input;
     private Handler handler;
@@ -47,17 +45,10 @@ public class set_tcp_page extends AppCompatActivity {
                     .setNegativeButton("确定", (dialog, which) -> {
                         goAnim(this,50);
                         MainActivity.deleteData("wifi_ip");
-                        File file = new File(getFilesDir(), file_name);
-                        if (file.exists()) {
-                            boolean deleted = file.delete();
-                            if (deleted){
-                                Toast.makeText(this, "删除电池历史数据成功", LENGTH_SHORT).show();
-                            }else {
-                                Toast.makeText(this, "删除电池历史数据失败", LENGTH_SHORT).show();
-                            }
-                        }else {
-                            Toast.makeText(this, "电池历史数据不存在", LENGTH_SHORT).show();
-                        }
+                        delete_history_data(MainActivity.bat_value_data);
+                        delete_history_data(MainActivity.D_Total_power);
+                        delete_history_data(MainActivity.M_Total_power);
+                        delete_history_data(MainActivity.Y_Total_power);
                         udpClient.close();
                     })
                     .show();
@@ -78,6 +69,19 @@ public class set_tcp_page extends AppCompatActivity {
                 }
             });
         }).start());
+    }
+    public void delete_history_data(String filename){
+        File file = new File(getFilesDir(), filename);
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            if (deleted) {
+                about.log(TAG, "删除成功");
+            } else {
+                about.log(TAG, "删除失败");
+            }
+        }else {
+            about.log(TAG, "文件不存在");
+        }
     }
     @Override
     public void onBackPressed() {

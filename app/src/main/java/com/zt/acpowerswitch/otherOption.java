@@ -2,7 +2,6 @@ package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.MainActivity.deleteData;
-import static com.zt.acpowerswitch.MainActivity.file_name;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.page_refresh_time;
 import static com.zt.acpowerswitch.MainActivity.readDate;
@@ -287,19 +286,27 @@ public class otherOption extends AppCompatActivity {
                     deleteData("adc3vsens");
                     deleteData("low_voltage");
                     deleteData("refresh_time");
-                    File file = new File(getFilesDir(), file_name);
-                    if (file.exists()) {
-                        boolean deleted = file.delete();
-                        if (deleted) {
-                            Toast.makeText(otherOption.this, "删除上次电池历史数据成功", LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(otherOption.this, "删除上次电池历史数据失败", LENGTH_SHORT).show();
-                        }
-                    }
+                    delete_history_data(MainActivity.bat_value_data);
+                    delete_history_data(MainActivity.D_Total_power);
+                    delete_history_data(MainActivity.M_Total_power);
+                    delete_history_data(MainActivity.Y_Total_power);
                     udpClient.close();
                 })
                 .show();
         });
+    }
+    public void delete_history_data(String filename){
+        File file = new File(getFilesDir(), filename);
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            if (deleted) {
+                about.log(TAG, "删除成功");
+            } else {
+                about.log(TAG, "删除失败");
+            }
+        }else {
+            about.log(TAG, "文件不存在");
+        }
     }
     public void send_w_edit() {
         if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {

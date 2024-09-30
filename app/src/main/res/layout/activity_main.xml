@@ -384,7 +384,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="发电功率图表:"
+                    android:text="发电功率图表(日/月/年):"
                     android:textColor="#85BC45"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -392,7 +392,7 @@
                     app:layout_constraintTop_toBottomOf="@+id/line_chart"
                     tools:ignore="HardcodedText" />
 
-                <com.github.mikephil.charting.charts.LineChart
+                <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/power_chart"
                     android:layout_width="match_parent"
                     android:layout_height="280dp"
