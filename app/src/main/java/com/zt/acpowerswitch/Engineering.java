@@ -57,7 +57,10 @@ public class Engineering extends AppCompatActivity {
             new AlertDialog.Builder(Engineering.this)
                     .setTitle("提 示")
                     .setMessage("是否要清除所有日志?")
-                    .setPositiveButton("取消", null)
+                    .setPositiveButton("取消", (dialogInterface, i) -> {
+                        goAnim(Engineering.this, 50);
+                        finish();
+                    })
                     .setNegativeButton("确定", (dialogInterface, i) -> {
                         goAnim(Engineering.this, 50);
                         if (send_command_to_server("del_debug_log")) {

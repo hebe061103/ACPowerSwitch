@@ -71,7 +71,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="内存使用率:"
+                    android:text="设备内存使用率:"
                     android:textColor="#85BC45"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -396,9 +396,9 @@
                     android:id="@+id/power_chart"
                     android:layout_width="match_parent"
                     android:layout_height="280dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/chart_shape"
-                    app:layout_constraintTop_toBottomOf="@+id/textView27"
+                    app:layout_constraintTop_toBottomOf="@+id/day_power"
                     tools:layout_editor_absoluteX="0dp" />
 
                 <com.github.mikephil.charting.charts.LineChart
@@ -409,6 +409,58 @@
                     android:background="@drawable/chart_shape"
                     app:layout_constraintTop_toBottomOf="@+id/textView28"
                     tools:layout_editor_absoluteX="0dp" />
+
+                <TextView
+                    android:id="@+id/day_power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#85BC45"
+                    android:text="     日     "
+                    android:textColor="#FDFDFD"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView27"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/month_power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:background="#85BC45"
+                    android:text="     月     "
+                    android:textColor="#FDFDFD"
+                    app:layout_constraintStart_toEndOf="@+id/day_power"
+                    app:layout_constraintTop_toBottomOf="@+id/textView27"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/year_power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:background="#85BC45"
+                    android:text="     年     "
+                    android:textColor="#FDFDFD"
+                    app:layout_constraintStart_toEndOf="@+id/month_power"
+                    app:layout_constraintTop_toBottomOf="@+id/textView27"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/mm_use"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="#CDDC39"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/mem_use_chart"
+                    app:layout_constraintStart_toEndOf="@+id/textView28"
+                    app:layout_constraintTop_toBottomOf="@+id/power_chart"
+                    app:layout_constraintVertical_bias="0.545"
+                    tools:ignore="HardcodedText" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>

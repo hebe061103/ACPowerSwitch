@@ -48,10 +48,8 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ViewPortHandler;
-import com.scwang.smart.refresh.footer.BallPulseFooter;
 import com.scwang.smart.refresh.header.BezierRadarHeader;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
-import com.scwang.smart.refresh.layout.constant.SpinnerStyle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -61,6 +59,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity{
@@ -76,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,
-            out_frequency,out_mode,bat_Voltage,le_current;
+            out_frequency,out_mode,bat_Voltage,le_current,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -95,6 +94,7 @@ public class MainActivity extends AppCompatActivity{
     public LineChart bat_line_chart,mem_use_chart;
     public BarChart power_chart;
     public int cycle_size=0;
+    public int date_num;
     private ComponentName topActivity;
     public static LineDataSet batlineDataSet,memlineDataSet;
     public static int page_refresh_time;
@@ -108,16 +108,19 @@ public class MainActivity extends AppCompatActivity{
         RefreshLayout refreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
         refreshLayout.setRefreshHeader(new BezierRadarHeader(this).setEnableHorizontalDrag(true));
-        //设置 Footer 为 球脉冲 样式
-        refreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
         refreshLayout.setOnRefreshListener(refreshlayout -> {
+            data_rec_finish=false;
+            request_homepage_date();
             refreshlayout.finishRefresh(2000);
             Log.e(TAG,"刷新完成");
         });
+        /*//设置 Footer 为 球脉冲 样式
+        refreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
         refreshLayout.setOnLoadMoreListener(refreshlayout -> {
             refreshlayout.finishLoadMore(2000);
             Log.e(TAG,"加载完成");
-        });
+        });*/
+        date_num = getCurrentMonthLastDay();
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
@@ -131,7 +134,7 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart = findViewById(R.id.line_chart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
-        bat_line_chart.setNoDataText("暂无数据!");
+        mm_use = findViewById(R.id.mm_use);
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -179,6 +182,39 @@ public class MainActivity extends AppCompatActivity{
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(menu_bt);
         });
+        TextView day_power = findViewById(R.id.day_power);
+        day_power.setOnClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            power_chart.clear();
+            power_chart.invalidate(); // 使改变生效
+            if (!_D_Total_power.isEmpty()) {
+                pro_chart_data(_D_Total_power,"日期柱状图表");//把数据放到柱状图上
+            }else{
+                power_chart.setNoDataText("暂无日期数据");
+            }
+        });
+        TextView month_power = findViewById(R.id.month_power);
+        month_power.setOnClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            power_chart.clear();
+            power_chart.invalidate(); // 使改变生效
+            if (!_M_Total_power.isEmpty()) {
+                pro_chart_data(_M_Total_power,"月份柱状图表");//把数据放到柱状图上
+            }else{
+                power_chart.setNoDataText("暂无月份数据");
+            }
+        });
+        TextView year_power = findViewById(R.id.year_power);
+        year_power.setOnClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            power_chart.clear();
+            power_chart.invalidate(); // 使改变生效
+            if (!_Y_Total_power.isEmpty()) {
+                pro_chart_data(_Y_Total_power,"年份柱状图表");//把数据放到柱状图上
+            }else{
+                power_chart.setNoDataText("暂无年份数据");
+            }
+        });
         bat_line_chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight highlight) {
@@ -194,14 +230,16 @@ public class MainActivity extends AppCompatActivity{
             }
         });
         if (bat_line_chart.getData()==null) {
-            read_old_bat_data(_min_bat_list,bat_value_data,"min>");
-            pro_chart_data(_min_bat_list, "每15分钟电压");
-            about.log(TAG, "折线图历史数据加载完成");
+            if(read_old_bat_data(_min_bat_list,bat_value_data,"min>")) {
+                pro_chart_data(_min_bat_list, "每15分钟电压");
+                about.log(TAG, "折线图历史数据加载完成");
+            }
         }
         if (power_chart.getData()==null) {
-            read_old_bat_data(_D_Total_power,D_Total_power,"D_Total_power>");
-            pro_chart_data(_D_Total_power, "处理日期柱状图表");
-            about.log(TAG, "柱状图历史数据加载完成");
+            if(read_old_bat_data(_D_Total_power,D_Total_power,"D_Total_power>")) {
+                pro_chart_data(_D_Total_power, "日期柱状图表");
+                about.log(TAG, "柱状图历史数据加载完成");
+            }
         }
         udpClient.udpConnect();
         about.log(TAG, "开始调用线程");
@@ -360,22 +398,25 @@ public class MainActivity extends AppCompatActivity{
                     saveData("low_voltage",info[25]);
                 }
             }else if (msg.what == 2){
-                new Thread(() -> {
-                    deleteFile(bat_value_data);
-                    deleteFile(D_Total_power);
-                    pro_data_request();//请求数据
-                    if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                        pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
-                    }
-                    about.log(TAG, "15分钟刷新完成");
-                    if (!_D_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                        pro_chart_data(_D_Total_power,"处理日期柱状图表");//把数据放到柱状图上
-                    }
-                    about.log(TAG, "日期刷新完成");
-                }).start();
+                request_homepage_date();
             }
         }
     };
+    private void request_homepage_date() {
+        new Thread(() -> {
+            deleteFile(bat_value_data);
+            deleteFile(D_Total_power);
+            pro_data_request();//请求数据
+            if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
+            }
+            about.log(TAG, "15分钟刷新完成");
+            if (!_D_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                pro_chart_data(_D_Total_power,"日期柱状图表");//把数据放到柱状图上
+            }
+            about.log(TAG, "日期刷新完成");
+        }).start();
+    }
     public void pro_data_request(){
         stop_send = true;
         _min_bat_list.clear();
@@ -480,20 +521,49 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         }
-        if (label.equals("处理日期柱状图表")) {
+        if (label.equals("日期柱状图表")) {
             _time_value.clear();
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
                 _time_value.add(_e[0]);
                 _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
-                pro_date_power_data(_barChart_list);
             }
+            pro_date_power_data(_barChart_list,"日发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            power_chart.notifyDataSetChanged();//通知数据巳改变
+            power_chart.invalidate();//清理无效数据,用于动态刷新
+        }
+        if (label.equals("月份柱状图表")) {
+            _time_value.clear();
+            _barChart_list.clear();
+            for (int i = 0; i < _sd.size(); i++) {
+                String[] _e = _sd.get(i).split(" ");
+                _time_value.add(_e[0]);
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+            }
+            pro_date_power_data(_barChart_list,"月度发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            power_chart.notifyDataSetChanged();//通知数据巳改变
+            power_chart.invalidate();//清理无效数据,用于动态刷新
+        }
+        if (label.equals("年份柱状图表")) {
+            _time_value.clear();
+            _barChart_list.clear();
+            for (int i = 0; i < _sd.size(); i++) {
+                String[] _e = _sd.get(i).split(" ");
+                _time_value.add(_e[0]);
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+            }
+            pro_date_power_data(_barChart_list,"年发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            power_chart.notifyDataSetChanged();//通知数据巳改变
+            power_chart.invalidate();//清理无效数据,用于动态刷新
         }
     }
-    @SuppressLint("DefaultLocale")
+    @SuppressLint({"DefaultLocale", "SetTextI18n"})
     public void mem_data_display_to_chart(){
         float _mem = Float.parseFloat(info[15]);
+        DecimalFormat decimalFormat = new DecimalFormat("#.0");
+        String formattedValue = decimalFormat.format(_mem/150*100);
+        mm_use.setText(formattedValue + "%");
         _mem_value.add("");
         _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
         memlineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (162-_mem))+"kb)");
@@ -506,7 +576,7 @@ public class MainActivity extends AppCompatActivity{
         memlineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
         memlineDataSet.setDrawFilled(true);//设置是否填充
         LineData mem_data = new LineData(memlineDataSet);
-        mem_use_chart.getDescription().setText("esp32c3");//右下角描述
+        mem_use_chart.getDescription().setText(" ");//右下角描述
         mem_use_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         /*mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
         mem_use_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
@@ -531,6 +601,7 @@ public class MainActivity extends AppCompatActivity{
         LineData bat_data = new LineData(batlineDataSet);
         bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
         bat_line_chart.getDescription().setText(des);//右下角描述
+        bat_line_chart.getDescription().setTextSize(9f);
         bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
         /*bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
@@ -548,19 +619,20 @@ public class MainActivity extends AppCompatActivity{
     /**
      * 初始化BarChart图表
      */
-    private void pro_date_power_data(ArrayList<BarEntry> barChart) {
+    private void pro_date_power_data(ArrayList<BarEntry> barChart,String label,String des) {
         //X轴设置显示位置在底部
         XAxis xAxis = power_chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setAxisMinimum(0f);
+        xAxis.setAxisMinimum(1f);
+        xAxis.setAxisMaximum(date_num);
         xAxis.setGranularity(1f);
 
-        BarDataSet dataSet = new BarDataSet(barChart, "数据集");
+        BarDataSet dataSet = new BarDataSet(barChart, label);
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
         BarData barData = new BarData(dataSet);
+        power_chart.getDescription().setText(des);//右下角描述
+        power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
-        power_chart.notifyDataSetChanged();//通知数据巳改变
-        power_chart.invalidate();//清理无效数据,用于动态刷新
     }
 
     /* 获取屏幕状态通过PowerManager */
@@ -626,7 +698,7 @@ public class MainActivity extends AppCompatActivity{
         popupMenu.show();
     }
 
-    public void read_old_bat_data(ArrayList arrayList,String filename,String contains){
+    public boolean read_old_bat_data(ArrayList arrayList,String filename,String contains){
         arrayList.clear();
         ArrayList<String> _tmp = readFromFile(this,filename);
         if (!_tmp.isEmpty()) {
@@ -640,7 +712,9 @@ public class MainActivity extends AppCompatActivity{
                     }
                 }
             }
+            return true;
         }
+        return false;
     }
     // 写入文件
     public static void writeToFile(Context context, String fileName, String data) {
@@ -720,6 +794,17 @@ public class MainActivity extends AppCompatActivity{
         }
         return lineCount;
     }*/
+    /**
+     * 取得当月天数
+     * */
+    public int getCurrentMonthLastDay()
+    {
+        Calendar a = Calendar.getInstance();
+        a.set(Calendar.DATE, 1);//把日期设置为当月第一天
+        a.roll(Calendar.DATE, -1);//日期回滚一天，也就是最后一天
+        return a.get(Calendar.DATE);
+    }
+
     public static String readDate(Context context, String s) {
         sp = context.getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);
         return sp.getString(s, null);
