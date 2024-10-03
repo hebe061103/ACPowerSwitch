@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity{
     public static final String TAG = "MainActivity:";
     public final String top_m = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
     public static final String bat_value_data = "bat_value_data.txt";
+    public static final String H_Total_power = "H_Total_power.txt";
     public static final String D_Total_power = "D_Total_power.txt";
     public static final String M_Total_power = "M_Total_power.txt";
     public static final String Y_Total_power = "Y_Total_power.txt";
@@ -82,6 +83,7 @@ public class MainActivity extends AppCompatActivity{
     public static int udpServerPort=55555;
     public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
+    public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
     public static ArrayList<String> _M_Total_power = new ArrayList<>();
     public static ArrayList<String> _Y_Total_power = new ArrayList<>();
@@ -96,7 +98,7 @@ public class MainActivity extends AppCompatActivity{
     public int cycle_size=0;
     public int date_num;
     private ComponentName topActivity;
-    public static LineDataSet batlineDataSet,memlineDataSet;
+    public static LineDataSet bat_lineDataSet,mem_lineDataSet;
     public static int page_refresh_time;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,6 +184,17 @@ public class MainActivity extends AppCompatActivity{
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(menu_bt);
         });
+        TextView hour_power = findViewById(R.id.hour_power);
+        hour_power.setOnClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            power_chart.clear();
+            power_chart.invalidate(); // 使改变生效
+            if (!_H_Total_power.isEmpty()) {
+                pro_chart_data(_H_Total_power,"小时柱状图表");//把数据放到柱状图上
+            }else{
+                power_chart.setNoDataText("暂无日期数据");
+            }
+        });
         TextView day_power = findViewById(R.id.day_power);
         day_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -236,8 +249,8 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         if (power_chart.getData()==null) {
-            if(read_old_bat_data(_D_Total_power,D_Total_power,"D_Total_power>")) {
-                pro_chart_data(_D_Total_power, "日期柱状图表");
+            if(read_old_bat_data(_H_Total_power,H_Total_power,"H_Total_power>")) {
+                pro_chart_data(_H_Total_power,"小时柱状图表");
                 about.log(TAG, "柱状图历史数据加载完成");
             }
         }
@@ -298,7 +311,7 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }
                     if (udp_response != null && udp_response.contains("min>") && data_rec_finish && !stop_send && checkScreenStatus()
-                            && getTopActivity().toString().equals(top_m) && batlineDataSet.getLabel().contains("每15分钟电压")) {
+                            && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
                         String[] _l = udp_response.split(">"); //按>进行分隔
                         if (_l[1] != null && !_l[1].isEmpty()) {
                             about.log(TAG, "动态分时数据:" + _l[1]);
@@ -405,21 +418,22 @@ public class MainActivity extends AppCompatActivity{
     private void request_homepage_date() {
         new Thread(() -> {
             deleteFile(bat_value_data);
-            deleteFile(D_Total_power);
+            deleteFile(H_Total_power);
             pro_data_request();//请求数据
             if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
             }
             about.log(TAG, "15分钟刷新完成");
-            if (!_D_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                pro_chart_data(_D_Total_power,"日期柱状图表");//把数据放到柱状图上
+            if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                pro_chart_data(_H_Total_power,"小时柱状图表");//把数据放到柱状图上
             }
-            about.log(TAG, "日期刷新完成");
+            about.log(TAG, "小时柱状图刷新完成");
         }).start();
     }
     public void pro_data_request(){
         stop_send = true;
         _min_bat_list.clear();
+        _H_Total_power.clear();
         _D_Total_power.clear();
         _M_Total_power.clear();
         _Y_Total_power.clear();
@@ -434,6 +448,13 @@ public class MainActivity extends AppCompatActivity{
                 int length = _l.length; // 获取数组长度
                 if (length > 1) {
                     _min_bat_list.add(_l[1]);
+                }
+            } else if (udp_response != null && udp_response.contains("H_Total_power>")) {
+                Log.e(TAG, udp_response);
+                String[] _l = udp_response.split(">"); //按>进行分隔
+                int length = _l.length; // 获取数组长度
+                if (length > 1) {
+                    _H_Total_power.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("D_Total_power>")) {
                 Log.e(TAG, udp_response);
@@ -464,10 +485,16 @@ public class MainActivity extends AppCompatActivity{
                     debugList.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
-                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 日期功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 时平均功率数据数量:" + _H_Total_power.size() +
+                        " 日期功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 if (!_min_bat_list.isEmpty()) {
                     for (int i = 0; i < _min_bat_list.size(); i++) {
                         writeToFile(this, bat_value_data, "min>" + _min_bat_list.get(i) + "\n");
+                    }
+                }
+                if (!_H_Total_power.isEmpty()) {
+                    for (int i = 0; i < _H_Total_power.size(); i++) {
+                        writeToFile(this, H_Total_power, "H_Total_power>" + _H_Total_power.get(i) + "\n");
                     }
                 }
                 if (!_D_Total_power.isEmpty()) {
@@ -494,6 +521,7 @@ public class MainActivity extends AppCompatActivity{
                 cycle_size=0;
             } else if (!data_rec_finish) {
                 _min_bat_list.clear();
+                _H_Total_power.clear();
                 _D_Total_power.clear();
                 _M_Total_power.clear();
                 _Y_Total_power.clear();
@@ -505,55 +533,86 @@ public class MainActivity extends AppCompatActivity{
     }
     public void pro_chart_data(List<String> _sd,String label){
         if (label.equals("每15分钟电压")) {
+            String minute_des = null;
             _time_value.clear();
             _value_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                String minute_des = _e[0];
-                int _e_length = _e.length;
-                if (_e_length > 1) {
-                    String[] _u = _e[1].split(":");
-                    _time_value.add(_u[0] + ":" + _u[1]);
-                    String[] _split_bat_value = _e[2].split(":");
-                    String _bat_value = _split_bat_value[1]; //截取电压值
-                    _value_list.add(new Entry(i, Float.parseFloat(_bat_value)));
-                    bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
-                }
+                minute_des= _e[0];
+                String[] _u = _e[1].split(":");
+                _time_value.add(_u[0] + ":" + _u[1]);
+                String[] _split_bat_value = _e[2].split(":");
+                _value_list.add(new Entry(i, Float.parseFloat(_split_bat_value[1])));
             }
+            bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
+            bat_line_chart.notifyDataSetChanged();//通知数据巳改变
+            bat_line_chart.invalidate();//清理无效数据,用于动态刷新
         }
-        if (label.equals("日期柱状图表")) {
-            _time_value.clear();
+        if (label.equals("小时柱状图表")) {
+            String begin_time = null;
+            String over_time = null;
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                _time_value.add(_e[0]);
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+                if (i==0){
+                    begin_time = "今日: "+_e[0].split(":")[0]+":"+_e[0].split(":")[1];
+                }else if (i==_sd.size()-1){
+                    over_time = _e[0].split(":")[0]+":"+_e[0].split(":")[1];
+                }
+                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split(":")[0]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"日发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            pro_date_power_data(_barChart_list,"每小时发电功率统计(单位:w)",begin_time + "  -  " + over_time,"小时");
+            power_chart.notifyDataSetChanged();//通知数据巳改变
+            power_chart.invalidate();//清理无效数据,用于动态刷新
+        }
+        if (label.equals("日期柱状图表")) {
+            String begin_time = null;
+            String over_time = null;
+            _barChart_list.clear();
+            for (int i = 0; i < _sd.size(); i++) {
+                String[] _e = _sd.get(i).split(" ");
+                if (i==0){
+                    begin_time = _e[0];
+                }else if (i==_sd.size()-1){
+                    over_time = _e[0];
+                }
+                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split("-")[2]), Float.parseFloat(_e[1])));
+            }
+            pro_date_power_data(_barChart_list,"昨日发电功率统计(单位:w)",begin_time+"  -  "+ over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("月份柱状图表")) {
-            _time_value.clear();
+            String begin_time = null;
+            String over_time = null;
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                _time_value.add(_e[0]);
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+                if (i==0){
+                    begin_time = _e[0].split("-")[0]+"-"+_e[0].split("-")[1];
+                }else if (i==_sd.size()-1){
+                    over_time = _e[0].split("-")[0]+"-"+_e[0].split("-")[1];
+                }
+                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split("-")[1]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"月度发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            pro_date_power_data(_barChart_list,"上月发电功率统计(单位:w)",begin_time+"  -  "+ over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("年份柱状图表")) {
-            _time_value.clear();
+            String begin_time = null;
+            String over_time = null;
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                _time_value.add(_e[0]);
+                if (i==0){
+                    begin_time = _e[0].split("-")[0];
+                }else if (i==_sd.size()-1){
+                    over_time = _e[0].split("-")[0];
+                }
                 _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"年发电功率统计(单位:w)",_time_value.get(0)+"  -  "+_time_value.get(_sd.size()-1));
+            pro_date_power_data(_barChart_list,"上一年发电功率统计(单位:w)",begin_time +"  -  "+ over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -566,20 +625,20 @@ public class MainActivity extends AppCompatActivity{
         mm_use.setText(formattedValue + "%");
         _mem_value.add("");
         _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
-        memlineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (162-_mem))+"kb)");
-        memlineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
-        memlineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-        memlineDataSet.setDrawCircles(false);//在点上画圆 默认true
-        /*memlineDataSet.setCircleRadius(2f);
-        memlineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
-        memlineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-        memlineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
-        memlineDataSet.setDrawFilled(true);//设置是否填充
-        LineData mem_data = new LineData(memlineDataSet);
+        mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (162-_mem))+"kb)");
+        mem_lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
+        mem_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
+        mem_lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+        /*mem_lineDataSet.setCircleRadius(2f);
+        mem_lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
+        mem_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+        mem_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
+        mem_lineDataSet.setDrawFilled(true);//设置是否填充
+        LineData mem_data = new LineData(mem_lineDataSet);
         mem_use_chart.getDescription().setText(" ");//右下角描述
         mem_use_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
-        /*mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-        mem_use_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
+        //mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
+        //mem_use_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色
         mem_use_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
         mem_use_chart.getAxisLeft().setAxisMaximum(160f);//左侧Y轴最大值
         mem_use_chart.getAxisRight().setAxisMinimum(0f);//右侧Y轴最小值
@@ -590,22 +649,22 @@ public class MainActivity extends AppCompatActivity{
     }
     public void bat_data_display_to_chart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
         String[] bat_value = String.valueOf(_value_list.get(_value_list.size()-1)).split(":");
-        batlineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
-        batlineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
-        batlineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-        batlineDataSet.setDrawCircles(false);//在点上画圆 默认true
-        /*batlineDataSet.setCircleRadius(2f);
-        batlineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
-        batlineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-        batlineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
-        LineData bat_data = new LineData(batlineDataSet);
+        bat_lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
+        bat_lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
+        bat_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
+        bat_lineDataSet.setDrawCircles(false);//在点上画圆 默认true
+        /*bat_lineDataSet.setCircleRadius(2f);
+        bat_lineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
+        bat_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
+        bat_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
+        LineData bat_data = new LineData(bat_lineDataSet);
         bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
         bat_line_chart.getDescription().setText(des);//右下角描述
         bat_line_chart.getDescription().setTextSize(9f);
         bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
-        /*bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-        bat_line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色*/
+        //bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
+        //bat_line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色
         bat_line_chart.getXAxis().setAxisMinimum(0f);
         bat_line_chart.getXAxis().setAxisMaximum(95f);
         bat_line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
@@ -613,22 +672,37 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
         bat_line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
         bat_line_chart.setData(bat_data);//调置数据
-        bat_line_chart.notifyDataSetChanged();//通知数据巳改变
-        bat_line_chart.invalidate();//清理无效数据,用于动态刷新
     }
     /**
      * 初始化BarChart图表
      */
-    private void pro_date_power_data(ArrayList<BarEntry> barChart,String label,String des) {
+    private void pro_date_power_data(ArrayList<BarEntry> barChart,String label,String des,String type) {
         //X轴设置显示位置在底部
         XAxis xAxis = power_chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setAxisMinimum(1f);
-        xAxis.setAxisMaximum(date_num);
+        switch (type) {
+            case "小时":
+                xAxis.setAxisMinimum(0f);
+                xAxis.setAxisMaximum(23);
+                break;
+            case "日期":
+                xAxis.setAxisMinimum(1f);
+                xAxis.setAxisMaximum(date_num);
+                break;
+            case "月份":
+                xAxis.setAxisMinimum(1f);
+                xAxis.setAxisMaximum(12);
+                break;
+            case "年份":
+                xAxis.setAxisMinimum(0f);
+                xAxis.setAxisMaximum(30f);
+                break;
+        }
         xAxis.setGranularity(1f);
-
         BarDataSet dataSet = new BarDataSet(barChart, label);
+        dataSet.setBarBorderWidth(0.2f); // 设置条形图之间的间距
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
+        dataSet.setValueTextSize(8f);
         BarData barData = new BarData(dataSet);
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
@@ -932,7 +1006,7 @@ public class MainActivity extends AppCompatActivity{
 class ExamModelOneXValueFormatter implements IAxisValueFormatter {
     private final ArrayList<String> list;
 
-    public ExamModelOneXValueFormatter(ArrayList<String> list){
+    public ExamModelOneXValueFormatter(ArrayList<String> list) {
         this.list = list;
     }
     @Override
@@ -941,9 +1015,9 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
         if (values < 0 || values >= list.size()) {
             return "";
         }
-        if (values == 0){
-            return "时间(00:00):";
-        } else{
+        if (values == 0) {
+            return "_.时间(00:00):";
+        } else {
             return list.get(values);
         }
     }
