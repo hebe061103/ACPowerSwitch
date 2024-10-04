@@ -48,8 +48,10 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ViewPortHandler;
-import com.scwang.smart.refresh.header.BezierRadarHeader;
+import com.scwang.smart.refresh.footer.BallPulseFooter;
+import com.scwang.smart.refresh.header.MaterialHeader;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
+import com.scwang.smart.refresh.layout.constant.SpinnerStyle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -75,8 +77,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,
-            out_frequency,out_mode,bat_Voltage,le_current,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -109,19 +110,17 @@ public class MainActivity extends AppCompatActivity{
         CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
         RefreshLayout refreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
-        refreshLayout.setRefreshHeader(new BezierRadarHeader(this).setEnableHorizontalDrag(true));
+        refreshLayout.setRefreshHeader(new MaterialHeader(this));
         refreshLayout.setOnRefreshListener(refreshlayout -> {
-            data_rec_finish=false;
-            request_homepage_date();
             refreshlayout.finishRefresh(2000);
             Log.e(TAG,"刷新完成");
         });
-        /*//设置 Footer 为 球脉冲 样式
+        //设置 Footer 为 球脉冲 样式
         refreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
         refreshLayout.setOnLoadMoreListener(refreshlayout -> {
             refreshlayout.finishLoadMore(2000);
             Log.e(TAG,"加载完成");
-        });*/
+        });
         date_num = getCurrentMonthLastDay();
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
@@ -187,18 +186,18 @@ public class MainActivity extends AppCompatActivity{
         TextView hour_power = findViewById(R.id.hour_power);
         hour_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
-            power_chart.clear();
+            power_chart.clear();//清除图表
             power_chart.invalidate(); // 使改变生效
             if (!_H_Total_power.isEmpty()) {
                 pro_chart_data(_H_Total_power,"小时柱状图表");//把数据放到柱状图上
             }else{
-                power_chart.setNoDataText("暂无日期数据");
+                power_chart.setNoDataText("暂无小时数据");
             }
         });
         TextView day_power = findViewById(R.id.day_power);
         day_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
-            power_chart.clear();
+            power_chart.clear();//清除图表
             power_chart.invalidate(); // 使改变生效
             if (!_D_Total_power.isEmpty()) {
                 pro_chart_data(_D_Total_power,"日期柱状图表");//把数据放到柱状图上
@@ -209,7 +208,7 @@ public class MainActivity extends AppCompatActivity{
         TextView month_power = findViewById(R.id.month_power);
         month_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
-            power_chart.clear();
+            power_chart.clear();//清除图表
             power_chart.invalidate(); // 使改变生效
             if (!_M_Total_power.isEmpty()) {
                 pro_chart_data(_M_Total_power,"月份柱状图表");//把数据放到柱状图上
@@ -220,7 +219,7 @@ public class MainActivity extends AppCompatActivity{
         TextView year_power = findViewById(R.id.year_power);
         year_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
-            power_chart.clear();
+            power_chart.clear();//清除图表
             power_chart.invalidate(); // 使改变生效
             if (!_Y_Total_power.isEmpty()) {
                 pro_chart_data(_Y_Total_power,"年份柱状图表");//把数据放到柱状图上
@@ -244,14 +243,22 @@ public class MainActivity extends AppCompatActivity{
         });
         if (bat_line_chart.getData()==null) {
             if(read_old_bat_data(_min_bat_list,bat_value_data,"min>")) {
-                pro_chart_data(_min_bat_list, "每15分钟电压");
-                about.log(TAG, "折线图历史数据加载完成");
+                if (!_min_bat_list.isEmpty()) {
+                    pro_chart_data(_min_bat_list, "每15分钟电压");
+                    about.log(TAG, "折线图历史数据加载完成");
+                }
+            }else{
+                bat_line_chart.setNoDataText("暂无分时数据");
             }
         }
         if (power_chart.getData()==null) {
             if(read_old_bat_data(_H_Total_power,H_Total_power,"H_Total_power>")) {
-                pro_chart_data(_H_Total_power,"小时柱状图表");
-                about.log(TAG, "柱状图历史数据加载完成");
+                if (!_H_Total_power.isEmpty()) {
+                    pro_chart_data(_H_Total_power, "小时柱状图表");
+                    about.log(TAG, "柱状图历史数据加载完成");
+                }
+            }else{
+                power_chart.setNoDataText("暂无小时数据");
             }
         }
         udpClient.udpConnect();
@@ -419,13 +426,20 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             deleteFile(bat_value_data);
             deleteFile(H_Total_power);
+            deleteFile(D_Total_power);
+            deleteFile(M_Total_power);
+            deleteFile(Y_Total_power);
             pro_data_request();//请求数据
             if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
+            }else{
+                bat_line_chart.setNoDataText("暂无分时数据");
             }
             about.log(TAG, "15分钟刷新完成");
             if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_H_Total_power,"小时柱状图表");//把数据放到柱状图上
+            }else{
+                power_chart.setNoDataText("暂无小时数据");
             }
             about.log(TAG, "小时柱状图刷新完成");
         }).start();
