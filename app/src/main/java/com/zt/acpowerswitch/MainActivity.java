@@ -575,7 +575,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split(":")[0]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"每小时发电功率统计(单位:w)",begin_time + "  -  " + over_time,"小时");
+            pro_date_power_data(_barChart_list,"过去一小时发电功率统计(单位:w)",begin_time + "  -  " + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -626,7 +626,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"上一年发电功率统计(单位:w)",begin_time +"  -  "+ over_time,"年份");
+            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:w)",begin_time +"  -  "+ over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }

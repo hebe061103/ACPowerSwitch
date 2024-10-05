@@ -13,8 +13,6 @@ import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,12 +21,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    private EditText w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set;
+    private TextView w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,229 +43,37 @@ public class otherOption extends AppCompatActivity {
         if (readDate(otherOption.this, "power") != null) {
             w_edit.setText(readDate(otherOption.this, "power"));
         }
-        w_edit.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            w_edit.clearFocus();
-                            send_w_edit();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        w_edit.setOnClickListener(view -> send_arg_server("功率参数设置"));
         //ADC2设置
         adc2_edit = findViewById(R.id.adc2_edit);
         if (readDate(otherOption.this, "adc2_offset_value") != null) {
             adc2_edit.setText(readDate(otherOption.this, "adc2_offset_value"));
         }
-        adc2_edit.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            adc2_edit.clearFocus();
-                            send_adc2_edit();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        adc2_edit.setOnClickListener(view -> send_arg_server("ADC2参数设置"));
         //ADC3 VCC/2设置
         adc3_vcc_edit = findViewById(R.id.adc3_vcc_edit);
         if (readDate(otherOption.this, "adc3_vcc_value") != null) {
             adc3_vcc_edit.setText(readDate(otherOption.this, "adc3_vcc_value"));
         }
-        adc3_vcc_edit.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            adc3_vcc_edit.clearFocus();
-                            send_adc3_vcc_edit();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        adc3_vcc_edit.setOnClickListener(view -> send_arg_server("ADC3电压值设置"));
         //ADC3系数设置
         adc3_vsens_edit = findViewById(R.id.adc3_vsens_edit);
         if (readDate(otherOption.this, "adc3vsens") != null) {
             adc3_vsens_edit.setText(readDate(otherOption.this, "adc3vsens"));
         }
-        adc3_vsens_edit.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            adc3_vsens_edit.clearFocus();
-                            send_adc3_vsens_edit();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        adc3_vsens_edit.setOnClickListener(view -> send_arg_server("ADC3系数设置"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
         if (readDate(otherOption.this, "low_voltage") != null) {
             low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
         }
-        low_voltage_set.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            low_voltage_set.clearFocus();
-                            lo_voltage_set();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        low_voltage_set.setOnClickListener(view -> send_arg_server("最低电压值"));
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
         if (readDate(otherOption.this, "refresh_time") != null) {
             refresh_time_set.setText(readDate(otherOption.this, "refresh_time"));
         }
-        refresh_time_set.addTextChangedListener(new TextWatcher() {
-            private Timer timer;
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // 如果已经有一个延时任务在执行，则取消它
-                if (timer != null) {
-                    timer.cancel();
-                }
-                // 创建一个新的延时任务
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 这里编写输入完成后想要执行的代码
-                        runOnUiThread(() -> {
-                            refresh_time_set.clearFocus();
-                            refresh_time_set();
-                        });
-                    }
-                }, 2000);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
+        refresh_time_set.setOnClickListener(view -> send_arg_server("页面刷新时间设置"));
         TextView reset_network = findViewById(R.id.reset_network);
         reset_network.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
@@ -307,6 +111,57 @@ public class otherOption extends AppCompatActivity {
         }else {
             about.log(TAG, "文件不存在");
         }
+    }
+    public void send_arg_server(String msg){
+        goAnim(otherOption.this, 50);
+        EditText editText = new EditText(this);
+        new AlertDialog.Builder(otherOption.this)
+            .setTitle("提 示")
+            .setMessage(msg)
+            .setView(editText)
+            .setPositiveButton("取消", null)
+            .setNegativeButton("确定", (dialog, which) -> {
+                goAnim(otherOption.this, 50);
+                switch (msg) {
+                    case "功率参数设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            w_edit.setText(editText.getText());
+                            send_w_edit();
+                        }
+                        break;
+                    case "ADC2参数设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            adc2_edit.setText(editText.getText());
+                            send_adc2_edit();
+                        }
+                        break;
+                    case "ADC3电压值设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            adc3_vcc_edit.setText(editText.getText());
+                            send_adc3_vcc_edit();
+                        }
+                        break;
+                    case "ADC3系数设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            adc3_vsens_edit.setText(editText.getText());
+                            send_adc3_vsens_edit();
+                        }
+                        break;
+                    case "最低电压值":
+                        if (!editText.getText().toString().isEmpty()) {
+                            low_voltage_set.setText(editText.getText());
+                            lo_voltage_set();
+                        }
+                        break;
+                    case "页面刷新时间设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            refresh_time_set.setText(editText.getText());
+                            refresh_time_set();
+                        }
+                        break;
+                }
+            })
+            .show();
     }
     public void send_w_edit() {
         if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {
