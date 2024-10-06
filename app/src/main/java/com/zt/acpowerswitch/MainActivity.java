@@ -638,8 +638,17 @@ public class MainActivity extends AppCompatActivity{
         String formattedValue = decimalFormat.format(_mem/150*100);
         mm_use.setText(formattedValue + "%");
         _mem_value.add("");
-        _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
-        mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (162-_mem))+"kb)");
+        if (!_mem_use_list.isEmpty()) {
+            if (_mem_use_list.size() <= 100) {
+                _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
+            }else{
+                _mem_use_list.clear();
+                _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
+            }
+        }else{
+            _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
+        }
+        mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (150-_mem))+"kb)");
         mem_lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
         mem_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
         mem_lineDataSet.setDrawCircles(false);//在点上画圆 默认true
@@ -649,6 +658,9 @@ public class MainActivity extends AppCompatActivity{
         mem_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
         mem_lineDataSet.setDrawFilled(true);//设置是否填充
         LineData mem_data = new LineData(mem_lineDataSet);
+        mem_use_chart.getXAxis().setAxisMinimum(1f);
+        mem_use_chart.getXAxis().setAxisMaximum(100f);
+        mem_use_chart.getXAxis().setEnabled(false);
         mem_use_chart.getDescription().setText(" ");//右下角描述
         mem_use_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         //mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
@@ -673,6 +685,7 @@ public class MainActivity extends AppCompatActivity{
         bat_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
         LineData bat_data = new LineData(bat_lineDataSet);
         bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
+        bat_line_chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         bat_line_chart.getDescription().setText(des);//右下角描述
         bat_line_chart.getDescription().setTextSize(9f);
         bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
@@ -696,8 +709,8 @@ public class MainActivity extends AppCompatActivity{
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         switch (type) {
             case "小时":
-                xAxis.setAxisMinimum(0f);
-                xAxis.setAxisMaximum(23);
+                xAxis.setAxisMinimum(1f);
+                xAxis.setAxisMaximum(24);
                 break;
             case "日期":
                 xAxis.setAxisMinimum(1f);
@@ -708,7 +721,7 @@ public class MainActivity extends AppCompatActivity{
                 xAxis.setAxisMaximum(12);
                 break;
             case "年份":
-                xAxis.setAxisMinimum(0f);
+                xAxis.setAxisMinimum(1f);
                 xAxis.setAxisMaximum(30f);
                 break;
         }
@@ -1026,14 +1039,10 @@ class ExamModelOneXValueFormatter implements IAxisValueFormatter {
     @Override
     public String getFormattedValue(float value, AxisBase axis) {
         int values = (int) value;
-        if (values < 0 || values >= list.size()) {
+        if (values <= 0 || values >= list.size()) {
             return "";
         }
-        if (values == 0) {
-            return "_.时间(00:00):";
-        } else {
-            return list.get(values);
-        }
+        return list.get(values);
     }
 }
 /*数据值格式化器*/
