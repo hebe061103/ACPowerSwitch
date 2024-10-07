@@ -158,6 +158,7 @@ public class MainActivity extends AppCompatActivity{
                                 deleteData("adc3vsens");
                                 deleteData("low_voltage");
                                 deleteData("refresh_time");
+                                deleteData("out_mode");
                                 File file = new File(getFilesDir(), bat_value_data);
                                 if (file.exists()) {
                                     boolean deleted = file.delete();
@@ -356,10 +357,10 @@ public class MainActivity extends AppCompatActivity{
             String ac = null;
             if (msg.what == 1) {
                 //交流电压
-                if (unicodeToString(info[13]).equals("市电供电") || unicodeToString(info[13]).equals("电池电压过低")){
+                if (unicodeToString(info[13]).equals("市电供电") || unicodeToString(info[13]).equals("电池电压过低") || unicodeToString(info[13]).equals("固定市电模式")){
                     out_Voltage.setText(info[1]);
                     ac = info[1];
-                }else if (unicodeToString(info[13]).equals("逆变供电")){
+                }else if (unicodeToString(info[13]).equals("逆变供电") || unicodeToString(info[13]).equals("固定逆变模式")){
                     out_Voltage.setText("220.00");
                     ac = "220.00";
                 }
@@ -416,6 +417,12 @@ public class MainActivity extends AppCompatActivity{
                     saveData("low_voltage",info[25]);
                 }else{
                     saveData("low_voltage",info[25]);
+                }
+                //输出模式
+                if (readDate(MainActivity.this,"out_mode")!=null && !readDate(MainActivity.this,"out_mode").equals(info[27])){
+                    saveData("out_mode",info[27]);
+                }else{
+                    saveData("out_mode",info[27]);
                 }
             }else if (msg.what == 2){
                 request_homepage_date();

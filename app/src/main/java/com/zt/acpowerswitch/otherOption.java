@@ -9,10 +9,13 @@ import static com.zt.acpowerswitch.MainActivity.saveData;
 import static com.zt.acpowerswitch.MainActivity.send_command_to_server;
 import static com.zt.acpowerswitch.MainActivity.udpClient;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
+import static com.zt.acpowerswitch.MainActivity.unicodeToString;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,7 +27,7 @@ import java.io.File;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    private TextView w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set;
+    private TextView w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +77,47 @@ public class otherOption extends AppCompatActivity {
             refresh_time_set.setText(readDate(otherOption.this, "refresh_time"));
         }
         refresh_time_set.setOnClickListener(view -> send_arg_server("页面刷新时间设置"));
+        //输出模式
+        auto_mode = findViewById(R.id.auto_mode);
+        power_grid_mode = findViewById(R.id.power_grid_mode);
+        pv_mode = findViewById(R.id.pv_mode);
+        Log.e(TAG,readDate(otherOption.this, "out_mode"));
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("自动模式")) {
+            auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+        }
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("市电模式")) {
+            power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+        }
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("逆变模式")) {
+            pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+        }
+        auto_mode.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            if (send_command_to_server("out_mode:自动模式")){
+                auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
+                pv_mode.setBackgroundColor(Color.TRANSPARENT);
+                saveData("out_mode", "自动模式");
+            }
+        });
+        power_grid_mode.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            if (send_command_to_server("out_mode:市电模式")){
+                power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                auto_mode.setBackgroundColor(Color.TRANSPARENT);
+                pv_mode.setBackgroundColor(Color.TRANSPARENT);
+                saveData("out_mode", "市电模式");
+            }
+        });
+        pv_mode.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            if (send_command_to_server("out_mode:逆变模式")){
+                pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                auto_mode.setBackgroundColor(Color.TRANSPARENT);
+                power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
+                saveData("out_mode", "逆变模式");
+            }
+        });
         TextView reset_network = findViewById(R.id.reset_network);
         reset_network.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
@@ -90,6 +134,7 @@ public class otherOption extends AppCompatActivity {
                     deleteData("adc3vsens");
                     deleteData("low_voltage");
                     deleteData("refresh_time");
+                    deleteData("out_mode");
                     delete_history_data(MainActivity.bat_value_data);
                     delete_history_data(MainActivity.D_Total_power);
                     delete_history_data(MainActivity.M_Total_power);

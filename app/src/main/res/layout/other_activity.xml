@@ -216,7 +216,7 @@
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/guideline25"
+                app:layout_constraintTop_toTopOf="@+id/guideline27"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
             <TextView
@@ -225,6 +225,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="设置模块参数,包括双电源切换时的阈值，电压采集时的偏移量,ACS758的VCC/2的电压及转换系数,还有电池保护电压,默认情况下使用太阳能逆变做为主供电，当负载功率达到设定功率时，自动切换到市电做为输出,以此达到自动切换的目的."
+                android:textColor="#78909C"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -291,6 +292,67 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 app:layout_constraintGuide_begin="320dp" />
+
+            <TextView
+                android:id="@+id/custom_output"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="固定输出模式:"
+                android:textColor="#78909C"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/guideline25"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/auto_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="自动模式"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/guideline22"
+                tools:ignore="HardcodedText" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guideline22"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_begin="569dp" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guideline27"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_begin="624dp" />
+
+            <TextView
+                android:id="@+id/power_grid_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="市电模式"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@+id/pv_mode"
+                app:layout_constraintStart_toEndOf="@+id/auto_mode"
+                app:layout_constraintTop_toTopOf="@+id/guideline22"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/pv_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="逆变模式"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/guideline22"
+                tools:ignore="HardcodedText" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
