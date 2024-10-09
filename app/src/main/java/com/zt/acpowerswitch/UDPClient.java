@@ -4,8 +4,6 @@ import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
-import android.util.Log;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -16,11 +14,12 @@ public class UDPClient {
     private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
     public static boolean rec_fail;
+
     public void udpConnect() {
         new Thread(() -> {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
-                if (!udp_connect ) {
+                if (!udp_connect) {
                     socket = new DatagramSocket();
                     udp_connect = true;
                     about.log(TAG, "创建套接字成功");
@@ -31,7 +30,8 @@ public class UDPClient {
             }
         }).start();
     }
-    public void sendMessage(String message){
+
+    public void sendMessage(String message) {
         new Thread(() -> {
             byte[] data = message.getBytes();
             DatagramPacket packet;
@@ -51,7 +51,8 @@ public class UDPClient {
             }
         }).start();
     }
-    public String receiveMessage(){
+
+    public String receiveMessage() {
         byte[] buffer = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         try {
@@ -61,11 +62,12 @@ public class UDPClient {
         } catch (Exception e) {
             // 这里捕获所有send方法可能抛出的异常
             //e.printStackTrace();
-            about.log(TAG,"接收超时");
+            about.log(TAG, "接收超时");
             rec_fail = true;
         }
         return new String(packet.getData(), 0, packet.getLength());
     }
+
     public void close() {
         socket.close();
         udp_connect = false;

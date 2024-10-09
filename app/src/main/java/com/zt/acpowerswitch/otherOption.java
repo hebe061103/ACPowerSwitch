@@ -15,7 +15,6 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -81,7 +80,6 @@ public class otherOption extends AppCompatActivity {
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
         pv_mode = findViewById(R.id.pv_mode);
-        Log.e(TAG,readDate(otherOption.this, "out_mode"));
         if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("自动模式")) {
             auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
         }
