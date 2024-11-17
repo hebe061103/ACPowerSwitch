@@ -4,23 +4,25 @@ import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 public class UDPClient {
     private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
-    public static boolean rec_fail;
-
+    public static DatagramPacket packet;
     public void udpConnect() {
         new Thread(() -> {
             // 创建Socket对象，并指定服务器的IP地址和端口号
             try {
                 if (!udp_connect) {
-                    socket = new DatagramSocket();
+                    socket = new DatagramSocket(udpServerPort);
+                    socket.setSoTimeout(3000);
                     udp_connect = true;
                     about.log(TAG, "创建套接字成功");
                 }
@@ -34,40 +36,42 @@ public class UDPClient {
     public void sendMessage(String message) {
         new Thread(() -> {
             byte[] data = message.getBytes();
-            DatagramPacket packet;
             try {
                 packet = new DatagramPacket(data, data.length, InetAddress.getByName(udpServerAddress), udpServerPort);
             } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
+                //e.printStackTrace();
+                about.log(TAG,"无法解析域名或IP地址");
             }
             try {
                 if (socket != null) {
                     socket.send(packet);
-                    socket.setSoTimeout(3000);
                 }
             } catch (Exception e) {
-                // 这里捕获所有send方法可能抛出的异常
-                e.printStackTrace();
+                //e.printStackTrace();
+                about.log(TAG, "发送异常");
             }
         }).start();
     }
 
     public String receiveMessage() {
         byte[] buffer = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        packet = new DatagramPacket(buffer, buffer.length);
         try {
             if (socket != null) {
                 socket.receive(packet);
             }
+        } catch (SocketTimeoutException e) {
+            about.log(TAG, "接收超时: " + e.getMessage());
+            e.printStackTrace(); // 打印堆栈跟踪
+        } catch (IOException e) {
+            about.log(TAG, "IO异常: " + e.getMessage());
+            e.printStackTrace(); // 打印堆栈跟踪
         } catch (Exception e) {
-            // 这里捕获所有send方法可能抛出的异常
-            //e.printStackTrace();
-            about.log(TAG, "接收超时");
-            rec_fail = true;
+            about.log(TAG, "接收异常: " + e.getMessage());
+            e.printStackTrace(); // 打印堆栈跟踪
         }
         return new String(packet.getData(), 0, packet.getLength());
     }
-
     public void close() {
         socket.close();
         udp_connect = false;

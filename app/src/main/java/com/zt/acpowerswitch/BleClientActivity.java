@@ -1,6 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
+
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 
 import android.annotation.SuppressLint;
@@ -46,8 +47,8 @@ public class BleClientActivity extends AppCompatActivity {
     public static List<BluetoothDevice> mlist = new ArrayList<>();
     private RecyclerView mRecyclerView;
     private BlueDeviceItemAdapter mRecycler;
-    private Button re_scan;
     private ProgressDialog pd;
+    public Button re_scan;
     public static int item_locale;
     public static boolean connect_ok;
     public static BluetoothGatt bluetoothGatt;
@@ -55,14 +56,13 @@ public class BleClientActivity extends AppCompatActivity {
     public BluetoothAdapter bluetoothAdapter;
     public BluetoothDevice bluetoothDeviceName;
     public static BluetoothGattCharacteristic writeCharacteristic;
-    public boolean discoveryFinished,BLE_ON;
+    public boolean discoveryFinished;
     private static ProgressDialog pd1;
     private ComponentName topActivity;
     @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_scan);
-        pd1 = new ProgressDialog(this);
         bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         if (bluetoothAdapter == null) {
@@ -73,34 +73,83 @@ public class BleClientActivity extends AppCompatActivity {
             // 蓝牙未开启，弹出对话框请求用户开启蓝牙
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, 11);
-        }else{
-            BLE_ON=true;
         }
-        init_setting();
-    }
-    public void init_setting(){
-        if (BLE_ON){
-            if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-                // 不支持BLE功能
-                Toast.makeText(this, "该设备不支持低功耗蓝牙功能!", Toast.LENGTH_SHORT).show();
-            }
-            re_scan = findViewById(R.id.re_scan);
-            re_scan.setOnClickListener(v -> {
-                goAnim(this,50);
-                searchBluetooth();
-            });
-            //设置过滤器，过滤因远程蓝牙设备被找到而发送的广播 BluetoothDevice.ACTION_FOUND
-            IntentFilter iFilter = new IntentFilter();
-            iFilter.addAction(BluetoothDevice.ACTION_FOUND);
-            iFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-            iFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-            iFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-            registerReceiver(foundReceiver, iFilter);
-            //设置广播接收器和安装过滤器
-            displayList();//刷新列表
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            // 不支持BLE功能
+            Toast.makeText(this, "该设备不支持低功耗蓝牙功能!", Toast.LENGTH_SHORT).show();
+        }
+        re_scan = findViewById(R.id.re_scan);
+        re_scan.setOnClickListener(v -> {
+            // 重新扫描
+            goAnim(BleClientActivity.this,50);
+            mlist.clear();
+            mRecycler = new BlueDeviceItemAdapter(mlist, BleClientActivity.this);
+            mRecyclerView.setAdapter(mRecycler);
             searchBluetooth();
-        }
+        });
+        pd1 = new ProgressDialog(this);
+        mRecyclerView = findViewById(R.id.rv_device_list);//设置固定大小
+        mRecyclerView.setHasFixedSize(true);//创建线性布局
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setOrientation(RecyclerView.VERTICAL);
+        mRecyclerView.addItemDecoration(new LinearSpacingItemDecoration(8));//添加间距
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL)); //添加分隔线
+        mRecyclerView.setLayoutManager(layoutManager);
+        mlist.clear();
+        mRecycler = new BlueDeviceItemAdapter(mlist, BleClientActivity.this);
+        mRecyclerView.setAdapter(mRecycler);
+        IntentFilter iFilter = new IntentFilter();
+        iFilter.addAction(BluetoothDevice.ACTION_FOUND);
+        iFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        iFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        iFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        registerReceiver(foundReceiver, iFilter);
+        searchBluetooth();
     }
+    @SuppressLint({"ObsoleteSdkInt", "MissingPermission"})
+    public void searchBluetooth() {
+        bluetoothAdapter.startDiscovery();
+        about.log(TAG, "开始搜索设备");
+        re_scan.setText("正在扫描");
+        pd = new ProgressDialog(this);
+        pd.setMessage("正在扫描,请稍等......");
+        pd.setCancelable(false);
+        pd.show();
+        new Thread(() -> {
+            while (!discoveryFinished) {
+                try {
+                    Thread.sleep(500);
+                    Message message = new Message();
+                    message.what = 1;
+                    myHandler.sendMessage(message);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            Message message = new Message();
+            message.what = 2;
+            myHandler.sendMessage(message);
+        }).start();
+    }
+    @SuppressLint("HandlerLeak")
+    Handler myHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            if (msg.what == 1) {
+                mRecycler = new BlueDeviceItemAdapter(mlist, BleClientActivity.this);
+                mRecyclerView.setAdapter(mRecycler);
+            }
+            if (msg.what == 2) {
+                stopDiscovery();
+                if (mlist!=null && !mlist.isEmpty()){
+                    mRecycler.setRecyclerItemClickListener(position -> {
+                        goAnim(BleClientActivity.this,50);
+                        item_locale = position;
+                        BleClientActivity.this.showPopupMenu(mRecyclerView.getChildAt(position));
+                    });
+                }
+            }
+        }
+    };
     /**
      * 当找到一个远程蓝牙设备时执行的广播接收者
      *
@@ -124,71 +173,10 @@ public class BleClientActivity extends AppCompatActivity {
             }
         }
     };
-    private void displayList() {
-        mRecyclerView = findViewById(R.id.rv_device_list);//设置固定大小
-        mRecyclerView.setHasFixedSize(true);//创建线性布局
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(RecyclerView.VERTICAL);
-        mRecyclerView.addItemDecoration(new LinearSpacingItemDecoration(8));//添加间距
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL)); //添加分隔线
-        mRecyclerView.setLayoutManager(layoutManager);
-        mRecycler = new BlueDeviceItemAdapter(mlist, this);
-        mRecyclerView.setAdapter(mRecycler);
-        mRecycler.setRecyclerItemClickListener(position -> {
-            goAnim(this,50);
-            item_locale = position;
-            BleClientActivity.this.showPopupMenu(mRecyclerView.getChildAt(position));
-        });
-    }
-
-    @SuppressLint({"ObsoleteSdkInt", "MissingPermission"})
-    public void searchBluetooth() {
-        if (!connect_ok) {
-            if (mlist != null) {
-                mlist.clear();
-            }
-            displayList();//刷新列表
-            bluetoothAdapter.startDiscovery();
-            about.log(TAG, "开始搜索设备");
-            re_scan.setText("正在扫描");
-            pd = new ProgressDialog(this);
-            pd.setMessage("正在扫描,请稍等......");
-            pd.setCancelable(false);
-            pd.show();
-            new Thread(() -> {
-                while (!discoveryFinished) {
-                    try {
-                        Thread.sleep(500);
-                        Message message = new Message();
-                        message.what = 1;
-                        myHandler.sendMessage(message);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                Message message = new Message();
-                message.what = 2;
-                myHandler.sendMessage(message);
-            }).start();
-        }
-    }
-    @SuppressLint("HandlerLeak")
-    Handler myHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                mRecycler = new BlueDeviceItemAdapter(mlist, BleClientActivity.this);
-                mRecyclerView.setAdapter(mRecycler);
-            }
-            if (msg.what == 2) {
-                stopDiscovery();
-            }
-        }
-    };
     @SuppressLint("MissingPermission")
     private void stopDiscovery() {
         connect_ok=false;
         discoveryFinished=false;
-        displayList();
         pd.dismiss();
         re_scan.setTextSize(16);
         re_scan.setText("重新扫描");
@@ -203,19 +191,14 @@ public class BleClientActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.connect_item) {//连接蓝牙
                 goAnim(this,50);
-                if (connect_ok) {
-                    Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
-                    startActivities(new Intent[]{intent});
-                }else {
-                    pd1.setMessage("正在连接蓝牙,请稍等");
-                    pd1.show();
-                    pd1.setCancelable(false);
-                    bluetoothDeviceName = mlist.get(item_locale);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                        bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
-                    } else {
-                        bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback);
-                    }
+                pd1.setMessage("正在连接蓝牙,请稍等");
+                pd1.show();
+                pd1.setCancelable(false);
+                bluetoothDeviceName = mlist.get(item_locale);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                    bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
+                } else {
+                    bluetoothGatt = mlist.get(item_locale).connectGatt(this, false, gattCallback);
                 }
             }
             if (itemId == R.id.disconnect_item){
@@ -275,7 +258,7 @@ public class BleClientActivity extends AppCompatActivity {
                                 if (runningTasks != null && !runningTasks.isEmpty()) {
                                     topActivity = runningTasks.get(0).topActivity;
                                 }
-                                if(topActivity!=null && !topActivity.toString().equals("ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.WifiListActivity}")) {
+                                if(topActivity!=null && !topActivity.toString().equals("ComponentInfo{com.zt.wirelesssw/com.zt.wirelesssw.WifiListActivity}")) {
                                     Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
                                     startActivities(new Intent[]{intent});
                                 }
@@ -326,14 +309,11 @@ public class BleClientActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 11) {
-            if (resultCode == RESULT_OK) {
-                // 用户开启了蓝牙
-                BLE_ON=true;
-                init_setting();
-            } else if (resultCode == RESULT_CANCELED) {
+            if (resultCode != RESULT_OK) {
                 // 用户取消了开启蓝牙的请求
                 // TODO: 处理用户取消开启蓝牙的情况
                 Toast.makeText(this, "请开启蓝牙，否则无法使用.", LENGTH_SHORT).show();
+                finish();
             }
         }
     }
@@ -357,6 +337,7 @@ public class BleClientActivity extends AppCompatActivity {
         super.onDestroy();
         if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;
+        close_ble();
     }
 
 }

@@ -1,7 +1,6 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.zt.acpowerswitch.UDPClient.rec_fail;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -48,10 +47,8 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ViewPortHandler;
-import com.scwang.smart.refresh.footer.BallPulseFooter;
 import com.scwang.smart.refresh.header.MaterialHeader;
-import com.scwang.smart.refresh.layout.api.RefreshLayout;
-import com.scwang.smart.refresh.layout.constant.SpinnerStyle;
+import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -108,19 +105,19 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
-        RefreshLayout refreshLayout = findViewById(R.id.refreshLayout);
+        SmartRefreshLayout smartRefreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
-        refreshLayout.setRefreshHeader(new MaterialHeader(this));
-        refreshLayout.setOnRefreshListener(refreshlayout -> {
+        smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
+        smartRefreshLayout.setOnRefreshListener(refreshlayout -> {
             refreshlayout.finishRefresh(2000);
             Log.e(TAG,"刷新完成");
         });
-        //设置 Footer 为 球脉冲 样式
-        refreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
-        refreshLayout.setOnLoadMoreListener(refreshlayout -> {
+        /*//设置 Footer 为 球脉冲 样式
+        smartRefreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
+        smartRefreshLayout.setOnLoadMoreListener(refreshlayout -> {
             refreshlayout.finishLoadMore(2000);
             Log.e(TAG,"加载完成");
-        });
+        });*/
         date_num = getCurrentMonthLastDay();
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
@@ -263,91 +260,74 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         udpClient.udpConnect();
-        about.log(TAG, "开始调用线程");
         while (!Thread_Run) {
             if (udp_connect) {
+                about.log(TAG, "开始调用线程");
                 mData_pro_thread();
                 break;
             }
         }
-        about.log(TAG, "线程调用完成");
-
     }
 
     public static boolean send_command_to_server(String data) {
-        int cycle_size = 0;
-        while (true) {
-            int num = 0;
+        int num = 0;
+        while (num < 10) {
             udpClient.sendMessage(data);
-            while (num < 10) {
-                sleep(100);
-                if (udp_response != null && udp_response.contains("ACK")) {
-                    return true;
-                }
-                num ++;
+            sleep(100);
+            if (udp_response != null && udp_response.contains("ACK")) {
+                return true;
             }
-            if (cycle_size == 2){
-                break;
-            }
-            cycle_size++;
+            num ++;
         }
         return false;
     }
     private void mData_pro_thread() {
         new Thread(() -> {
-            while(true) {
-                Thread_Run = true;
-                while (udp_connect) {
-                    if (checkScreenStatus() && !stop_send) {
-                        udpClient.sendMessage("get_info");
-                        //about.log(TAG, "发送请求信息");
-                        sleep(page_refresh_time);
-                        udp_response = udpClient.receiveMessage();
-                        //about.log(TAG, "服务端返回数据:" + udp_response);
-                    }
-                    if (udp_response != null && udp_response.contains("['AC_voltage")) {
-                        about.log(TAG, "服务端返回数据:" + udp_response);
-                        String modifiedString = udp_response.substring(1, udp_response.length() - 1);
-                        modifiedString = modifiedString.replace("'", "");
-                        modifiedString = modifiedString.replace(",", ":");
-                        modifiedString = modifiedString.replace(" ", "");
-                        info = modifiedString.split(":");
-                        if (info[1] != null) {
-                            Message message = new Message();
-                            message.what = 1;
-                            messageProHandler.sendMessage(message);
-                        }
-                    }
-                    if (udp_response != null && udp_response.contains("min>") && data_rec_finish && !stop_send && checkScreenStatus()
-                            && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
-                        String[] _l = udp_response.split(">"); //按>进行分隔
-                        if (_l[1] != null && !_l[1].isEmpty()) {
-                            about.log(TAG, "动态分时数据:" + _l[1]);
-                            _min_bat_list.add(_l[1]);
-                            pro_chart_data(_min_bat_list, "每15分钟电压");
-                        }
-                    }
-                    if (!data_rec_finish && !stop_send && checkScreenStatus()) {
+            Thread_Run = true;
+            while (udp_connect) {
+                if (checkScreenStatus() && !stop_send) {
+                    //about.log(TAG, "请求数据!");
+                    udpClient.sendMessage("get_info");
+                    sleep(page_refresh_time);
+                    udp_response=udpClient.receiveMessage();
+                    //about.log(TAG, "服务端返回数据:" + udp_response);
+                }
+                if (udp_response != null && udp_response.contains("['AC_voltage")) {
+                    about.log(TAG, "服务端返回数据:" + udp_response);
+                    String modifiedString = udp_response.substring(1, udp_response.length() - 1);
+                    modifiedString = modifiedString.replace("'", "");
+                    modifiedString = modifiedString.replace(",", ":");
+                    modifiedString = modifiedString.replace(" ", "");
+                    info = modifiedString.split(":");
+                    if (info[1] != null) {
                         Message message = new Message();
-                        message.what = 2;
+                        message.what = 1;
                         messageProHandler.sendMessage(message);
                     }
-                    if (!checkScreenStatus()) {
-                        about.log(TAG, "屏幕关闭");
-                        udpClient.close();
-                    }
-                    if (rec_fail) {
-                        rec_fail = false;
-                        break;
+                }
+                if (udp_response != null && udp_response.contains("live>") && data_rec_finish && !stop_send && checkScreenStatus()
+                        && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
+                    String[] _l = udp_response.split(">"); //按>进行分隔
+                    if (_l[1] != null && !_l[1].isEmpty()) {
+                        about.log(TAG, "动态分时数据:" + _l[1]);
+                        _min_bat_list.add(_l[1]);
+                        pro_chart_data(_min_bat_list, "每15分钟电压");
                     }
                 }
-                Thread_Run = false;
-                if (!udp_connect){
-                    break;
+                if (!data_rec_finish && !stop_send && checkScreenStatus()) {
+                    Message message = new Message();
+                    message.what = 2;
+                    messageProHandler.sendMessage(message);
+                }
+                if (!checkScreenStatus()) {
+                    about.log(TAG, "屏幕关闭");
+                    udpClient.close();
                 }
             }
+            Thread_Run = false;
+            about.log(TAG, "数据更新线程巳退出");
         }).start();
-        about.log(TAG, "线程关闭");
+        about.log(TAG, "线程调用完成");
     }
     @SuppressLint("HandlerLeak")
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
@@ -389,41 +369,17 @@ public class MainActivity extends AppCompatActivity{
                 //内存使用信息
                 mem_data_display_to_chart();//把内存使用信息放到折线图上
                 //市电切换阈值
-                if (readDate(MainActivity.this,"power")!=null && !readDate(MainActivity.this,"power").equals(info[17])){
-                    saveData("power",info[17]);
-                }else{
-                    saveData("power",info[17]);
-                }
+                saveData("power",info[17]);
                 //ADC2设置电池电压偏移量
-                if (readDate(MainActivity.this,"adc2_offset_value")!=null && !readDate(MainActivity.this,"adc2_offset_value").equals(info[19])){
-                    saveData("adc2_offset_value",info[19]);
-                }else{
-                    saveData("adc2_offset_value",info[19]);
-                }
+                saveData("adc2_offset_value",info[19]);
                 // ADC3设置ACS758LCB-100B VCC/2电压
-                if (readDate(MainActivity.this,"adc3_vcc_value")!=null && !readDate(MainActivity.this,"adc3_vcc_value").equals(info[21])){
-                    saveData("adc3_vcc_value",info[21]);
-                }else{
-                    saveData("adc3_vcc_value",info[21]);
-                }
+                saveData("adc3_vcc_value",info[21]);
                 // ADC3设置ACS758LCB-100B系数
-                if (readDate(MainActivity.this,"adc3vsens")!=null && !readDate(MainActivity.this,"adc3vsens").equals(info[23])){
-                    saveData("adc3vsens",info[23]);
-                }else{
-                    saveData("adc3vsens",info[23]);
-                }
+                saveData("adc3vsens",info[23]);
                 //电池低于此值则市电常开
-                if (readDate(MainActivity.this,"low_voltage")!=null && !readDate(MainActivity.this,"low_voltage").equals(info[25])){
-                    saveData("low_voltage",info[25]);
-                }else{
-                    saveData("low_voltage",info[25]);
-                }
+                saveData("low_voltage",info[25]);
                 //输出模式
-                if (readDate(MainActivity.this,"out_mode")!=null && !readDate(MainActivity.this,"out_mode").equals(info[27])){
-                    saveData("out_mode",info[27]);
-                }else{
-                    saveData("out_mode",info[27]);
-                }
+                saveData("out_mode",info[27]);
             }else if (msg.what == 2){
                 request_homepage_date();
             }
@@ -462,7 +418,7 @@ public class MainActivity extends AppCompatActivity{
         udpClient.sendMessage("get_all_file");
         sleep(page_refresh_time);
         while (!data_rec_finish) {
-            udp_response = udpClient.receiveMessage();
+            udp_response=udpClient.receiveMessage();
             if (udp_response != null && udp_response.contains("min>")) {
                 Log.e(TAG, udp_response);
                 String[] _l = udp_response.split(">"); //按>进行分隔
@@ -554,7 +510,7 @@ public class MainActivity extends AppCompatActivity{
     }
     public void pro_chart_data(List<String> _sd,String label){
         if (label.equals("每15分钟电压")) {
-            String minute_des = null;
+            String minute_des = "";
             _time_value.clear();
             _value_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
@@ -570,70 +526,102 @@ public class MainActivity extends AppCompatActivity{
             bat_line_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("小时柱状图表")) {
-            String begin_time = null;
-            String over_time = null;
+            String begin_time = "";
+            String over_time = "";
+            String last_power = "";
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                if (i==0){
-                    begin_time = "今日: "+_e[0].split(":")[0]+":"+_e[0].split(":")[1];
-                }else if (i==_sd.size()-1){
-                    over_time = _e[0].split(":")[0]+":"+_e[0].split(":")[1];
+                if (_sd.size() > 1) {
+                    if (i == 0) {
+                        begin_time = "今日: " + _e[0].split(":")[0] + ":" + _e[0].split(":")[1] + "  ->  ";
+                    } else if (i == _sd.size() - 1) {
+                        over_time = _e[0].split(":")[0] + ":" + _e[0].split(":")[1];
+                        last_power = _e[1];
+                    }
+                }else{
+                    begin_time = "今日: " + _e[0].split(":")[0] + ":" + _e[0].split(":")[1];
+                    over_time = "";
+                    last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split(":")[0]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"过去一小时发电功率统计(单位:w)",begin_time + "  -  " + over_time,"小时");
+            pro_date_power_data(_barChart_list,"过去一小时发电功率统计(单位:"+last_power+"w)",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("日期柱状图表")) {
-            String begin_time = null;
-            String over_time = null;
+            String begin_time = "";
+            String over_time = "";
+            String last_power = "";
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                if (i==0){
+                if (_sd.size() > 1) {
+                    if (i == 0) {
+                        begin_time = _e[0] + "  ->  ";
+                    } else if (i == _sd.size() - 1) {
+                        over_time = _e[0];
+                        last_power = _e[1];
+                    }
+                }else{
                     begin_time = _e[0];
-                }else if (i==_sd.size()-1){
-                    over_time = _e[0];
+                    over_time = "";
+                    last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split("-")[2]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"昨日发电功率统计(单位:w)",begin_time+"  -  "+ over_time,"日期");
+            pro_date_power_data(_barChart_list,"昨日发电功率统计(单位:"+last_power+"w)",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("月份柱状图表")) {
-            String begin_time = null;
-            String over_time = null;
+            String begin_time = "";
+            String over_time = "";
+            String last_power = "";
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                if (i==0){
-                    begin_time = _e[0].split("-")[0]+"-"+_e[0].split("-")[1];
-                }else if (i==_sd.size()-1){
-                    over_time = _e[0].split("-")[0]+"-"+_e[0].split("-")[1];
+                if (_sd.size() > 1) {
+                    if (i == 0) {
+                        begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"  ->  ";
+                    } else if (i == _sd.size() - 1) {
+                        over_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1];
+                        last_power = _e[1];
+                    }
+                }else{
+                    begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1];
+                    over_time = "";
+                    last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Float.parseFloat(_e[0].split("-")[1]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"上月发电功率统计(单位:w)",begin_time+"  -  "+ over_time,"月份");
+            pro_date_power_data(_barChart_list,"上月发电功率统计(单位:"+last_power+"w)",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("年份柱状图表")) {
-            String begin_time = null;
-            String over_time = null;
+            String begin_time = "";
+            String over_time = "";
+            String last_power = "";
             _barChart_list.clear();
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                if (i==0){
+                if (_sd.size() > 1) {
+                    if (i == 0) {
+                        begin_time = _e[0].split("-")[0]+"  ->  ";
+                    } else if (i == _sd.size() - 1) {
+                        over_time = _e[0].split("-")[0];
+                        last_power = _e[1];
+                    }
+                }else{
                     begin_time = _e[0].split("-")[0];
-                }else if (i==_sd.size()-1){
-                    over_time = _e[0].split("-")[0];
+                    over_time = "";
+                    last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:w)",begin_time +"  -  "+ over_time,"年份");
+            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:"+last_power+"w)",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -716,20 +704,20 @@ public class MainActivity extends AppCompatActivity{
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         switch (type) {
             case "小时":
-                xAxis.setAxisMinimum(1f);
-                xAxis.setAxisMaximum(24);
+                xAxis.setAxisMinimum(-0.5f);
+                xAxis.setAxisMaximum(23.5f);
                 break;
             case "日期":
-                xAxis.setAxisMinimum(1f);
-                xAxis.setAxisMaximum(date_num);
+                xAxis.setAxisMinimum(0.5f);
+                xAxis.setAxisMaximum(date_num+0.5f);
                 break;
             case "月份":
-                xAxis.setAxisMinimum(1f);
-                xAxis.setAxisMaximum(12);
+                xAxis.setAxisMinimum(0.5f);
+                xAxis.setAxisMaximum(12.5f);
                 break;
             case "年份":
-                xAxis.setAxisMinimum(1f);
-                xAxis.setAxisMaximum(30f);
+                xAxis.setAxisMinimum(2024-0.5f);
+                xAxis.setAxisMaximum(2054.5f);
                 break;
         }
         xAxis.setGranularity(1f);
