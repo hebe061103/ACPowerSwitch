@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="#CADE0B">
+    android:background="#CFDDE939">
 
     <TextView
         android:id="@+id/m_year"
@@ -12,7 +12,7 @@
         android:layout_height="20dp"
         android:hint="year:"
         android:textSize="10sp"
-        android:textColor="#616261"
+        android:textColor="#37BBFA"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -23,7 +23,7 @@
         android:layout_height="20dp"
         android:hint="time:"
         android:textSize="10sp"
-        android:textColor="#4CAF50"
+        android:textColor="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/m_year"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -34,7 +34,7 @@
         android:layout_height="20dp"
         android:hint="value:"
         android:textSize="10sp"
-        android:textColor="#FF5722"
+        android:textColor="#43A047"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/m_time"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
