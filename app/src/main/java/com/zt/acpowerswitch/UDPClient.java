@@ -62,7 +62,7 @@ public class UDPClient {
             }
         } catch (SocketTimeoutException e) {
             about.log(TAG, "接收超时: " + e.getMessage());
-            e.printStackTrace(); // 打印堆栈跟踪
+            //e.printStackTrace(); // 打印堆栈跟踪
         } catch (IOException e) {
             about.log(TAG, "IO异常: " + e.getMessage());
             e.printStackTrace(); // 打印堆栈跟踪

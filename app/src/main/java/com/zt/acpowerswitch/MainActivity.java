@@ -60,6 +60,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity{
     public static final String TAG = "MainActivity:";
@@ -137,43 +138,43 @@ public class MainActivity extends AppCompatActivity{
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
             new AlertDialog.Builder(this)
-                .setTitle("注意:")
-                .setMessage("该操作将重置远端设备网络,请慬慎执行!!!")
-                .setPositiveButton("取消",null)
-                .setNegativeButton("执行", (dialogInterface, i) -> {
-                    goAnim(MainActivity.this, 50);
-                    if(send_command_to_server("del_wifi_config")) {
-                        new AlertDialog.Builder(this)
-                            .setTitle("提 示")
-                            .setMessage("重置成功")
-                            .setNegativeButton("完成", (dialogInterface1, i1) -> {
-                                goAnim(MainActivity.this, 50);
-                                deleteData("wifi_ip");
-                                deleteData("power");
-                                deleteData("adc2_offset_value");
-                                deleteData("adc3_vcc_value");
-                                deleteData("adc3vsens");
-                                deleteData("low_voltage");
-                                deleteData("refresh_time");
-                                deleteData("out_mode");
-                                File file = new File(getFilesDir(), bat_value_data);
-                                if (file.exists()) {
-                                    boolean deleted = file.delete();
-                                    if (deleted) {
-                                        Toast.makeText(MainActivity.this, "删除上次电池历史数据成功", LENGTH_SHORT).show();
-                                    } else {
-                                        Toast.makeText(MainActivity.this, "删除上次电池历史数据失败", LENGTH_SHORT).show();
-                                    }
-                                }
-                                udpClient.close();
-                            }).show();
-                    }else{
-                        new AlertDialog.Builder(this)
-                            .setTitle("提 示")
-                            .setMessage("设备正忙,请稍后再试!")
-                            .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
-                    }
-                }).show();
+                    .setTitle("注意:")
+                    .setMessage("该操作将重置远端设备网络,请慬慎执行!!!")
+                    .setPositiveButton("取消",null)
+                    .setNegativeButton("执行", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if(send_command_to_server("del_wifi_config")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("重置成功")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> {
+                                        goAnim(MainActivity.this, 50);
+                                        deleteData("wifi_ip");
+                                        deleteData("power");
+                                        deleteData("adc2_offset_value");
+                                        deleteData("adc3_vcc_value");
+                                        deleteData("adc3vsens");
+                                        deleteData("low_voltage");
+                                        deleteData("refresh_time");
+                                        deleteData("out_mode");
+                                        File file = new File(getFilesDir(), bat_value_data);
+                                        if (file.exists()) {
+                                            boolean deleted = file.delete();
+                                            if (deleted) {
+                                                Toast.makeText(MainActivity.this, "删除上次电池历史数据成功", LENGTH_SHORT).show();
+                                            } else {
+                                                Toast.makeText(MainActivity.this, "删除上次电池历史数据失败", LENGTH_SHORT).show();
+                                            }
+                                        }
+                                        udpClient.close();
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
             return false;
         });
         menu_bt = findViewById(R.id.menu_img);
@@ -270,27 +271,45 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public static boolean send_command_to_server(String data) {
-        int num = 0;
-        while (num < 10) {
-            udpClient.sendMessage(data);
-            sleep(100);
-            if (udp_response != null && udp_response.contains("ACK")) {
-                return true;
+        CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1
+        boolean[] result = {false}; // 使用数组来存储返回值
+        new Thread(() -> {
+            int num = 0;
+            stop_send = true;
+            udp_response = null;
+            while (num < 10) {
+                udpClient.sendMessage(data);
+                sleep(100);
+                udp_response = udpClient.receiveMessage();
+                about.log(TAG, "返回数据:" + udp_response);
+                if (udp_response != null && udp_response.contains("ACK")) {
+                    result[0] = true; // 设置返回值
+                    break;
+                } else {
+                    udp_response = null;
+                }
+                num++;
             }
-            num ++;
+            stop_send = false;
+            latch.countDown(); // 计数器减一，表示任务完成
+        }).start();
+
+        try {
+            latch.await(); // 等待线程完成
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        return false;
+
+        return result[0]; // 返回结果
     }
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
             while (udp_connect) {
                 if (checkScreenStatus() && !stop_send) {
-                    //about.log(TAG, "请求数据!");
                     udpClient.sendMessage("get_info");
                     sleep(page_refresh_time);
                     udp_response=udpClient.receiveMessage();
-                    //about.log(TAG, "服务端返回数据:" + udp_response);
                 }
                 if (udp_response != null && udp_response.contains("['AC_voltage")) {
                     about.log(TAG, "服务端返回数据:" + udp_response);
@@ -734,15 +753,15 @@ public class MainActivity extends AppCompatActivity{
     /* 获取屏幕状态通过PowerManager */
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkScreenStatus() {
-            PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
-            boolean isScreenOn;
-            // Android 4.4W (KitKat Wear)系统及以上使用新接口获取亮屏状态
-            if (Build.VERSION.SDK_INT >= 20) {
-                isScreenOn = pm.isInteractive();
-            } else {
-                isScreenOn = pm.isScreenOn();
-            }
-            return isScreenOn;
+        PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+        boolean isScreenOn;
+        // Android 4.4W (KitKat Wear)系统及以上使用新接口获取亮屏状态
+        if (Build.VERSION.SDK_INT >= 20) {
+            isScreenOn = pm.isInteractive();
+        } else {
+            isScreenOn = pm.isScreenOn();
+        }
+        return isScreenOn;
     }
     /*获取最上层activity*/
     public ComponentName getTopActivity(){
