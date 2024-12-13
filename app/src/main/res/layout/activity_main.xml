@@ -80,16 +80,16 @@
                     tools:ignore="HardcodedText" />
 
                 <TextView
-                    android:id="@+id/le_voltage"
+                    android:id="@+id/le_current"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:layout_marginEnd="16dp"
-                    android:hint="null"
+                    android:layout_marginEnd="12dp"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView12"
+                    app:layout_constraintTop_toBottomOf="@+id/out_mode"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -101,7 +101,7 @@
                     android:textColor="#E91E63"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView20"
+                    app:layout_constraintTop_toBottomOf="@+id/textView11"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -110,7 +110,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -123,7 +123,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -136,7 +136,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -149,7 +149,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -173,12 +173,11 @@
                     android:id="@+id/textView6"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="35dp"
                     android:text="输出电压(AC/v):"
                     android:textColor="#00BCD4"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView5"
+                    app:layout_constraintTop_toTopOf="@+id/guideline28"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -233,13 +232,12 @@
                     android:id="@+id/out_Voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView5"
+                    app:layout_constraintTop_toTopOf="@+id/guideline28"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -247,7 +245,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="25dp"
-                    android:text="交流输出信息"
+                    android:text="交流输出信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -273,7 +271,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -281,49 +279,11 @@
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
-                    android:id="@+id/textView12"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="35dp"
-                    android:text="太阳能信息"
-                    android:textColor="#78909C"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView11"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:id="@+id/textView20"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="35dp"
-                    android:text="光伏充电电压(v):"
-                    android:textColor="#00BCD4"
-                    android:textSize="18sp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView12"
-                    tools:ignore="HardcodedText,TextContrastCheck" />
-
-                <TextView
-                    android:id="@+id/le_current"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="35dp"
-                    android:layout_marginEnd="16dp"
-                    android:hint="null"
-                    android:textColorHint="#37373F"
-                    android:textSize="18sp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView20"
-                    tools:ignore="HardcodedText,TextContrastCheck" />
-
-                <TextView
                     android:id="@+id/textView16"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="电池信息"
+                    android:text="储能电池信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -350,7 +310,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
                     android:layout_marginEnd="12dp"
-                    android:hint="null"
+                    android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -474,6 +434,13 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/textView27"
                     tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/guideline28"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_begin="86dp" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>

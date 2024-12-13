@@ -22,7 +22,7 @@ public class UDPClient {
             try {
                 if (!udp_connect) {
                     socket = new DatagramSocket(udpServerPort);
-                    socket.setSoTimeout(3000);
+                    socket.setSoTimeout(1000);
                     udp_connect = true;
                     about.log(TAG, "创建套接字成功");
                 }

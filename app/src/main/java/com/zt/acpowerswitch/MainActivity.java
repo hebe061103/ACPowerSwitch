@@ -360,8 +360,8 @@ public class MainActivity extends AppCompatActivity{
                     out_Voltage.setText(info[1]);
                     ac = info[1];
                 }else if (unicodeToString(info[13]).equals("逆变供电") || unicodeToString(info[13]).equals("固定逆变模式")){
-                    out_Voltage.setText("220.00");
-                    ac = "220.00";
+                    out_Voltage.setText(info[1]);
+                    ac = info[1];
                 }
                 //交流电流
                 Float jl_dl = Float.parseFloat(info[3]);
