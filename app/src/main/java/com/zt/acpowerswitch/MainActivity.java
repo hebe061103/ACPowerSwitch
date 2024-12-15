@@ -371,12 +371,11 @@ public class MainActivity extends AppCompatActivity{
                 //交流有功功率
                 power_kw.setText(info[5]);
                 //交流实际功率
-                Float sj_power = null;
                 if (ac != null) {
-                    sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    String formattedValue = df.format(sj_power);
+                    sj_power_kw.setText(formattedValue);
                 }
-                String formattedValue = df.format(sj_power);
-                sj_power_kw.setText(formattedValue);
                 //交流频率
                 out_frequency.setText(info[7]+" hz");
                 //为电池电压
