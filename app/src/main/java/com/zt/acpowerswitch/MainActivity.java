@@ -405,11 +405,6 @@ public class MainActivity extends AppCompatActivity{
     };
     private void request_homepage_date() {
         new Thread(() -> {
-            deleteFile(bat_value_data);
-            deleteFile(H_Total_power);
-            deleteFile(D_Total_power);
-            deleteFile(M_Total_power);
-            deleteFile(Y_Total_power);
             pro_data_request();//请求数据
             if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
@@ -480,29 +475,33 @@ public class MainActivity extends AppCompatActivity{
                     debugList.add(_l[1]);
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
-                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 时平均功率数据数量:" + _H_Total_power.size() +
-                        " 日期功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 if (!_min_bat_list.isEmpty()) {
+                    deleteFile(bat_value_data);
                     for (int i = 0; i < _min_bat_list.size(); i++) {
                         writeToFile(this, bat_value_data, "min>" + _min_bat_list.get(i) + "\n");
                     }
                 }
                 if (!_H_Total_power.isEmpty()) {
+                    deleteFile(H_Total_power);
                     for (int i = 0; i < _H_Total_power.size(); i++) {
                         writeToFile(this, H_Total_power, "H_Total_power>" + _H_Total_power.get(i) + "\n");
                     }
                 }
                 if (!_D_Total_power.isEmpty()) {
+                    deleteFile(D_Total_power);
                     for (int i = 0; i < _D_Total_power.size(); i++) {
                         writeToFile(this, D_Total_power, "D_Total_power>" + _D_Total_power.get(i) + "\n");
                     }
                 }
                 if (!_M_Total_power.isEmpty()) {
+                    deleteFile(M_Total_power);
                     for (int i = 0; i < _M_Total_power.size(); i++) {
                         writeToFile(this, M_Total_power, "M_Total_power>" + _M_Total_power.get(i) + "\n");
                     }
                 }
                 if (!_Y_Total_power.isEmpty()) {
+                    deleteFile(Y_Total_power);
                     for (int i = 0; i < _Y_Total_power.size(); i++) {
                         writeToFile(this, Y_Total_power, "Y_Total_power>" + _Y_Total_power.get(i) + "\n");
                     }
@@ -639,7 +638,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]), Float.parseFloat(_e[1])));
             }
-            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:"+last_power+"w)",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:"+ last_power +" w)",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }

@@ -91,7 +91,7 @@ public class otherOption extends AppCompatActivity {
         }
         auto_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("out_mode:自动模式")){
+            if (send_command_to_server("power_out_mode:自动模式")){
                 auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
                 pv_mode.setBackgroundColor(Color.TRANSPARENT);
@@ -100,7 +100,7 @@ public class otherOption extends AppCompatActivity {
         });
         power_grid_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("out_mode:市电模式")){
+            if (send_command_to_server("power_out_mode:市电模式")){
                 power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 auto_mode.setBackgroundColor(Color.TRANSPARENT);
                 pv_mode.setBackgroundColor(Color.TRANSPARENT);
@@ -109,7 +109,7 @@ public class otherOption extends AppCompatActivity {
         });
         pv_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("out_mode:逆变模式")){
+            if (send_command_to_server("power_out_mode:逆变模式")){
                 pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 auto_mode.setBackgroundColor(Color.TRANSPARENT);
                 power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
