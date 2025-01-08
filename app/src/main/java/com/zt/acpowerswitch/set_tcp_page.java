@@ -19,12 +19,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class set_tcp_page extends AppCompatActivity {
-    private static final String TAG = "set_tcp_page:";
+    //private static final String TAG = "set_tcp_page:";
     public Button bl_ip_get,manual_set,bt_clean;
     public EditText ip_input;
 
@@ -56,10 +55,6 @@ public class set_tcp_page extends AppCompatActivity {
                     .setNegativeButton("确定", (dialog, which) -> {
                         goAnim(this,50);
                         MainActivity.deleteData("wifi_ip");
-                        delete_history_data(MainActivity.bat_value_data);
-                        delete_history_data(MainActivity.D_Total_power);
-                        delete_history_data(MainActivity.M_Total_power);
-                        delete_history_data(MainActivity.Y_Total_power);
                         udpClient.close();
                         Message message = new Message();
                         message.what = 1;
@@ -105,19 +100,6 @@ public class set_tcp_page extends AppCompatActivity {
     public static boolean isValidDomainName(String domain) {
         String regex = "^([a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.)+[a-zA-Z]{2,}$";
         return domain.matches(regex);
-    }
-    public void delete_history_data(String filename){
-        File file = new File(getFilesDir(), filename);
-        if (file.exists()) {
-            boolean deleted = file.delete();
-            if (deleted) {
-                about.log(TAG, "删除成功");
-            } else {
-                about.log(TAG, "删除失败");
-            }
-        }else {
-            about.log(TAG, "文件不存在");
-        }
     }
     @Override
     public void onBackPressed() {

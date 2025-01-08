@@ -1,5 +1,6 @@
 package com.zt.acpowerswitch;
 
+import static com.zt.acpowerswitch.MainActivity.Conn_status;
 import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
@@ -41,6 +42,7 @@ public class UDPClient {
             } catch (UnknownHostException e) {
                 //e.printStackTrace();
                 about.log(TAG,"无法解析域名或IP地址");
+                Conn_status=true;
             }
             try {
                 if (socket != null) {

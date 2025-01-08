@@ -49,13 +49,6 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.scwang.smart.refresh.header.MaterialHeader;
 import com.scwang.smart.refresh.layout.SmartRefreshLayout;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -65,14 +58,9 @@ import java.util.concurrent.CountDownLatch;
 public class MainActivity extends AppCompatActivity{
     public static final String TAG = "MainActivity:";
     public final String top_m = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
-    public static final String bat_value_data = "bat_value_data.txt";
-    public static final String H_Total_power = "H_Total_power.txt";
-    public static final String D_Total_power = "D_Total_power.txt";
-    public static final String M_Total_power = "M_Total_power.txt";
-    public static final String Y_Total_power = "Y_Total_power.txt";
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
-    public ImageView menu_bt;
+    public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current,mm_use;
@@ -80,7 +68,7 @@ public class MainActivity extends AppCompatActivity{
     public String[] info;
     public static String udpServerAddress;
     public static int udpServerPort=55555;
-    public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run;
+    public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run,Conn_status;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -113,12 +101,7 @@ public class MainActivity extends AppCompatActivity{
             refreshlayout.finishRefresh(2000);
             Log.e(TAG,"刷新完成");
         });
-        /*//设置 Footer 为 球脉冲 样式
-        smartRefreshLayout.setRefreshFooter(new BallPulseFooter(this).setSpinnerStyle(SpinnerStyle.Scale));
-        smartRefreshLayout.setOnLoadMoreListener(refreshlayout -> {
-            refreshlayout.finishLoadMore(2000);
-            Log.e(TAG,"加载完成");
-        });*/
+        mark_status = findViewById(R.id.mark_status);
         date_num = getCurrentMonthLastDay();
         udpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
@@ -157,15 +140,6 @@ public class MainActivity extends AppCompatActivity{
                                         deleteData("low_voltage");
                                         deleteData("refresh_time");
                                         deleteData("out_mode");
-                                        File file = new File(getFilesDir(), bat_value_data);
-                                        if (file.exists()) {
-                                            boolean deleted = file.delete();
-                                            if (deleted) {
-                                                Toast.makeText(MainActivity.this, "删除上次电池历史数据成功", LENGTH_SHORT).show();
-                                            } else {
-                                                Toast.makeText(MainActivity.this, "删除上次电池历史数据失败", LENGTH_SHORT).show();
-                                            }
-                                        }
                                         udpClient.close();
                                     }).show();
                         }else{
@@ -240,26 +214,6 @@ public class MainActivity extends AppCompatActivity{
                 // 可以不做处理
             }
         });
-        if (bat_line_chart.getData()==null) {
-            if(read_old_bat_data(_min_bat_list,bat_value_data,"min>")) {
-                if (!_min_bat_list.isEmpty()) {
-                    pro_chart_data(_min_bat_list, "每15分钟电压");
-                    about.log(TAG, "折线图历史数据加载完成");
-                }
-            }else{
-                bat_line_chart.setNoDataText("暂无分时数据");
-            }
-        }
-        if (power_chart.getData()==null) {
-            if(read_old_bat_data(_H_Total_power,H_Total_power,"H_Total_power>")) {
-                if (!_H_Total_power.isEmpty()) {
-                    pro_chart_data(_H_Total_power, "小时柱状图表");
-                    about.log(TAG, "柱状图历史数据加载完成");
-                }
-            }else{
-                power_chart.setNoDataText("暂无小时数据");
-            }
-        }
         udpClient.udpConnect();
         while (!Thread_Run) {
             if (udp_connect) {
@@ -323,6 +277,9 @@ public class MainActivity extends AppCompatActivity{
                         message.what = 1;
                         messageProHandler.sendMessage(message);
                     }
+                    Message message = new Message();
+                    message.what = 4;
+                    messageProHandler.sendMessage(message);
                 }
                 if (udp_response != null && udp_response.contains("live>") && data_rec_finish && !stop_send && checkScreenStatus()
                         && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
@@ -341,6 +298,11 @@ public class MainActivity extends AppCompatActivity{
                 if (!checkScreenStatus()) {
                     about.log(TAG, "屏幕关闭");
                     udpClient.close();
+                }
+                if (Conn_status){
+                    Message message = new Message();
+                    message.what = 3;
+                    messageProHandler.sendMessage(message);
                 }
             }
             Thread_Run = false;
@@ -400,6 +362,16 @@ public class MainActivity extends AppCompatActivity{
                 saveData("out_mode",info[27]);
             }else if (msg.what == 2){
                 request_homepage_date();
+            }else if (msg.what == 3){
+                if (mark_status.getVisibility() == View.VISIBLE) {
+                    mark_status.setVisibility(View.INVISIBLE);
+                } else {
+                    mark_status.setVisibility(View.VISIBLE);
+                }
+                Conn_status=false;
+            }else if (msg.what == 4){
+                mark_status.setVisibility(View.INVISIBLE);
+                Conn_status=false;
             }
         }
     };
@@ -476,36 +448,6 @@ public class MainActivity extends AppCompatActivity{
                 }
             } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
                 about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
-                if (!_min_bat_list.isEmpty()) {
-                    deleteFile(bat_value_data);
-                    for (int i = 0; i < _min_bat_list.size(); i++) {
-                        writeToFile(this, bat_value_data, "min>" + _min_bat_list.get(i) + "\n");
-                    }
-                }
-                if (!_H_Total_power.isEmpty()) {
-                    deleteFile(H_Total_power);
-                    for (int i = 0; i < _H_Total_power.size(); i++) {
-                        writeToFile(this, H_Total_power, "H_Total_power>" + _H_Total_power.get(i) + "\n");
-                    }
-                }
-                if (!_D_Total_power.isEmpty()) {
-                    deleteFile(D_Total_power);
-                    for (int i = 0; i < _D_Total_power.size(); i++) {
-                        writeToFile(this, D_Total_power, "D_Total_power>" + _D_Total_power.get(i) + "\n");
-                    }
-                }
-                if (!_M_Total_power.isEmpty()) {
-                    deleteFile(M_Total_power);
-                    for (int i = 0; i < _M_Total_power.size(); i++) {
-                        writeToFile(this, M_Total_power, "M_Total_power>" + _M_Total_power.get(i) + "\n");
-                    }
-                }
-                if (!_Y_Total_power.isEmpty()) {
-                    deleteFile(Y_Total_power);
-                    for (int i = 0; i < _Y_Total_power.size(); i++) {
-                        writeToFile(this, Y_Total_power, "Y_Total_power>" + _Y_Total_power.get(i) + "\n");
-                    }
-                }
                 data_rec_finish = true;
                 stop_send=false;
                 cycle_size=0;
@@ -637,7 +579,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
             pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
@@ -811,103 +753,6 @@ public class MainActivity extends AppCompatActivity{
         //显示菜单，不要少了这一步
         popupMenu.show();
     }
-
-    public boolean read_old_bat_data(ArrayList arrayList,String filename,String contains){
-        arrayList.clear();
-        ArrayList<String> _tmp = readFromFile(this,filename);
-        if (!_tmp.isEmpty()) {
-            for (int i = 0; i < _tmp.size(); i++) {
-                Log.e(TAG, _tmp.get(i));
-                if (_tmp.get(i) != null && _tmp.get(i).contains(contains)) {
-                    String[] _l = _tmp.get(i).split(">"); //按>进行分隔
-                    int length = _l.length; // 获取数组长度
-                    if (length > 1) {
-                        arrayList.add(_l[1]);
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-    // 写入文件
-    public static void writeToFile(Context context, String fileName, String data) {
-        FileOutputStream outputStream = null;
-        //使用getFilesDir()方法‌：这可以获取应用程序的私有文件目录，即/data/user/0/<包名>/files/。这个目录下的文件只能由应用程序本身访问。
-        //使用getExternalFilesDir()方法‌：通过这个方法可以获取应用程序的外部存储文件目录，即/storage/emulated/0/Android/data/<包名>/files/。
-        //这个目录下的文件可以被应用程序和其他应用程序访问。
-        try {
-            outputStream = context.openFileOutput(fileName, Context.MODE_APPEND);
-            outputStream.write(data.getBytes());
-        } catch (IOException e) {
-            about.log(TAG, "Error writing to file");
-        } finally {
-            try {
-                if (outputStream != null) {
-                    outputStream.close();
-                }
-            } catch (IOException e) {
-                about.log(TAG, "Error closing file output stream");
-            }
-        }
-    }
-    // 读取文件
-    public static ArrayList<String> readFromFile(Context context,String filename) {
-        File fileDir = context.getFilesDir();
-        File file = new File(fileDir, filename);
-        ArrayList<String> _bat = new ArrayList<>();
-        // 判断文件是否存在
-        boolean fileExists = file.exists();
-        if (fileExists) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath())))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    _bat.add(line);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }else{
-            about.log(TAG, "历史数据文件空");
-        }
-        return _bat;
-    }
-    public boolean deleteFile(String fileName) {
-        try {
-            File file = new File(getFilesDir(), fileName);
-            if (file.exists()) {
-                boolean deleted = file.delete();
-                if (deleted) {
-                    // 文件删除成功
-                    about.log(TAG,"删除 "+fileName + " 完成");
-                    return true;
-                } else {
-                    // 文件删除失败
-                    about.log(TAG,"删除 "+fileName + " 失败");
-                }
-            }else{
-                // 文件不存在
-                about.log(TAG,fileName + " 不存在");
-            }
-        } catch (Exception e) {
-            // 处理异常情况
-        }
-        return false;
-    }
-    /*public int getFileLineCount(Context context, String fileName) {
-        int lineCount = 0;
-        File file = new File(context.getFilesDir(), fileName);
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                while (reader.readLine() != null) {
-                    lineCount++;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return lineCount;
-    }*/
     /**
      * 取得当月天数
      * */

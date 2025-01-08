@@ -22,8 +22,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.File;
-
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     private TextView w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set,auto_mode,power_grid_mode,pv_mode;
@@ -133,27 +131,10 @@ public class otherOption extends AppCompatActivity {
                     deleteData("low_voltage");
                     deleteData("refresh_time");
                     deleteData("out_mode");
-                    delete_history_data(MainActivity.bat_value_data);
-                    delete_history_data(MainActivity.D_Total_power);
-                    delete_history_data(MainActivity.M_Total_power);
-                    delete_history_data(MainActivity.Y_Total_power);
                     udpClient.close();
                 })
                 .show();
         });
-    }
-    public void delete_history_data(String filename){
-        File file = new File(getFilesDir(), filename);
-        if (file.exists()) {
-            boolean deleted = file.delete();
-            if (deleted) {
-                about.log(TAG, "删除成功");
-            } else {
-                about.log(TAG, "删除失败");
-            }
-        }else {
-            about.log(TAG, "文件不存在");
-        }
     }
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
