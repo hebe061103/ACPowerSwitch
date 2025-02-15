@@ -26,6 +26,11 @@ public class set_tcp_page extends AppCompatActivity {
     //private static final String TAG = "set_tcp_page:";
     public Button bl_ip_get,manual_set,bt_clean;
     public EditText ip_input;
+    // 正则表达式用于匹配域名或子域名
+    private static final String DOMAIN_PATTERN =
+            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z]{2,}|[A-Za-z]{2,}\\.[A-Za-z]{2,})$";
+
+    private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,7 +71,7 @@ public class set_tcp_page extends AppCompatActivity {
             // 执行一些后台工作
             goAnim(this, 50);
             if (!ip_input.getText().toString().isEmpty()) {
-                if (isValidIPv4(ip_input.getText().toString())||isValidDomainName(ip_input.getText().toString())) {
+                if (isValidIPv4(ip_input.getText().toString())||isValidDomain(ip_input.getText().toString())) {
                     saveData("wifi_ip", ip_input.getText().toString());
                 } else {
                     Toast.makeText(this, "请输入正确的IP地址或域名", Toast.LENGTH_SHORT).show();
@@ -97,9 +102,12 @@ public class set_tcp_page extends AppCompatActivity {
         Matcher matcher = pattern.matcher(ip);
         return matcher.matches();
     }
-    public static boolean isValidDomainName(String domain) {
-        String regex = "^([a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.)+[a-zA-Z]{2,}$";
-        return domain.matches(regex);
+    public static boolean isValidDomain(String domain) {
+        if (domain == null || domain.isEmpty()) {
+            return false;
+        }
+        Matcher matcher = pattern.matcher(domain);
+        return matcher.matches();
     }
     @Override
     public void onBackPressed() {
