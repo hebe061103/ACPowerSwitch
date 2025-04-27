@@ -24,7 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    private TextView w_edit, adc2_edit, adc3_vsens_edit,adc3_vcc_edit,low_voltage_set, refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    private TextView w_edit,low_voltage_set, refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,24 +44,6 @@ public class otherOption extends AppCompatActivity {
             w_edit.setText(readDate(otherOption.this, "power"));
         }
         w_edit.setOnClickListener(view -> send_arg_server("功率参数设置"));
-        //ADC2设置
-        adc2_edit = findViewById(R.id.adc2_edit);
-        if (readDate(otherOption.this, "adc2_offset_value") != null) {
-            adc2_edit.setText(readDate(otherOption.this, "adc2_offset_value"));
-        }
-        adc2_edit.setOnClickListener(view -> send_arg_server("ADC2参数设置"));
-        //ADC3 VCC/2设置
-        adc3_vcc_edit = findViewById(R.id.adc3_vcc_edit);
-        if (readDate(otherOption.this, "adc3_vcc_value") != null) {
-            adc3_vcc_edit.setText(readDate(otherOption.this, "adc3_vcc_value"));
-        }
-        adc3_vcc_edit.setOnClickListener(view -> send_arg_server("ADC3电压值设置"));
-        //ADC3系数设置
-        adc3_vsens_edit = findViewById(R.id.adc3_vsens_edit);
-        if (readDate(otherOption.this, "adc3vsens") != null) {
-            adc3_vsens_edit.setText(readDate(otherOption.this, "adc3vsens"));
-        }
-        adc3_vsens_edit.setOnClickListener(view -> send_arg_server("ADC3系数设置"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
         if (readDate(otherOption.this, "low_voltage") != null) {
@@ -153,24 +135,6 @@ public class otherOption extends AppCompatActivity {
                             send_w_edit();
                         }
                         break;
-                    case "ADC2参数设置":
-                        if (!editText.getText().toString().isEmpty()) {
-                            adc2_edit.setText(editText.getText());
-                            send_adc2_edit();
-                        }
-                        break;
-                    case "ADC3电压值设置":
-                        if (!editText.getText().toString().isEmpty()) {
-                            adc3_vcc_edit.setText(editText.getText());
-                            send_adc3_vcc_edit();
-                        }
-                        break;
-                    case "ADC3系数设置":
-                        if (!editText.getText().toString().isEmpty()) {
-                            adc3_vsens_edit.setText(editText.getText());
-                            send_adc3_vsens_edit();
-                        }
-                        break;
                     case "最低电压值":
                         if (!editText.getText().toString().isEmpty()) {
                             low_voltage_set.setText(editText.getText());
@@ -215,92 +179,6 @@ public class otherOption extends AppCompatActivity {
             }
         }
     }
-
-    public void send_adc2_edit() {
-        if (!adc2_edit.getText().toString().isEmpty() && !adc2_edit.getText().toString().equals(readDate(otherOption.this, "adc2_offset_value"))) {
-            about.log(TAG, "ADC2参数巳改变,发送参数到服务端");
-            if (isInteger(adc2_edit.getText().toString()) || isDecimal(adc2_edit.getText().toString()) && Float.parseFloat(adc2_edit.getText().toString()) > 0) {
-                if (send_command_to_server("adc2_set_offset:" + adc2_edit.getText().toString())){
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置成功!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                saveData("adc2_offset_value", adc2_edit.getText().toString());
-                            }).show();
-                }else{
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置失败,请重试!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                adc2_edit.setText(readDate(otherOption.this, "adc2_offset_value"));
-                            }).show();
-                }
-            } else {
-                about.log(TAG, "adc2项请输入数字类型");
-                Toast.makeText(otherOption.this, "adc2项请输入数字类型", LENGTH_SHORT).show();
-                adc2_edit.setText(readDate(otherOption.this, "adc2_offset_value"));
-            }
-        }
-    }
-    public void send_adc3_vcc_edit() {
-        if (!adc3_vcc_edit.getText().toString().isEmpty() && !adc3_vcc_edit.getText().toString().equals(readDate(otherOption.this, "adc3_vcc_value"))) {
-            about.log(TAG, "ADC3电压值参数巳改变,发送参数到服务端");
-            if (isInteger(adc3_vcc_edit.getText().toString()) || isDecimal(adc3_vcc_edit.getText().toString()) && Float.parseFloat(adc3_vcc_edit.getText().toString()) > 0) {
-                if (send_command_to_server("adc3_set_vcc_value:" + adc3_vcc_edit.getText().toString())){
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置成功!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                saveData("adc3_vcc_value", adc3_vcc_edit.getText().toString());
-                            }).show();
-                }else{
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置失败,请重试!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                adc3_vcc_edit.setText(readDate(otherOption.this, "adc3_vcc_value"));
-                            }).show();
-                }
-            } else {
-                about.log(TAG, "adc3电压值项请输入数字类型");
-                Toast.makeText(otherOption.this, "adc3电压值项请输入数字类型", LENGTH_SHORT).show();
-                adc3_vcc_edit.setText(readDate(otherOption.this, "adc3_vcc_value"));
-            }
-        }
-    }
-    public void send_adc3_vsens_edit() {
-        if (!adc3_vsens_edit.getText().toString().isEmpty() && !adc3_vsens_edit.getText().toString().equals(readDate(otherOption.this, "adc3vsens"))) {
-            about.log(TAG, "ADC3系数巳改变,发送参数到服务端");
-            if (isInteger(adc3_vsens_edit.getText().toString()) || isDecimal(adc3_vsens_edit.getText().toString()) && Float.parseFloat(adc3_vsens_edit.getText().toString()) > 0) {
-                if (send_command_to_server("adc3_vsens_set:" + adc3_vsens_edit.getText().toString())){
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置成功!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                saveData("adc3vsens", adc3_vsens_edit.getText().toString());
-                            }).show();
-                }else{
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置失败,请重试!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                adc3_vsens_edit.setText(readDate(otherOption.this, "adc3vsens"));
-                            }).show();
-                }
-            } else {
-                about.log(TAG, "adc3系数项请输入数字类型");
-                Toast.makeText(otherOption.this, "adc3系数项请输入数字类型", LENGTH_SHORT).show();
-                adc3_vsens_edit.setText(readDate(otherOption.this, "adc3vsens"));
-            }
-        }
-    }
-
     public void lo_voltage_set() {
         if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this, "low_voltage"))) {
             about.log(TAG, "最低电压值巳改变,发送参数到服务端");

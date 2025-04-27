@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,le_current,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,sun_voltage_value,le_current,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity{
         sj_power_kw = findViewById(R.id.sj_power_kw);
         out_frequency = findViewById(R.id.out_frequency);
         out_mode = findViewById(R.id.out_mode);
+        sun_voltage_value = findViewById(R.id.sun_voltage_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_line_chart = findViewById(R.id.line_chart);
@@ -319,6 +320,7 @@ public class MainActivity extends AppCompatActivity{
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
                         udpClient.close();
+                        isPaused=true;
                     }
                     if (Conn_status) {
                         Message message = new Message();
@@ -327,6 +329,7 @@ public class MainActivity extends AppCompatActivity{
                     }
                 }
             }
+            isPaused=false;
             Thread_Run = false;
             about.log(TAG, "数据更新线程巳退出");
         }).start();
@@ -337,16 +340,11 @@ public class MainActivity extends AppCompatActivity{
         @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
-            String ac = null;
+            String ac;
             if (msg.what == 1) {
                 //交流电压
-                if (unicodeToString(info[13]).equals("市电供电") || unicodeToString(info[13]).equals("电池电压过低") || unicodeToString(info[13]).equals("固定市电模式")){
-                    out_Voltage.setText(info[1]);
-                    ac = info[1];
-                }else if (unicodeToString(info[13]).equals("逆变供电") || unicodeToString(info[13]).equals("固定逆变模式")){
-                    out_Voltage.setText(info[1]);
-                    ac = info[1];
-                }
+                out_Voltage.setText(info[1]);
+                ac = info[1];
                 //交流电流
                 Float jl_dl = Float.parseFloat(info[3]);
                 String formattedValue_iv_Value = df.format(jl_dl);
@@ -364,24 +362,20 @@ public class MainActivity extends AppCompatActivity{
                 out_frequency.setText(info[7]+" hz");
                 //为电池电压
                 bat_Voltage.setText(info[9]);
+                //为光伏电压
+                sun_voltage_value.setText(info[11]);
                 //为太阳能电流
-                le_current.setText(info[11]);
+                le_current.setText(info[13]);
                 //当前输出模式
-                out_mode.setText(unicodeToString(info[13]));
+                out_mode.setText(unicodeToString(info[15]));
                 //内存使用信息
                 mem_data_display_to_chart();//把内存使用信息放到折线图上
                 //市电切换阈值
-                saveData("power",info[17]);
-                //ADC2设置电池电压偏移量
-                saveData("adc2_offset_value",info[19]);
-                // ADC3设置ACS758LCB-100B VCC/2电压
-                saveData("adc3_vcc_value",info[21]);
-                // ADC3设置ACS758LCB-100B系数
-                saveData("adc3vsens",info[23]);
+                saveData("power",info[19]);
                 //电池低于此值则市电常开
-                saveData("low_voltage",info[25]);
+                saveData("low_voltage",info[21]);
                 //输出模式
-                saveData("out_mode",info[27]);
+                saveData("out_mode",info[23]);
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
@@ -613,7 +607,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint({"DefaultLocale", "SetTextI18n"})
     public void mem_data_display_to_chart(){
-        float _mem = Float.parseFloat(info[15]);
+        float _mem = Float.parseFloat(info[17]);
         DecimalFormat decimalFormat = new DecimalFormat("#.0");
         String formattedValue = decimalFormat.format(_mem/150*100);
         mm_use.setText(formattedValue + "%");
