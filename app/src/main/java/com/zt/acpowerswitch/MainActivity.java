@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,sun_voltage_value,le_current,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,sun_voltage_value,le_current,mos_temp_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart = findViewById(R.id.line_chart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
+        mos_temp_value = findViewById(R.id.mos_temp_value);
         mm_use = findViewById(R.id.mm_use);
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
@@ -366,16 +367,20 @@ public class MainActivity extends AppCompatActivity{
                 sun_voltage_value.setText(info[11]);
                 //为太阳能电流
                 le_current.setText(info[13]);
+                //为MOS管散热片温度
+                mos_temp_value.setText(info[15]);
                 //当前输出模式
-                out_mode.setText(unicodeToString(info[15]));
+                out_mode.setText(unicodeToString(info[17]));
                 //内存使用信息
                 mem_data_display_to_chart();//把内存使用信息放到折线图上
                 //市电切换阈值
-                saveData("power",info[19]);
+                saveData("power",info[21]);
                 //电池低于此值则市电常开
-                saveData("low_voltage",info[21]);
+                saveData("low_voltage",info[23]);
                 //输出模式
-                saveData("out_mode",info[23]);
+                saveData("out_mode", info[25]);
+                //MOS开启的阈值温度
+                saveData("mos_temp",info[27]);
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
@@ -607,7 +612,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint({"DefaultLocale", "SetTextI18n"})
     public void mem_data_display_to_chart(){
-        float _mem = Float.parseFloat(info[17]);
+        float _mem = Float.parseFloat(info[19]);
         DecimalFormat decimalFormat = new DecimalFormat("#.0");
         String formattedValue = decimalFormat.format(_mem/150*100);
         mm_use.setText(formattedValue + "%");

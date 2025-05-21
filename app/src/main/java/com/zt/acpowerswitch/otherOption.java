@@ -24,12 +24,28 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    private TextView w_edit,low_voltage_set, refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    public String _tmp;
+    private volatile boolean mShouldCheckMode = true;
+    private TextView w_edit,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
         str_pro();
+        new Thread(() -> {
+            while (mShouldCheckMode) {
+                if (!readDate(otherOption.this, "out_mode").equals(_tmp)) {
+                    about.log(TAG, "内容已改变");
+                    _tmp = readDate(otherOption.this, "out_mode");
+                    runOnUiThread(this::out_mode_display);
+                }
+                try {
+                    Thread.sleep(500); // 每次循环间隔 500ms
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
@@ -50,6 +66,12 @@ public class otherOption extends AppCompatActivity {
             low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
         }
         low_voltage_set.setOnClickListener(view -> send_arg_server("最低电压值"));
+        //MOS风扇温度触发值设置
+        mos_trigger_value = findViewById(R.id.mos_trigger_value);
+        if (readDate(otherOption.this, "mos_temp") != null) {
+            mos_trigger_value.setText(readDate(otherOption.this, "mos_temp"));
+        }
+        mos_trigger_value.setOnClickListener(view -> send_arg_server("MOS温度触发值"));
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
         if (readDate(otherOption.this, "refresh_time") != null) {
@@ -60,15 +82,9 @@ public class otherOption extends AppCompatActivity {
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
         pv_mode = findViewById(R.id.pv_mode);
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("自动模式")) {
-            auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-        }
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("市电模式")) {
-            power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-        }
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("逆变模式")) {
-            pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-        }
+        //输出模式显示,字体背景加颜色
+        out_mode_display();
+        //输出模式按钮监听
         auto_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
             if (send_command_to_server("power_out_mode:自动模式")){
@@ -118,6 +134,25 @@ public class otherOption extends AppCompatActivity {
                 .show();
         });
     }
+
+    public void out_mode_display() {
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("自动模式")) {
+            auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+            power_grid_mode.setBackground(null);
+            pv_mode.setBackground(null);
+        }
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("市电模式")) {
+            power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+            auto_mode.setBackground(null);
+            pv_mode.setBackground(null);
+        }
+        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("逆变模式")) {
+            pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+            auto_mode.setBackground(null);
+            power_grid_mode.setBackground(null);
+        }
+    }
+
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
         EditText editText = new EditText(this);
@@ -147,65 +182,80 @@ public class otherOption extends AppCompatActivity {
                             refresh_time_set();
                         }
                         break;
+                    case "MOS温度触发值":
+                        if (!editText.getText().toString().isEmpty()) {
+                            mos_trigger_value.setText(editText.getText());
+                            mos_trigger_value_set();
+                        }
+                        break;
                 }
             })
             .show();
     }
     public void send_w_edit() {
-        if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {
-            about.log(TAG, "功率参数巳改变,发送参数到服务端");
-            if (isInteger(w_edit.getText().toString()) || isDecimal(w_edit.getText().toString()) && Float.parseFloat(w_edit.getText().toString()) > 0) {
-                if (send_command_to_server("set_w:" + w_edit.getText().toString())){
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置成功!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                saveData("power", w_edit.getText().toString());
-                            }).show();
-                }else{
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置失败,请重试!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                w_edit.setText(readDate(otherOption.this, "power"));
-                            }).show();
+        new Thread(() -> {
+            if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {
+                about.log(TAG, "功率参数巳改变,发送参数到服务端");
+                if (isInteger(w_edit.getText().toString()) || isDecimal(w_edit.getText().toString()) && Float.parseFloat(w_edit.getText().toString()) > 0) {
+                        // 切回主线程更新 UI
+                        runOnUiThread(() -> {
+                        if (send_command_to_server("set_w:" + w_edit.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("power", w_edit.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        w_edit.setText(readDate(otherOption.this, "power"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG, "功率设置项请输入数字类型");
+                    Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
+                    w_edit.setText(readDate(otherOption.this, "power"));
                 }
-            } else {
-                about.log(TAG, "功率设置项请输入数字类型");
-                Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
-                w_edit.setText(readDate(otherOption.this, "power"));
             }
-        }
+        }).start();
     }
     public void lo_voltage_set() {
-        if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this, "low_voltage"))) {
-            about.log(TAG, "最低电压值巳改变,发送参数到服务端");
-            if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString()) && Float.parseFloat(low_voltage_set.getText().toString()) > 0) {
-                if (send_command_to_server("low_voltage:" + low_voltage_set.getText().toString())){
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置成功!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                saveData("low_voltage", low_voltage_set.getText().toString());
-                            }).show();
-                }else{
-                    new AlertDialog.Builder(otherOption.this)
-                            .setTitle("提 示:")
-                            .setMessage("设置失败,请重试!")
-                            .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                goAnim(otherOption.this, 50);
-                                low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
-                            }).show();
+        new Thread(() -> {
+            if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this, "low_voltage"))) {
+                about.log(TAG, "最低电压值巳改变,发送参数到服务端");
+                if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString()) && Float.parseFloat(low_voltage_set.getText().toString()) > 0) {
+                    runOnUiThread(() -> {
+                        if (send_command_to_server("low_voltage:" + low_voltage_set.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("low_voltage", low_voltage_set.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG, "最低电压值项请输入数字类型");
+                    Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", LENGTH_SHORT).show();
+                    low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
                 }
-            } else {
-                about.log(TAG, "最低电压值项请输入数字类型");
-                Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", LENGTH_SHORT).show();
-                low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
             }
-        }
+        }).start();
     }
     public void refresh_time_set(){
         new Thread(() -> {
@@ -218,6 +268,39 @@ public class otherOption extends AppCompatActivity {
                     about.log(TAG,"页面刷新项请输入整数类型");
                     Looper.prepare();
                     Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
+                    Looper.loop();
+                }
+            }
+        }).start();
+    }
+    public void mos_trigger_value_set(){
+        new Thread(() -> {
+            if (!mos_trigger_value.getText().toString().isEmpty() && !mos_trigger_value.getText().toString().equals(readDate(otherOption.this,"mos_temp"))){
+                about.log(TAG,"mos温度触发值巳改变");
+                if (isInteger(mos_trigger_value.getText().toString()) || isDecimal(mos_trigger_value.getText().toString()) && Float.parseFloat(mos_trigger_value.getText().toString()) > 0) {
+                    runOnUiThread(() -> {
+                        if (send_command_to_server("mos_temp:" + mos_trigger_value.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("mos_temp", mos_trigger_value.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        mos_trigger_value.setText(readDate(otherOption.this, "mos_temp"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG,"mos温度触发值请输入数字类型");
+                    Looper.prepare();
+                    Toast.makeText(otherOption.this, "mos温度触发值请输入数字类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
@@ -239,5 +322,10 @@ public class otherOption extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mShouldCheckMode = false; // 退出循环
     }
 }

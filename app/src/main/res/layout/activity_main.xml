@@ -130,6 +130,32 @@
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
+                    android:id="@+id/mos_temp_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="35dp"
+                    android:layout_marginEnd="12dp"
+                    android:hint="暂无"
+                    android:textColorHint="#37373F"
+                    android:textSize="18sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/le_current"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/mos_temp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginTop="35dp"
+                    android:text="MOS散热片温度(℃):"
+                    android:textColor="#039BE5"
+                    android:textSize="18sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
                     android:id="@+id/power_kw"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -313,7 +339,7 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
+                    app:layout_constraintTop_toBottomOf="@+id/mos_temp"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView

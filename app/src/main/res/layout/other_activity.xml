@@ -110,7 +110,7 @@
         android:id="@+id/low_voltage_set"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="40dp"
         android:layout_marginEnd="16dp"
         android:hint="21"
         android:textSize="16sp"
@@ -131,6 +131,18 @@
         tools:ignore="HardcodedText" />
 
     <TextView
+        android:id="@+id/textView30"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
+        android:text="设置MOS散热风扇触发温度"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView23"
+        tools:ignore="HardcodedText" />
+
+    <TextView
         android:id="@+id/refresh_time_set"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -140,6 +152,18 @@
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/low_voltage_set"
+        tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
+
+    <TextView
+        android:id="@+id/mos_trigger_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:hint="60"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/refresh_time_set"
         tools:ignore="Autofill,HardcodedText,TextFields,TouchTargetSizeCheck,TextContrastCheck" />
 
     <TextView
@@ -185,7 +209,7 @@
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView23"
+        app:layout_constraintTop_toBottomOf="@+id/textView30"
         tools:ignore="HardcodedText" />
 
     <TextView
