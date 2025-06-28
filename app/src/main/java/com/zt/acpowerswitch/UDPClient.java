@@ -5,12 +5,10 @@ import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
 import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 public class UDPClient {
@@ -49,8 +47,7 @@ public class UDPClient {
                     socket.send(packet);
                 }
             } catch (Exception e) {
-                //e.printStackTrace();
-                about.log(TAG, "发送异常");
+                e.printStackTrace();
             }
         }).start();
     }
@@ -62,14 +59,7 @@ public class UDPClient {
             if (socket != null) {
                 socket.receive(packet);
             }
-        } catch (SocketTimeoutException e) {
-            about.log(TAG, "接收超时: " + e.getMessage());
-            //e.printStackTrace(); // 打印堆栈跟踪
-        } catch (IOException e) {
-            about.log(TAG, "IO异常: " + e.getMessage());
-            e.printStackTrace(); // 打印堆栈跟踪
         } catch (Exception e) {
-            about.log(TAG, "接收异常: " + e.getMessage());
             e.printStackTrace(); // 打印堆栈跟踪
         }
         return new String(packet.getData(), 0, packet.getLength());

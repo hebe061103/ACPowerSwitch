@@ -34,8 +34,7 @@ public class otherOption extends AppCompatActivity {
         str_pro();
         new Thread(() -> {
             while (mShouldCheckMode) {
-                if (!readDate(otherOption.this, "out_mode").equals(_tmp)) {
-                    about.log(TAG, "内容已改变");
+                if (readDate(otherOption.this,"out_mode")!=null && !readDate(otherOption.this, "out_mode").equals(_tmp)) {
                     _tmp = readDate(otherOption.this, "out_mode");
                     runOnUiThread(this::out_mode_display);
                 }
