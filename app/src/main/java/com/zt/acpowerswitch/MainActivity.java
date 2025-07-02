@@ -493,6 +493,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     public void pro_chart_data(List<String> _sd, String label){
+        DecimalFormat df = new DecimalFormat("#.#");
         if (label.equals("每15分钟电压")) {
             String minute_des = "";
             _time_value.clear();
@@ -528,7 +529,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(df.format((Float.parseFloat(_e[1])/1000)))));
             }
             pro_date_power_data(_barChart_list,"过去一小时发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
@@ -553,7 +554,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(df.format(Float.parseFloat(_e[1])/1000))));
             }
             pro_date_power_data(_barChart_list,"昨日发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
@@ -578,7 +579,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(_e[1])));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(df.format(Float.parseFloat(_e[1])/1000))));
             }
             pro_date_power_data(_barChart_list,"上月发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
