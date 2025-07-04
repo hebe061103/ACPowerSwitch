@@ -54,6 +54,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity{
@@ -493,7 +494,6 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     public void pro_chart_data(List<String> _sd, String label){
-        DecimalFormat df = new DecimalFormat("#.#");
         if (label.equals("每15分钟电压")) {
             String minute_des = "";
             _time_value.clear();
@@ -529,9 +529,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(df.format((Float.parseFloat(_e[1])/1000)))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(String.format("%.1f", Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"过去一小时发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"每小时用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -554,9 +554,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(df.format(Float.parseFloat(_e[1])/1000))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"昨日发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"日期");
+            pro_date_power_data(_barChart_list,"每日用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -579,9 +579,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(df.format(Float.parseFloat(_e[1])/1000))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"上月发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"月份");
+            pro_date_power_data(_barChart_list,"每月用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -606,7 +606,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"过去一年发电功率统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"每年用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -707,8 +707,10 @@ public class MainActivity extends AppCompatActivity{
         }
         xAxis.setGranularity(1f);
         BarDataSet dataSet = new BarDataSet(barChart, label);
+        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.1f", value));// 自定义值格式
         dataSet.setBarBorderWidth(0.2f); // 设置条形图之间的间距
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
+        dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
         dataSet.setValueTextSize(8f);
         BarData barData = new BarData(dataSet);
         power_chart.getDescription().setText(des);//右下角描述

@@ -395,7 +395,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="发电功率图表(日/月/年):"
+                    android:text="电量使用图表(时/日/月/年):"
                     android:textColor="#85BC45"
                     android:textSize="18sp"
                     android:textStyle="bold"
