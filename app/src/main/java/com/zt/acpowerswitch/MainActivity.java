@@ -691,31 +691,45 @@ public class MainActivity extends AppCompatActivity{
             case "小时":
                 xAxis.setAxisMinimum(-0.5f);
                 xAxis.setAxisMaximum(23.5f);
+                power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
             case "日期":
                 xAxis.setAxisMinimum(0.5f);
                 xAxis.setAxisMaximum(date_num+0.5f);
+                power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
             case "月份":
                 xAxis.setAxisMinimum(0.5f);
                 xAxis.setAxisMaximum(12.5f);
+                power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
             case "年份":
                 xAxis.setAxisMinimum(2024-0.5f);
                 xAxis.setAxisMaximum(2054.5f);
+                power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
         }
         xAxis.setGranularity(1f);
+        BarData barData = getBarData(barChart, label);
+        power_chart.getDescription().setText(des);//右下角描述
+        power_chart.getDescription().setTextSize(9f);
+        power_chart.setData(barData);//调置数据
+    }
+
+    @NonNull
+    private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
         BarDataSet dataSet = new BarDataSet(barChart, label);
-        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.1f", value));// 自定义值格式
+        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> {
+            if (value < 1){
+                value = 0;
+            }
+            return String.format(Locale.getDefault(), "%.1f", value);
+        });// 自定义值格式
         dataSet.setBarBorderWidth(0.2f); // 设置条形图之间的间距
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
         dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
         dataSet.setValueTextSize(8f);
-        BarData barData = new BarData(dataSet);
-        power_chart.getDescription().setText(des);//右下角描述
-        power_chart.getDescription().setTextSize(9f);
-        power_chart.setData(barData);//调置数据
+        return new BarData(dataSet);
     }
 
     /* 获取屏幕状态通过PowerManager */

@@ -47,7 +47,7 @@ public class UDPClient {
                     socket.send(packet);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }).start();
     }
@@ -60,7 +60,7 @@ public class UDPClient {
                 socket.receive(packet);
             }
         } catch (Exception e) {
-            e.printStackTrace(); // 打印堆栈跟踪
+            //e.printStackTrace(); // 打印堆栈跟踪
         }
         return new String(packet.getData(), 0, packet.getLength());
     }
