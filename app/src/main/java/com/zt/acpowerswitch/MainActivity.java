@@ -529,9 +529,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(String.format("%.1f", Float.parseFloat(_e[1])/1000))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(String.format("%.1f", Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"每小时用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"每小时用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" w)",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -719,12 +719,7 @@ public class MainActivity extends AppCompatActivity{
     @NonNull
     private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
         BarDataSet dataSet = new BarDataSet(barChart, label);
-        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> {
-            if (value < 1){
-                value = 0;
-            }
-            return String.format(Locale.getDefault(), "%.1f", value);
-        });// 自定义值格式
+        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.1f", value));// 自定义值格式
         dataSet.setBarBorderWidth(0.2f); // 设置条形图之间的间距
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
         dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
