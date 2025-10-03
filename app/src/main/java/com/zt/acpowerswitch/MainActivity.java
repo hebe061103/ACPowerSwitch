@@ -531,7 +531,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(String.format("%.1f", Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"前一小时用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" w/h)",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"前一小时用电量统计(单位:"+ String.format("%.3f", Float.parseFloat(last_power)) +" kw.h(度))",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -556,7 +556,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"前一日用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"日期");
+            pro_date_power_data(_barChart_list,"前一日用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kw.h(度))",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -581,7 +581,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"上一月用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"月份");
+            pro_date_power_data(_barChart_list,"上一月用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kw.h(度))",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -606,7 +606,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])/1000))));
             }
-            pro_date_power_data(_barChart_list,"前一年用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power) / 1000) +" kw)",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"前一年用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kw.h(度))",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
