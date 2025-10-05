@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="光伏储能逆变市电输出转换监测系统"
+            android:text="光伏市电输出自动转换监测系统"
             android:textColor="#FF9800"
             android:textSize="22sp"
             android:textStyle="bold"

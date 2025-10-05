@@ -44,7 +44,7 @@ dependencies {
     //noinspection UseTomlInstead
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0-alpha")
     //noinspection UseTomlInstead
-    implementation ("androidx.appcompat:appcompat:1.7.0")                 //必须 1.0.0 以上
+    implementation ("androidx.appcompat:appcompat:1.7.1")                 //必须 1.0.0 以上
     //noinspection UseTomlInstead
     implementation  ("io.github.scwang90:refresh-layout-kernel:2.1.0")    //核心必须依赖
     //noinspection UseTomlInstead

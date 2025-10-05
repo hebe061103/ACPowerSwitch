@@ -641,6 +641,7 @@ public class MainActivity extends AppCompatActivity{
         mem_use_chart.getXAxis().setAxisMinimum(1f);
         mem_use_chart.getXAxis().setAxisMaximum(100f);
         mem_use_chart.getXAxis().setEnabled(false);
+        mem_use_chart.setTouchEnabled(false);//完全禁用触摸交互,包括不显示点击时的高亮坐标十字线
         mem_use_chart.getDescription().setText(" ");//右下角描述
         mem_use_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         //mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
