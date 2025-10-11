@@ -178,7 +178,7 @@
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/sj_power_kw"
+                    app:layout_constraintTop_toBottomOf="@+id/PF"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -192,6 +192,19 @@
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/power_kw"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/PF"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="35dp"
+                    android:layout_marginEnd="12dp"
+                    android:hint="暂无"
+                    android:textColorHint="#37373F"
+                    android:textSize="18sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/sj_power_kw"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -224,7 +237,7 @@
                     android:id="@+id/textView6"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="输出电压(AC/v):"
+                    android:text="输出电压(V):"
                     android:textColor="#00BCD4"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -236,7 +249,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="输出电流(out-A):"
+                    android:text="输出电流(A):"
                     android:textColor="#C54ADA"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -248,7 +261,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="有功功率(P/W):"
+                    android:text="有功功率(W):"
                     android:textColor="#E84A3F"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -256,11 +269,23 @@
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
+                    android:id="@+id/textView1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="35dp"
+                    android:text="功率因数(PF):"
+                    android:textColor="#E84A3F"
+                    android:textSize="18sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView13"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
                     android:id="@+id/textView13"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="视在功率(S/W):"
+                    android:text="视在功率(S):"
                     android:textColor="#8BC34A"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -276,7 +301,7 @@
                     android:textColor="#CDDC39"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView13"
+                    app:layout_constraintTop_toBottomOf="@+id/textView1"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView

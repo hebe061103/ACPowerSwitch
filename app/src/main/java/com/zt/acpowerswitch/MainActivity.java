@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,out_frequency,out_mode,bat_Voltage,sun_voltage_value,le_current,mos_temp_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,sun_voltage_value,le_current,mos_temp_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -127,6 +127,7 @@ public class MainActivity extends AppCompatActivity{
         out_Current = findViewById(R.id.out_Current);
         power_kw = findViewById(R.id.power_kw);
         sj_power_kw = findViewById(R.id.sj_power_kw);
+        pf = findViewById(R.id.PF);
         out_frequency = findViewById(R.id.out_frequency);
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
@@ -343,6 +344,7 @@ public class MainActivity extends AppCompatActivity{
         public void handleMessage(Message msg) {
             DecimalFormat df = new DecimalFormat("#.##");
             String ac;
+            Float sj_power= 0.0F;
             if (msg.what == 1) {
                 //交流电压
                 out_Voltage.setText(info[1]);
@@ -354,12 +356,15 @@ public class MainActivity extends AppCompatActivity{
                 String iv = info[3];
                 //交流有功功率
                 power_kw.setText(info[5]);
-                //交流实际功率
+                //交流视在功率
                 if (ac != null) {
-                    Float sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                    sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
                     String formattedValue = df.format(sj_power);
                     sj_power_kw.setText(formattedValue);
                 }
+                //功率因数
+                String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
+                pf.setText(pf_value);
                 //交流频率
                 out_frequency.setText(info[7]+" hz");
                 //为电池电压
