@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PowerSwitch</string>
+    <string name="app_name">逆变器监控</string>
     <string name="about_about">关于</string>
     <string name="other_option">参数设置</string>
     <string name="wifi_readme">在此处选择电源切换模块需要连接到的wifi网络，给模块进行配网操作</string>

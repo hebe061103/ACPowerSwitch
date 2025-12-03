@@ -60,23 +60,23 @@ public class about extends AppCompatActivity {
         return info ;
     }
     private void clickEvent() {
-            about_tx.setOnClickListener(view -> {
-                i++;
-                goAnim(this,50);
-                if(i==6){
-                    i=0;
-                    Intent intent = new Intent(about.this, Engineering.class);
-                    startActivities(new Intent[]{intent});
-                }
-            });
-            run_log.setOnLongClickListener(view -> {
-                goAnim(about.this, 50);
-                logList.clear();
-                Message msg = new Message();
-                msg.what = 1;
-                gHandler.sendMessage(msg);
-                return false;
-            });
+        about_tx.setOnClickListener(view -> {
+            i++;
+            goAnim(this,50);
+            if(i==6){
+                i=0;
+                Intent intent = new Intent(about.this, Engineering.class);
+                startActivities(new Intent[]{intent});
+            }
+        });
+        run_log.setOnLongClickListener(view -> {
+            goAnim(about.this, 50);
+            logList.clear();
+            Message msg = new Message();
+            msg.what = 1;
+            gHandler.sendMessage(msg);
+            return false;
+        });
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -104,17 +104,24 @@ public class about extends AppCompatActivity {
     }
     public static void log(String tag, String m) {
         Log.e(tag, m);
-        if (logList.size() < 1000) {
-            logList.add(tag + m);
-            if (!stop_refresh) {
-                if (adapter != null) {
-                    Message msg = new Message();
-                    msg.what = 1;
-                    gHandler.sendMessage(msg);
+        if (gHandler != null) {
+            gHandler.post(() -> {
+                if (logList.size() < 1000) {
+                    logList.add(tag + m);
+                    if (!stop_refresh) {
+                        if (adapter != null) {
+                            Message msg = new Message();
+                            msg.what = 1;
+                            gHandler.sendMessage(msg);
+                        }
+                    }
+                } else {
+                    logList.clear();
                 }
-            }
-        } else logList.clear();
+            });
+        }
     }
+
     @SuppressLint("HandlerLeak")
     public static Handler gHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -140,5 +147,9 @@ public class about extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         stop_refresh=false;
+        // 清理Handler，避免内存泄漏
+        if (gHandler != null) {
+            gHandler.removeCallbacksAndMessages(null);
+        }
     }
 }
