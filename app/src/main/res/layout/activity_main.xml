@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="光伏市电输出自动转换监测系统"
+            android:text="光伏市电输出转换监测系统"
             android:textColor="#FF9800"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:gravity="center"
-            android:hint="ESP32C3"
+            android:hint="ESP32"
             android:textColor="#999999"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -110,7 +110,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="光伏电压(V):"
+                    android:text="☀️ 光伏电压(V):"
                     android:textColor="#5BE91E"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -121,7 +121,7 @@
                     android:id="@+id/sun_ic"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="光伏充电电流(i):"
+                    android:text="⏳️ 光伏充电电流(i):"
                     android:layout_marginTop="35dp"
                     android:textColor="#E91E63"
                     android:textSize="18sp"
@@ -148,7 +148,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="0dp"
                     android:layout_marginTop="35dp"
-                    android:text="MOS散热片温度(℃):"
+                    android:text="🌡️TPS54560温度(℃):"
                     android:textColor="#039BE5"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -225,7 +225,7 @@
                     android:id="@+id/menu_img"
                     android:layout_width="32dp"
                     android:layout_height="29dp"
-                    android:layout_marginTop="25dp"
+                    android:layout_marginTop="10dp"
                     android:layout_marginEnd="12dp"
                     android:contentDescription="菜单"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -237,11 +237,12 @@
                     android:id="@+id/textView6"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="输出电压(V):"
+                    android:layout_marginTop="20dp"
+                    android:text="⚡ 输出电压(V):"
                     android:textColor="#00BCD4"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/guideline28"
+                    app:layout_constraintTop_toBottomOf="@+id/textView5"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -249,7 +250,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="输出电流(A):"
+                    android:text="📈 输出电流(A):"
                     android:textColor="#C54ADA"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -261,7 +262,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="有功功率(W):"
+                    android:text="🥃 有功功率(W):"
                     android:textColor="#E84A3F"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -273,7 +274,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="功率因数(PF):"
+                    android:text="🎢 功率因数(PF):"
                     android:textColor="#E84A3F"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -285,7 +286,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="视在功率(S):"
+                    android:text="🍺 视在功率(S):"
                     android:textColor="#8BC34A"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -297,7 +298,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="交流频率(Hz):"
+                    android:text="♏ 交流频率(Hz):"
                     android:textColor="#CDDC39"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -308,19 +309,20 @@
                     android:id="@+id/out_Voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
                     android:layout_marginEnd="12dp"
                     android:hint="暂无"
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/guideline28"
+                    app:layout_constraintTop_toBottomOf="@+id/menu_img"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
                     android:id="@+id/textView5"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="25dp"
+                    android:layout_marginTop="10dp"
                     android:text="交流输出信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
@@ -334,7 +336,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="当前输出模式:"
+                    android:text="🔌 当前输出模式:"
                     android:textColor="#2196F3"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -372,7 +374,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="35dp"
-                    android:text="电池电压(v):"
+                    android:text="🔋 电池电压(v):"
                     android:textColor="#FF9800"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -511,13 +513,6 @@
                     app:layout_constraintTop_toBottomOf="@+id/textView27"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/guideline28"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layout_constraintGuide_begin="86dp" />
-
                 <ImageView
                     android:id="@+id/mark_status"
                     android:layout_width="15dp"
@@ -532,5 +527,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.scwang.smart.refresh.layout.SmartRefreshLayout>
