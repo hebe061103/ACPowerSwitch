@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,sun_voltage_value,le_current,mos_temp_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,irf1404_value,sun_voltage_value,le_current,mos_temp_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -132,6 +132,7 @@ public class MainActivity extends AppCompatActivity{
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
+        irf1404_value =  findViewById(R.id.irf1404_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
@@ -190,6 +191,29 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.setNoDataText("暂无小时数据");
             }
         });
+        //小时柱状图长按动作,清除服务端小时历史数据
+        hour_power.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(this)
+                    .setTitle("注意:")
+                    .setMessage("是否清除服务端小时历史数据,请慬慎执行!")
+                    .setPositiveButton("取消",null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if(send_command_to_server("del_file:H_Total_power")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("删除完成")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
+            return false;
+        });
         TextView day_power = findViewById(R.id.day_power);
         day_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -200,6 +224,29 @@ public class MainActivity extends AppCompatActivity{
             }else{
                 power_chart.setNoDataText("暂无日期数据");
             }
+        });
+        //日柱状图长按动作,清除服务端日历史数据
+        day_power.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(this)
+                    .setTitle("注意:")
+                    .setMessage("是否清除服务端日历史数据,请慬慎执行!")
+                    .setPositiveButton("取消",null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if(send_command_to_server("del_file:D_Total_power")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("删除完成")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
+            return false;
         });
         TextView month_power = findViewById(R.id.month_power);
         month_power.setOnClickListener(view -> {
@@ -212,6 +259,29 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.setNoDataText("暂无月份数据");
             }
         });
+        //月柱状图长按动作,清除服务端月历史数据
+        month_power.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(this)
+                    .setTitle("注意:")
+                    .setMessage("是否清除服务端月历史数据,请慬慎执行!")
+                    .setPositiveButton("取消",null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if(send_command_to_server("del_file:M_Total_power")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("删除完成")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
+            return false;
+        });
         TextView year_power = findViewById(R.id.year_power);
         year_power.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -222,6 +292,29 @@ public class MainActivity extends AppCompatActivity{
             }else{
                 power_chart.setNoDataText("暂无年份数据");
             }
+        });
+        //年柱状图长按动作,清除服务端年历史数据
+        year_power.setOnLongClickListener(view -> {
+            goAnim(MainActivity.this, 50);
+            new AlertDialog.Builder(this)
+                    .setTitle("注意:")
+                    .setMessage("是否清除服务端年历史数据,请慬慎执行!")
+                    .setPositiveButton("取消",null)
+                    .setNegativeButton("确定", (dialogInterface, i) -> {
+                        goAnim(MainActivity.this, 50);
+                        if(send_command_to_server("del_file:Y_Total_power")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("删除完成")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> goAnim(MainActivity.this, 50)).show();
+                        }else{
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
+                        }
+                    }).show();
+            return false;
         });
         bat_line_chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
@@ -407,6 +500,8 @@ public class MainActivity extends AppCompatActivity{
                 saveData("out_mode", info[25]);
                 //MOS开启的阈值温度
                 saveData("mos_temp",info[27]);
+                //主功率板温度
+                irf1404_value.setText("暂无");
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
