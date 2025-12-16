@@ -76,7 +76,7 @@
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/out_mode"
+                    app:layout_constraintTop_toBottomOf="@+id/pv_info"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -106,15 +106,28 @@
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
+                    android:id="@+id/pv_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="光伏电池信息:"
+                    android:textColor="#78909C"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView11"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
                     android:id="@+id/sun_voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="25dp"
-                    android:text="☀️ 光伏电压(V):"
+                    android:text="☀️ 光伏输出电压(V):"
                     android:textColor="#5BE91E"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textView11"
+                    app:layout_constraintTop_toBottomOf="@+id/pv_info"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -122,7 +135,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="25dp"
-                    android:text="⏳️ 光伏电流(i):"
+                    android:text="⏳️ 光伏输出电流(i):"
                     android:textColor="#E91E63"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
@@ -139,7 +152,20 @@
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/le_current"
+                    app:layout_constraintTop_toBottomOf="@+id/sys_temperature"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/sys_temperature"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="系统温度信息:"
+                    android:textColor="#78909C"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -152,7 +178,7 @@
                     android:textColor="#039BE5"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
+                    app:layout_constraintTop_toBottomOf="@+id/sys_temperature"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
