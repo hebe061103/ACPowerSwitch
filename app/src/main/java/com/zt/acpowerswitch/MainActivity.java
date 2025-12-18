@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,irf1404_value,sun_voltage_value,le_current,mos_temp_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,irf1404_value,load_rate_value,sun_voltage_value,le_current,mos_temp_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -133,6 +133,7 @@ public class MainActivity extends AppCompatActivity{
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
         irf1404_value =  findViewById(R.id.irf1404_value);
+        load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
@@ -462,6 +463,8 @@ public class MainActivity extends AppCompatActivity{
                 pf.setText(pf_value);
                 //交流频率
                 out_frequency.setText(info[7]+" hz");
+                //负载使用率
+                load_rate_value.setText(df.format((sj_power/5000*100))+" %");
                 //为电池电压
                 bat_Voltage.setText(info[9]);
                 //为光伏电压
