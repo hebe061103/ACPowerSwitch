@@ -353,9 +353,7 @@ public class MainActivity extends AppCompatActivity{
             stop_send = true;
             udp_response = null;
             while (num < 10) {
-                udpClient.sendMessage(data);
-                sleep(100);
-                udp_response = udpClient.receiveMessage();
+                udp_response = udpClient.sendAndReceive(data);
                 about.log(TAG, "返回数据:" + udp_response);
                 if (udp_response != null && udp_response.contains("ACK")) {
                     result[0] = true; // 设置返回值
@@ -383,13 +381,11 @@ public class MainActivity extends AppCompatActivity{
             while (udp_connect) {
                 while (!isPaused) {
                     if (checkScreenStatus() && !stop_send) {
-                        udpClient.sendMessage("get_info");
-                        about.log(TAG, "发送数据请求指令!");
+                        udp_response = udpClient.sendAndReceive("get_info");
                         sleep(page_refresh_time);
-                        udp_response = udpClient.receiveMessage();
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
-                        about.log(TAG, "服务端返回数据:" + udp_response);
+                        about.log(TAG, "数据内容: " + udp_response);
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "");
                         modifiedString = modifiedString.replace(",", ":");
@@ -549,7 +545,6 @@ public class MainActivity extends AppCompatActivity{
         udp_response=null;
         about.log(TAG, "请求全部数据");
         udpClient.sendMessage("get_all_file");
-        sleep(page_refresh_time);
         while (!data_rec_finish) {
             udp_response=udpClient.receiveMessage();
             if (udp_response != null && udp_response.contains("min>")) {
@@ -612,9 +607,8 @@ public class MainActivity extends AppCompatActivity{
                 _M_Total_power.clear();
                 _Y_Total_power.clear();
                 debugList.clear();
-                udpClient.sendMessage("get_all_file");
-                sleep(page_refresh_time);
                 cycle_size++;
+                udpClient.sendMessage("get_all_file");
             }
         }
     }
