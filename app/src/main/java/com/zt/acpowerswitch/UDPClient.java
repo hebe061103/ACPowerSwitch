@@ -21,7 +21,7 @@ public class UDPClient {
         new Thread(() -> {
             try {
                 if (!udp_connect) {
-                    socket = new DatagramSocket(udpServerPort);
+                    socket = new DatagramSocket();
                     socket.setSoTimeout(3000);
                     udp_connect = true;
                     about.log(TAG, "创建套接字成功");
