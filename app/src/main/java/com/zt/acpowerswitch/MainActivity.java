@@ -472,12 +472,12 @@ public class MainActivity extends AppCompatActivity{
                 if (unicodeToString(info[17]).equals("逆变供电")) {
                     //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
                     float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);
-                    if (pw - (sj_power + 30) > 0) {
+                    if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                         current_direction.setText("\uD83D\uDCA7 电池充电电流(A):");
-                        bat_out_current.setText(df.format((pw - (sj_power + 30)) / Float.parseFloat(info[9])));
+                        bat_out_current.setText(df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
                     } else {
                         current_direction.setText("\uD83D\uDCA7 电池放电电流(A):");
-                        bat_out_current.setText(df.format(((sj_power + 30) - pw) / Float.parseFloat(info[9])));
+                        bat_out_current.setText(df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                     }
                 }else if (unicodeToString(info[17]).equals("电池电压过低")){
                     current_direction.setText("\uD83D\uDCA7 无逆变自身功耗放电电流(A):");
