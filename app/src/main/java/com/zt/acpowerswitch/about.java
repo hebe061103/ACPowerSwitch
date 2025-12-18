@@ -3,10 +3,7 @@ package com.zt.acpowerswitch;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -35,30 +32,14 @@ public class about extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.about);
-        TextView mBlueMessage = findViewById(R.id.blue_info);
         about_tx = findViewById(R.id.about);
         listView = findViewById(R.id.log_list_view);
         run_log = findViewById(R.id.run_log);
-        mBlueMessage.setText(getBluetoothMAC(this));
         clickEvent();
         adapter = new ArrayAdapter<>(about.this, R.layout.list_item, logList);
         listView.setAdapter(adapter);
     }
 
-    @SuppressLint("HardwareIds")
-    @SuppressWarnings("MissingPermission")
-    public static String getBluetoothMAC(Context context) {
-        String info = null;
-        try {
-            if (context.checkCallingOrSelfPermission(android.Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
-                BluetoothAdapter bta = BluetoothAdapter.getDefaultAdapter();
-                info = "name:"+ bta.getName()+"\n"+"address:"+bta.getAddress();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return info ;
-    }
     private void clickEvent() {
         about_tx.setOnClickListener(view -> {
             i++;

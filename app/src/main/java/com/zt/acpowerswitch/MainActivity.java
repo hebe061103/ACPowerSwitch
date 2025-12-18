@@ -343,6 +343,7 @@ public class MainActivity extends AppCompatActivity{
                 break;
             }
         }
+        about.log(TAG, "线程调用完成");
     }
     public static boolean send_command_to_server(String data) {
         CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1
@@ -383,6 +384,7 @@ public class MainActivity extends AppCompatActivity{
                 while (!isPaused) {
                     if (checkScreenStatus() && !stop_send) {
                         udpClient.sendMessage("get_info");
+                        about.log(TAG, "发送数据请求指令!");
                         sleep(page_refresh_time);
                         udp_response = udpClient.receiveMessage();
                     }
@@ -432,7 +434,6 @@ public class MainActivity extends AppCompatActivity{
             Thread_Run = false;
             about.log(TAG, "数据更新线程巳退出");
         }).start();
-        about.log(TAG, "线程调用完成");
     }
     @SuppressLint("HandlerLeak")
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
