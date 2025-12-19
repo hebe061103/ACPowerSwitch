@@ -12,6 +12,12 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class UDPClient {
     private static final String TAG = "UDPClient:";
@@ -63,22 +69,41 @@ public class UDPClient {
     }
     private final Object receiveLock = new Object();
     public String receiveMessage() {
-        synchronized (receiveLock) {
-            try {
-                byte[] receiveData = new byte[1024]; // 缓冲区大小
-                packet = new DatagramPacket(receiveData, receiveData.length);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // 使用 Callable 可以返回结果
+            Future<String> future = executor.submit(() -> {
+                synchronized (receiveLock) {
+                    try {
+                        byte[] receiveData = new byte[1024];
+                        packet = new DatagramPacket(receiveData, receiveData.length);
 
-                socket.receive(packet); // 这里会阻塞直到收到数据或超时
+                        // 设置接收超时（避免永久阻塞）
+                        socket.setSoTimeout(5000);  // 5秒超时
+                        socket.receive(packet);
 
-                return new String(packet.getData(), 0, packet.getLength());
+                        return new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
 
-            } catch (SocketTimeoutException e) {
-                about.log(TAG, "接收超时，未收到任何数据");
-                return null;
-            } catch (IOException e) {
-                about.log(TAG, "接收数据异常: " + e.getMessage());
-                return null;
-            }
+                    } catch (SocketTimeoutException e) {
+                        about.log(TAG, "接收超时，未收到任何数据");
+                        return null;
+                    } catch (IOException e) {
+                        about.log(TAG, "接收数据异常: " + e.getMessage());
+                        return null;
+                    }
+                }
+            });
+            // 等待并获取结果（可设置超时）
+            return future.get(6, TimeUnit.SECONDS);  // 等待6秒
+
+        } catch (TimeoutException e) {
+            about.log(TAG, "接收操作超时");
+            return null;
+        } catch (Exception e) {
+            about.log(TAG, "接收异常: " + e.getMessage());
+            return null;
+        } finally {
+            executor.shutdown();
         }
     }
     /**
