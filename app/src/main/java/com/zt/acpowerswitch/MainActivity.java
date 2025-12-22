@@ -480,10 +480,10 @@ public class MainActivity extends AppCompatActivity{
                         bat_out_current.setText(df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                     }
                 }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                    current_direction.setText("\uD83D\uDCA7 无逆变自身功耗放电电流(A):");
-                    bat_out_current.setText(df.format(10 / Float.parseFloat(info[9]))); //10w为估算值,具体要测量才知道
+                    current_direction.setText("\uD83D\uDCA7 (无逆变)自身功耗放电电流(A):");
+                    bat_out_current.setText(df.format(3.6 / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                 } else{
-                    current_direction.setText("\uD83D\uDCA7 有逆变自身功耗放电电流(A):");
+                    current_direction.setText("\uD83D\uDCA7 (有逆变)自身功耗放电电流(A):");
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
                 //为MOS管散热片温度
