@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,irf1404_value,load_rate_value,sun_voltage_value,le_current,mos_temp_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -132,7 +132,8 @@ public class MainActivity extends AppCompatActivity{
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
-        irf1404_value =  findViewById(R.id.irf1404_value);
+        temp0_value = findViewById(R.id.temp0_value);//temp0_value定义为XL4016散热片的温度值
+        temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为功率板irf1404散热片的温度值
         load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
@@ -140,7 +141,6 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart = findViewById(R.id.line_chart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
-        mos_temp_value = findViewById(R.id.mos_temp_value);
         mm_use = findViewById(R.id.mm_use);
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
@@ -487,7 +487,7 @@ public class MainActivity extends AppCompatActivity{
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
                 //为MOS管散热片温度
-                mos_temp_value.setText(info[15]);
+                temp0_value.setText(info[15]);
                 //当前输出模式
                 out_mode.setText(unicodeToString(info[17]));
                 //内存使用信息
@@ -501,7 +501,7 @@ public class MainActivity extends AppCompatActivity{
                 //MOS开启的阈值温度
                 saveData("mos_temp",info[27]);
                 //主功率板温度
-                irf1404_value.setText("暂无");
+                temp1_value.setText("暂无");
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
