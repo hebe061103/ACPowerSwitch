@@ -26,7 +26,7 @@ public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     public String _tmp;
     private volatile boolean mShouldCheckMode = true;
-    private TextView w_edit,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    private TextView w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,6 +59,12 @@ public class otherOption extends AppCompatActivity {
             w_edit.setText(readDate(otherOption.this, "power"));
         }
         w_edit.setOnClickListener(view -> send_arg_server("功率参数设置"));
+        //开启逆变阈值
+        open_pv_value = findViewById(R.id.open_pv_value);
+        if (readDate(otherOption.this, "open_pv_value") != null) {
+            open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
+        }
+        open_pv_value.setOnClickListener(view -> send_arg_server("开启逆变阈值"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
         if (readDate(otherOption.this, "low_voltage") != null) {
@@ -169,6 +175,12 @@ public class otherOption extends AppCompatActivity {
                             send_w_edit();
                         }
                         break;
+                    case "开启逆变阈值":
+                        if (!editText.getText().toString().isEmpty()) {
+                            open_pv_value.setText(editText.getText());
+                            send_pv_value_edit();
+                        }
+                        break;
                     case "最低电压值":
                         if (!editText.getText().toString().isEmpty()) {
                             low_voltage_set.setText(editText.getText());
@@ -220,6 +232,39 @@ public class otherOption extends AppCompatActivity {
                     about.log(TAG, "功率设置项请输入数字类型");
                     Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
                     w_edit.setText(readDate(otherOption.this, "power"));
+                }
+            }
+        }).start();
+    }
+    public void send_pv_value_edit() {
+        new Thread(() -> {
+            if (!open_pv_value.getText().toString().isEmpty() && !open_pv_value.getText().toString().equals(readDate(otherOption.this, "open_pv_value"))) {
+                about.log(TAG, "开启逆变阈值巳改变,发送参数到服务端");
+                if (isInteger(open_pv_value.getText().toString()) || isDecimal(open_pv_value.getText().toString()) && Float.parseFloat(open_pv_value.getText().toString()) > 0) {
+                    // 切回主线程更新 UI
+                    runOnUiThread(() -> {
+                        if (send_command_to_server("set_open_pv_value:" + open_pv_value.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("open_pv_value", open_pv_value.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG, "逆变阈值请输入数字类型");
+                    Toast.makeText(otherOption.this, "逆变阈值请输入数字类型", LENGTH_SHORT).show();
+                    open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
                 }
             }
         }).start();
