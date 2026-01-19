@@ -230,7 +230,7 @@ public class otherOption extends AppCompatActivity {
                     });
                 } else {
                     about.log(TAG, "功率设置项请输入数字类型");
-                    Toast.makeText(otherOption.this, "功率设置项请输入数字类型", LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "功率设置项请输入整数或小数类型", LENGTH_SHORT).show();
                     w_edit.setText(readDate(otherOption.this, "power"));
                 }
             }
@@ -263,7 +263,7 @@ public class otherOption extends AppCompatActivity {
                     });
                 } else {
                     about.log(TAG, "逆变阈值请输入数字类型");
-                    Toast.makeText(otherOption.this, "逆变阈值请输入数字类型", LENGTH_SHORT).show();
+                    runOnUiThread(() -> Toast.makeText(otherOption.this, "逆变阈值请输入整数或小数类型", Toast.LENGTH_SHORT).show());
                     open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
                 }
             }
@@ -295,7 +295,7 @@ public class otherOption extends AppCompatActivity {
                     });
                 } else {
                     about.log(TAG, "最低电压值项请输入数字类型");
-                    Toast.makeText(otherOption.this, "最低电压值项请输入数字类型", LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "最低电压值项请输入整数或小数类型", LENGTH_SHORT).show();
                     low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
                 }
             }
@@ -344,7 +344,7 @@ public class otherOption extends AppCompatActivity {
                 } else {
                     about.log(TAG,"mos温度触发值请输入数字类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "mos温度触发值请输入数字类型", LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "mos温度触发值请输入整数类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
