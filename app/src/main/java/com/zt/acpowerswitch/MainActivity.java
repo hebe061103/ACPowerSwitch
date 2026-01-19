@@ -507,6 +507,8 @@ public class MainActivity extends AppCompatActivity{
                 temp1_value.setText(readable);
                 //主功率板散热风扇转速值
                 fan_value.setText(info[31]);
+                //开启逆变的电压阈值
+                saveData("open_pv_value",info[33]);
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
