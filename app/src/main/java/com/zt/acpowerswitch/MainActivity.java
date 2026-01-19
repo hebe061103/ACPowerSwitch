@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity{
         current_direction = findViewById(R.id.current_direction);
         temp0_value = findViewById(R.id.temp0_value);//temp0_value定义为XL4016散热片的温度值
         temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为功率板irf1404散热片的温度值
+        fan_value = findViewById(R.id.fan_value);//主功率板散热风扇转速值
         load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
@@ -487,7 +488,7 @@ public class MainActivity extends AppCompatActivity{
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
                 //为MOS管散热片温度
-                temp0_value.setText(info[15]);
+                temp0_value.setText(info[15]+"°C");
                 //当前输出模式
                 out_mode.setText(unicodeToString(info[17]));
                 //内存使用信息
@@ -501,7 +502,11 @@ public class MainActivity extends AppCompatActivity{
                 //MOS开启的阈值温度
                 saveData("mos_temp",info[27]);
                 //主功率板温度
-                temp1_value.setText("暂无");
+                String raw = info[29];
+                String readable = raw.replace("\\xb0", "°");
+                temp1_value.setText(readable);
+                //主功率板散热风扇转速值
+                fan_value.setText(info[31]);
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
