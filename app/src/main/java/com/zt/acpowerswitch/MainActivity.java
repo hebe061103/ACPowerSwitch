@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,temp2_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -132,9 +132,10 @@ public class MainActivity extends AppCompatActivity{
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
-        temp0_value = findViewById(R.id.temp0_value);//temp0_value定义为XL4016散热片的温度值
-        temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为功率板irf1404散热片的温度值
-        fan_value = findViewById(R.id.fan_value);//主功率板散热风扇转速值
+        temp0_value = findViewById(R.id.temp0_value);//temp0_value为主控板散热片温度
+        temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为主功率板散热片温度
+        temp2_value = findViewById(R.id.temp2_value);//temp2_value定义为主控板风扇转速
+        fan_value = findViewById(R.id.fan_value);//定义为主功率板散热风扇转速值
         load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
         bat_Voltage = findViewById(R.id.bat_Voltage);
@@ -462,7 +463,11 @@ public class MainActivity extends AppCompatActivity{
                 //交流频率
                 out_frequency.setText(info[7]+" hz");
                 //负载使用率
-                load_rate_value.setText(df.format((sj_power/5000*100))+" %");
+                if (unicodeToString(info[17]).equals("逆变供电")) {
+                    load_rate_value.setText(df.format((sj_power / 5000 * 100)) + " %");
+                }else{
+                    load_rate_value.setText("市电无限制");
+                }
                 //为电池电压
                 bat_Voltage.setText(info[9]);
                 //为光伏电压
@@ -481,13 +486,13 @@ public class MainActivity extends AppCompatActivity{
                         bat_out_current.setText(df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                     }
                 }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                    current_direction.setText("\uD83D\uDCA7 (无逆变)自身功耗放电电流(A):");
+                    current_direction.setText("\uD83D\uDCA7 (无逆变)系统放电电流(A):");
                     bat_out_current.setText(df.format(3.6 / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                 } else{
-                    current_direction.setText("\uD83D\uDCA7 (有逆变)自身功耗放电电流(A):");
+                    current_direction.setText("\uD83D\uDCA7 (有逆变)系统放电电流(A):");
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
-                //为MOS管散热片温度
+                //为主控板散热片温度
                 temp0_value.setText(info[15]+"°C");
                 //当前输出模式
                 out_mode.setText(unicodeToString(info[17]));
@@ -499,9 +504,9 @@ public class MainActivity extends AppCompatActivity{
                 saveData("low_voltage",info[23]);
                 //输出模式
                 saveData("out_mode", info[25]);
-                //MOS开启的阈值温度
+                //MOS风扇开启的阈值温度
                 saveData("mos_temp",info[27]);
-                //主功率板温度
+                //主功率板散热片温度
                 String raw = info[29];
                 String readable = raw.replace("\\xb0", "°");
                 temp1_value.setText(readable);
@@ -509,6 +514,16 @@ public class MainActivity extends AppCompatActivity{
                 fan_value.setText(info[31]);
                 //开启逆变的电压阈值
                 saveData("open_pv_value",info[33]);
+                //主控板散热风扇转速
+                if (info.length >= 36){
+                    temp2_value.setText(info[35]);
+                }else{
+                    temp2_value.setText("暂无");
+                }
+                //系统风扇开启的阈值温度
+                if (info.length >= 38){
+                    saveData("sys_temp",info[37]);
+                }
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){

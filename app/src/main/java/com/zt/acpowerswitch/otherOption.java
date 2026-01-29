@@ -26,7 +26,7 @@ public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     public String _tmp;
     private volatile boolean mShouldCheckMode = true;
-    private TextView w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    private TextView w_edit,open_pv_value,low_voltage_set,mos_trigger_value,sys_temp_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +77,12 @@ public class otherOption extends AppCompatActivity {
             mos_trigger_value.setText(readDate(otherOption.this, "mos_temp"));
         }
         mos_trigger_value.setOnClickListener(view -> send_arg_server("MOS温度触发值"));
+        //系统风扇温度触发值设置
+        sys_temp_trigger_value = findViewById(R.id.sys_temp_trigger_value);
+        if (readDate(otherOption.this, "sys_temp") != null) {
+            sys_temp_trigger_value.setText(readDate(otherOption.this, "sys_temp"));
+        }
+        sys_temp_trigger_value.setOnClickListener(view -> send_arg_server("系统温度触发值"));
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
         if (readDate(otherOption.this, "refresh_time") != null) {
@@ -199,6 +205,12 @@ public class otherOption extends AppCompatActivity {
                             mos_trigger_value_set();
                         }
                         break;
+                    case "系统温度触发值":
+                        if (!editText.getText().toString().isEmpty()) {
+                            sys_temp_trigger_value.setText(editText.getText());
+                            sys_temp_trigger_value_set();
+                        }
+                        break;
                 }
             })
             .show();
@@ -229,8 +241,8 @@ public class otherOption extends AppCompatActivity {
                         }
                     });
                 } else {
-                    about.log(TAG, "功率设置项请输入数字类型");
-                    Toast.makeText(otherOption.this, "功率设置项请输入整数或小数类型", LENGTH_SHORT).show();
+                    about.log(TAG, "功率设置项请输入整数类型");
+                    Toast.makeText(otherOption.this, "功率设置项请输入整数类型", LENGTH_SHORT).show();
                     w_edit.setText(readDate(otherOption.this, "power"));
                 }
             }
@@ -262,8 +274,8 @@ public class otherOption extends AppCompatActivity {
                         }
                     });
                 } else {
-                    about.log(TAG, "逆变阈值请输入数字类型");
-                    runOnUiThread(() -> Toast.makeText(otherOption.this, "逆变阈值请输入整数或小数类型", Toast.LENGTH_SHORT).show());
+                    about.log(TAG, "逆变阈值请输入整数类型");
+                    runOnUiThread(() -> Toast.makeText(otherOption.this, "逆变阈值请输入整数类型", Toast.LENGTH_SHORT).show());
                     open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
                 }
             }
@@ -294,7 +306,7 @@ public class otherOption extends AppCompatActivity {
                         }
                     });
                 } else {
-                    about.log(TAG, "最低电压值项请输入数字类型");
+                    about.log(TAG, "最低电压值项请输入整数或小数类型");
                     Toast.makeText(otherOption.this, "最低电压值项请输入整数或小数类型", LENGTH_SHORT).show();
                     low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
                 }
@@ -342,9 +354,42 @@ public class otherOption extends AppCompatActivity {
                         }
                     });
                 } else {
-                    about.log(TAG,"mos温度触发值请输入数字类型");
+                    about.log(TAG,"主功率板风扇温度触发值请输入整数或小数类型");
                     Looper.prepare();
-                    Toast.makeText(otherOption.this, "mos温度触发值请输入整数类型", LENGTH_SHORT).show();
+                    Toast.makeText(otherOption.this, "主功率板风扇温度触发值请输入整数或小数类型", LENGTH_SHORT).show();
+                    Looper.loop();
+                }
+            }
+        }).start();
+    }
+    public void sys_temp_trigger_value_set(){
+        new Thread(() -> {
+            if (!sys_temp_trigger_value.getText().toString().isEmpty() && !sys_temp_trigger_value.getText().toString().equals(readDate(otherOption.this,"sys_temp"))){
+                about.log(TAG,"系统温度触发值巳改变");
+                if (isInteger(sys_temp_trigger_value.getText().toString()) || isDecimal(sys_temp_trigger_value.getText().toString()) && Float.parseFloat(sys_temp_trigger_value.getText().toString()) > 0) {
+                    runOnUiThread(() -> {
+                        if (send_command_to_server("sys_temp:" + sys_temp_trigger_value.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("sys_temp", sys_temp_trigger_value.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        sys_temp_trigger_value.setText(readDate(otherOption.this, "sys_temp"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG,"系统温度触发值请输入整数或小数类型");
+                    Looper.prepare();
+                    Toast.makeText(otherOption.this, "系统温度触发值请输入整数或小数类型", LENGTH_SHORT).show();
                     Looper.loop();
                 }
             }
