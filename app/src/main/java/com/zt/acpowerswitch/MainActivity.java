@@ -464,7 +464,7 @@ public class MainActivity extends AppCompatActivity{
                 out_frequency.setText(info[7]+" hz");
                 //负载使用率
                 if (unicodeToString(info[17]).equals("逆变供电")) {
-                    load_rate_value.setText(df.format((sj_power / Integer.parseInt(info[21]) * 100)) + " %"); //这里使用功率切换阈值作为最大功率
+                    load_rate_value.setText(df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"); //这里使用功率切换阈值作为最大功率
                 }else{
                     load_rate_value.setText("市电无限制");
                 }
