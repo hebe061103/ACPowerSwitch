@@ -155,18 +155,6 @@
                     app:layout_constraintTop_toBottomOf="@+id/sys_temperature"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
-                <TextView
-                    android:id="@+id/temp2_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginEnd="12dp"
-                    android:hint="暂无"
-                    android:textColorHint="#37373F"
-                    android:textSize="18sp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/temp0_value"
-                    tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
                     android:id="@+id/temp1_value"
@@ -178,7 +166,7 @@
                     android:textColorHint="#37373F"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/temp2_value"
+                    app:layout_constraintTop_toBottomOf="@+id/temp0_value"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -213,24 +201,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="0dp"
                     android:layout_marginTop="10dp"
-                    android:text="🌡️ 主控板温度(℃):"
+                    android:text="🌡️ MPPT实时温度(℃):"
                     android:textColor="#EB92B3"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/sys_temperature"
-                    tools:ignore="HardcodedText,TextContrastCheck" />
-
-                <TextView
-                    android:id="@+id/temp2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="0dp"
-                    android:layout_marginTop="20dp"
-                    android:text="🍃️ 主控板风扇转速(%):"
-                    android:textColor="#BF3266"
-                    android:textSize="18sp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/temp0"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -243,7 +218,7 @@
                     android:textColor="#EF3BC5"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/temp2"
+                    app:layout_constraintTop_toBottomOf="@+id/temp0"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -252,7 +227,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="0dp"
                     android:layout_marginTop="20dp"
-                    android:text="🍃 主功率板风扇转速(%):"
+                    android:text="🍂 主功率板风扇转速(%):"
                     android:textColor="#8757E7"
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"

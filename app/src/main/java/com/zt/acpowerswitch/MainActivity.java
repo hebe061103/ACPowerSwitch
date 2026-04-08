@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt,mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,temp2_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
     public static String udp_response;
     public String[] info;
     public static String udpServerAddress;
@@ -134,7 +134,6 @@ public class MainActivity extends AppCompatActivity{
         current_direction = findViewById(R.id.current_direction);
         temp0_value = findViewById(R.id.temp0_value);//temp0_value为主控板散热片温度
         temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为主功率板散热片温度
-        temp2_value = findViewById(R.id.temp2_value);//temp2_value定义为主控板风扇转速
         fan_value = findViewById(R.id.fan_value);//定义为主功率板散热风扇转速值
         load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
@@ -492,7 +491,7 @@ public class MainActivity extends AppCompatActivity{
                     current_direction.setText("\uD83D\uDCA7 (有逆变)系统放电电流(A):");
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
-                //为主控板散热片温度
+                //为MPPT散热片温度
                 temp0_value.setText(info[15]+"°C");
                 //当前输出模式
                 out_mode.setText(unicodeToString(info[17]));
@@ -504,9 +503,9 @@ public class MainActivity extends AppCompatActivity{
                 saveData("low_voltage",info[23]);
                 //输出模式
                 saveData("out_mode", info[25]);
-                //MOS风扇开启的阈值温度
+                //主功率板散执片风扇开启温度
                 saveData("mos_temp",info[27]);
-                //主功率板散热片温度
+                //主功率板散热片实时温度
                 String raw = info[29];
                 String readable = raw.replace("\\xb0", "°");
                 temp1_value.setText(readable);
@@ -514,16 +513,6 @@ public class MainActivity extends AppCompatActivity{
                 fan_value.setText(info[31]);
                 //开启逆变的电压阈值
                 saveData("open_pv_value",info[33]);
-                //主控板散热风扇转速
-                if (info.length >= 36){
-                    temp2_value.setText(info[35]);
-                }else{
-                    temp2_value.setText("暂无");
-                }
-                //系统风扇开启的阈值温度
-                if (info.length >= 38){
-                    saveData("sys_temp",info[37]);
-                }
             }else if (msg.what == 2){
                 request_homepage_date();
             }else if (msg.what == 3){
