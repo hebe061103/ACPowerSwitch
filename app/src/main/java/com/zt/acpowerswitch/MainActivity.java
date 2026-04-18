@@ -63,7 +63,9 @@ public class MainActivity extends AppCompatActivity{
     public final String top_m = "ComponentInfo{com.zt.acpowerswitch/com.zt.acpowerswitch.MainActivity}";
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
-    public ImageView menu_bt,mark_status;
+    public ImageView menu_bt;
+    @SuppressLint("StaticFieldLeak")
+    public static ImageView mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
@@ -377,6 +379,7 @@ public class MainActivity extends AppCompatActivity{
         return result[0]; // 返回结果
     }
     private void mData_pro_thread() {
+        request_homepage_date();
         new Thread(() -> {
             Thread_Run = true;
             while (udp_connect) {
@@ -384,10 +387,11 @@ public class MainActivity extends AppCompatActivity{
                     if (checkScreenStatus() && !stop_send) {
                         udp_response = udpClient.sendAndReceive("get_info");
                         sleep(page_refresh_time);
-                        Conn_status=false;
+                        about.log(TAG, "发送请求数据命令: ");
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
                         about.log(TAG, "数据内容: " + udp_response);
+                        Conn_status=false;
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "");
                         modifiedString = modifiedString.replace(",", ":");
@@ -395,7 +399,7 @@ public class MainActivity extends AppCompatActivity{
                         info = modifiedString.split(":");
                         if (info[1] != null) {
                             Message message = new Message();
-                            message.what = 1;
+                            message.what = 2;
                             messageProHandler.sendMessage(message);
                         }
                     }
@@ -408,21 +412,14 @@ public class MainActivity extends AppCompatActivity{
                             pro_chart_data(_min_bat_list, "每15分钟电压");
                         }
                     }
-                    if (!data_rec_finish && !stop_send && checkScreenStatus()) {
-                        Message message = new Message();
-                        message.what = 2;
-                        messageProHandler.sendMessage(message);
-                    }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
                         udpClient.close();
                         isPaused=true;
                     }
-                    if (Conn_status) {
-                        Message message = new Message();
-                        message.what = 3;
-                        messageProHandler.sendMessage(message);
-                    }
+                    Message message = new Message();
+                    message.what = 1;
+                    messageProHandler.sendMessage(message);
                 }
             }
             isPaused=false;
@@ -438,6 +435,12 @@ public class MainActivity extends AppCompatActivity{
             String ac;
             Float sj_power= 0.0F;
             if (msg.what == 1) {
+                if (Conn_status) {
+                    mark_status.setVisibility(View.VISIBLE);
+                } else {
+                    mark_status.setVisibility(View.INVISIBLE);
+                }
+            }else if (msg.what == 2) {
                 //交流电压
                 out_Voltage.setText(info[1]);
                 ac = info[1];
@@ -516,14 +519,6 @@ public class MainActivity extends AppCompatActivity{
                 fan_value.setText(info[31]);
                 //开启逆变的电压阈值
                 saveData("open_pv_value",info[33]);
-            }else if (msg.what == 2){
-                request_homepage_date();
-            }else if (msg.what == 3){
-                if (mark_status.getVisibility() == View.VISIBLE) {
-                    mark_status.setVisibility(View.INVISIBLE);
-                } else {
-                    mark_status.setVisibility(View.VISIBLE);
-                }
             }
         }
     };
@@ -532,16 +527,16 @@ public class MainActivity extends AppCompatActivity{
             pro_data_request();//请求数据
             if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_min_bat_list, "每15分钟电压");//把数据放到折线图上
+                about.log(TAG, "15分钟刷新完成");
             }else{
                 bat_line_chart.setNoDataText("暂无分时数据");
             }
-            about.log(TAG, "15分钟刷新完成");
             if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
                 pro_chart_data(_H_Total_power,"小时柱状图表");//把数据放到柱状图上
+                about.log(TAG, "小时柱状图刷新完成");
             }else{
                 power_chart.setNoDataText("暂无小时数据");
             }
-            about.log(TAG, "小时柱状图刷新完成");
         }).start();
     }
     public void pro_data_request(){
@@ -604,6 +599,11 @@ public class MainActivity extends AppCompatActivity{
                 data_rec_finish = true;
                 stop_send=false;
                 isPaused=false;
+            } else {
+                about.log(TAG, "数据接收不完整!");
+                stop_send=false;
+                isPaused=false;
+                break;
             }
         }
     }
