@@ -11,18 +11,15 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class UDPClient {
     private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
-    public static DatagramPacket packet;
+
+    // 移除不必要的单线程池，改为复用 InetAddress
+    private InetAddress cachedServerAddress = null;
+
     public void udpConnect() {
         new Thread(() -> {
             try {
@@ -38,87 +35,74 @@ public class UDPClient {
         }).start();
     }
 
-    // 在类成员变量位置，缓存解析好的 InetAddress
-    private InetAddress cachedServerAddress = null;
-    private final Object sendLock = new Object();
     public void sendMessage(String message) {
-        synchronized (sendLock) {
-            byte[] data = message.getBytes();
-            if (cachedServerAddress == null) {
-                try {
-                    cachedServerAddress = InetAddress.getByName(udpServerAddress);
-                    about.log(TAG, "首次解析域名: " + udpServerAddress + " -> IP: " + cachedServerAddress.getHostAddress());
-                } catch (UnknownHostException e) {
-                    about.log(TAG, "无法解析域名或IP地址");
-                    Conn_status = true; // 这里设置为true表示“连接异常”
-                    return; // 解析失败，直接返回，不发送
-                }
-            }
-
-            // 使用缓存的地址创建数据包
-            DatagramPacket packet = new DatagramPacket(data, data.length, cachedServerAddress, udpServerPort);
-
-            try {
-                if (socket != null) {
-                    socket.send(packet);
-                }
-            } catch (Exception e) {
-                about.log(TAG, "发送失败: " + e.getMessage());
-            }
-        }
-    }
-    private final Object receiveLock = new Object();
-    public String receiveMessage() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            // 使用 Callable 可以返回结果
-            Future<String> future = executor.submit(() -> {
-                synchronized (receiveLock) {
-                    try {
-                        byte[] receiveData = new byte[1024];
-                        packet = new DatagramPacket(receiveData, receiveData.length);
-
-                        // 设置接收超时（避免永久阻塞）
-                        socket.setSoTimeout(5000);  // 5秒超时
-                        socket.receive(packet);
-
-                        return new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
-
-                    } catch (SocketTimeoutException e) {
-                        about.log(TAG, "接收超时，未收到任何数据");
-                        return null;
-                    } catch (IOException e) {
-                        about.log(TAG, "接收数据异常: " + e.getMessage());
-                        return null;
-                    }
-                }
-            });
-            // 等待并获取结果（可设置超时）
-            return future.get(6, TimeUnit.SECONDS);  // 等待6秒
-
-        } catch (TimeoutException e) {
-            about.log(TAG, "接收操作超时");
-            return null;
-        } catch (Exception e) {
-            about.log(TAG, "接收异常: " + e.getMessage());
-            return null;
-        } finally {
-            executor.shutdown();
-        }
-    }
-    /**
-     * 发送并接收（原子操作）
-     */
-    public String sendAndReceive(String message) {
-        synchronized (this) {  // 使用this锁，确保整个操作原子性
-            sendMessage(message);
-            // 等待一下，让服务器有时间处理
-            try { Thread.sleep(50); } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            byte[] data = message.getBytes(StandardCharsets.UTF_8);
+            if (cachedServerAddress == null) {
+                cachedServerAddress = InetAddress.getByName(udpServerAddress);
             }
-            return receiveMessage();
+            DatagramPacket packet = new DatagramPacket(data, data.length, cachedServerAddress, udpServerPort);
+            if (socket != null && !socket.isClosed()) {
+                socket.send(packet);
+            }
+        } catch (Exception e) {
+            about.log(TAG, "发送异常: " + e.getMessage());
         }
     }
+
+    public String receiveMessage() {
+        try {
+            if (socket == null || socket.isClosed()) return null;
+
+            byte[] receiveData = new byte[1024];
+            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+
+            // 物理上的超时控制（核心：由 Socket 自身处理超时）
+            socket.setSoTimeout(3000); // 缩短至3秒，提高响应
+            socket.receive(receivePacket);
+
+            return new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
+
+        } catch (SocketTimeoutException e) {
+            about.log(TAG, "接收超时");
+            Conn_status = true;
+            return null;
+        } catch (IOException e) {
+            about.log(TAG, "读取异常: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // 整个通讯过程加锁，防止多线程同时挤占同一个 Socket
+    public synchronized String sendAndReceive(String message) {
+        if (socket == null) return null;
+
+        // --- 1. 暴力清空底层缓冲区 ---
+        try {
+            // 设置一个极短的超时，快速试探
+            socket.setSoTimeout(1);
+            byte[] trash = new byte[1024];
+            DatagramPacket trashPacket = new DatagramPacket(trash, trash.length);
+            while (true) {
+                socket.receive(trashPacket); // 只要能收到东西，就说明有存货
+                // 循环直到抛出 SocketTimeoutException，说明清空了
+            }
+        } catch (SocketTimeoutException e) {
+            // 缓冲区已空，这是正常现象，跳出循环
+        } catch (IOException e) {
+            // 其他错误
+        }
+
+        // --- 2. 恢复正常的超时设置，发送新请求 ---
+        try {
+            socket.setSoTimeout(3000); // 设回正常的 3 秒
+            sendMessage(message);
+            return receiveMessage();
+        } catch (SocketException e) {
+            return null;
+        }
+    }
+
     public void close() {
         socket.close();
         udp_connect = false;

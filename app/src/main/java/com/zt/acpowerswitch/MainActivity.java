@@ -46,6 +46,7 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
+import com.github.mikephil.charting.utils.MPPointF;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.scwang.smart.refresh.header.MaterialHeader;
 import com.scwang.smart.refresh.layout.SmartRefreshLayout;
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity{
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
     public static String udp_response;
-    public String[] info;
+    public static String[] info;
     public static String udpServerAddress;
     public static int udpServerPort=55555;
     public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run,Conn_status,isPaused;
@@ -84,7 +85,6 @@ public class MainActivity extends AppCompatActivity{
     public static ArrayList<String> debugList = new ArrayList<>();
     public LineChart bat_line_chart,mem_use_chart;
     public BarChart power_chart;
-    public int cycle_size=0;
     public int date_num;
     private ComponentName topActivity;
     public static LineDataSet bat_lineDataSet,mem_lineDataSet;
@@ -384,6 +384,7 @@ public class MainActivity extends AppCompatActivity{
                     if (checkScreenStatus() && !stop_send) {
                         udp_response = udpClient.sendAndReceive("get_info");
                         sleep(page_refresh_time);
+                        Conn_status=false;
                     }
                     if (udp_response != null && udp_response.contains("['AC_voltage")) {
                         about.log(TAG, "数据内容: " + udp_response);
@@ -397,9 +398,6 @@ public class MainActivity extends AppCompatActivity{
                             message.what = 1;
                             messageProHandler.sendMessage(message);
                         }
-                        Message message = new Message();
-                        message.what = 4;
-                        messageProHandler.sendMessage(message);
                     }
                     if (udp_response != null && udp_response.contains("live>") && data_rec_finish && !stop_send && checkScreenStatus()
                             && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
@@ -474,9 +472,9 @@ public class MainActivity extends AppCompatActivity{
                 //为太阳能电流
                 le_current.setText(info[13]);
                 //为逆变模式时计算电池的充放电电流
+                float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
                 if (unicodeToString(info[17]).equals("逆变供电")) {
                     //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
-                    float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);
                     if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                         current_direction.setText("\uD83D\uDCA7 电池充电电流(A):");
                         bat_out_current.setText(df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
@@ -485,10 +483,15 @@ public class MainActivity extends AppCompatActivity{
                         bat_out_current.setText(df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                     }
                 }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                    current_direction.setText("\uD83D\uDCA7 (无逆变)系统放电电流(A):");
+                    if ((pw - 3.6) > 0) {
+                        current_direction.setText("\uD83D\uDCA7 无逆变电池充电电流(A):");
+                        bat_out_current.setText(df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                    }
+                    current_direction.setText("\uD83D\uDCA7 无逆变电池放电电流(A):");
                     bat_out_current.setText(df.format(3.6 / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                 } else{
-                    current_direction.setText("\uD83D\uDCA7 (有逆变)系统放电电流(A):");
+                    //手动市电供电模式下,逆变为开启状态的时的放电电流
+                    current_direction.setText("\uD83D\uDCA7 有逆变电池放电电流(A):");
                     bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                 }
                 //为MPPT散热片温度
@@ -521,10 +524,6 @@ public class MainActivity extends AppCompatActivity{
                 } else {
                     mark_status.setVisibility(View.VISIBLE);
                 }
-                Conn_status=false;
-            }else if (msg.what == 4){
-                mark_status.setVisibility(View.INVISIBLE);
-                Conn_status=false;
             }
         }
     };
@@ -605,21 +604,6 @@ public class MainActivity extends AppCompatActivity{
                 data_rec_finish = true;
                 stop_send=false;
                 isPaused=false;
-                cycle_size=0;
-            } else if(cycle_size == 3){
-                data_rec_finish = true;
-                stop_send=false;
-                cycle_size=0;
-                isPaused=false;
-            } else if (!data_rec_finish) {
-                _min_bat_list.clear();
-                _H_Total_power.clear();
-                _D_Total_power.clear();
-                _M_Total_power.clear();
-                _Y_Total_power.clear();
-                debugList.clear();
-                cycle_size++;
-                udpClient.sendMessage("get_all_file");
             }
         }
     }
@@ -794,7 +778,22 @@ public class MainActivity extends AppCompatActivity{
         /*bat_lineDataSet.setCircleRadius(2f);
         bat_lineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
         bat_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-        bat_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
+        bat_lineDataSet.setLineWidth(1.5f);//设置线条的宽度，最大10f,最小0.2f
+        // --- 添加以下代码来强化焦点显示 ---
+        // 1. 开启十字线指示器（必须）
+        bat_lineDataSet.setHighlightEnabled(true);
+        bat_lineDataSet.setDrawHighlightIndicators(true);
+        // 2. 设置十字线的样式
+        bat_lineDataSet.setHighLightColor(Color.RED); // 十字线颜色
+        bat_lineDataSet.setHighlightLineWidth(0.8f);   // 十字线粗细
+        // 3. 关键：设置焦点处的“准星”圆圈
+        // 注意：该功能在某些版本中通过控制间隔线或自定义渲染实现
+        // 最直接的方法是启用特定的指示器绘制
+        bat_lineDataSet.setDrawVerticalHighlightIndicator(true);   // 垂直线
+        bat_lineDataSet.setDrawHorizontalHighlightIndicator(true); // 水平线
+        // 设置为虚线：线长10，间距5，偏移0
+        bat_lineDataSet.enableDashedHighlightLine(10f, 20f, 0f);
+
         LineData bat_data = new LineData(bat_lineDataSet);
         bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
         bat_line_chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -1084,11 +1083,20 @@ class CustomMarkerView extends MarkerView {
     private final TextView m_year;
     private final TextView m_time;
     private final TextView m_value;
+
+    private final TextView pv_voltage;
+    private final TextView pv_current;
+    private final TextView pv_power;
+
+
     public CustomMarkerView (Context context, int layoutResource) {
         super(context, layoutResource);
         m_year = findViewById(R.id.m_year);
         m_time = findViewById(R.id.m_time);
         m_value = findViewById(R.id.m_value);
+        pv_voltage = findViewById(R.id.pv_voltage);
+        pv_current = findViewById(R.id.pv_current);
+        pv_power = findViewById(R.id.pv_power);
     }
     @SuppressLint("SetTextI18n")
     @Override
@@ -1097,7 +1105,39 @@ class CustomMarkerView extends MarkerView {
         m_year.setText(_tmp[0]);
         m_time.setText(_tmp[1]);
         m_value.setText("电压值:" + e.getY());
-        setOffset(-((float) getWidth() /2), (-getHeight() - 50));
+        pv_voltage.setText("光伏电压:");
+        pv_current.setText("光伏电流:");
+        pv_power.setText("光伏功率:");
+
         super.refreshContent(e, highlight);
+    }
+    /**
+     * 核心：动态调整位置
+     * posX, posY 是当前点击位置在屏幕上的绝对像素坐标
+     */
+    @Override
+    public MPPointF getOffsetForDrawingAtPoint(float posX, float posY) {
+        MPPointF offset = new MPPointF();
+
+        // 1. 水平方向：默认居中
+        offset.x = -(getWidth() / 2f);
+
+        // 2. 垂直方向：默认在准星上方，并留出 40 像素的空隙（不挡住准星中心）
+        offset.y = -getHeight() - 40;
+
+        // 3. 动态避让逻辑
+        // 如果上方空间不够（posY 小于气泡高度），则把气泡显示在准星下方
+        if (posY + offset.y < 0) {
+            offset.y = 40; // 显示在下方，40 是距离准星中心的距离
+        }
+
+        // 4. 防止左右溢出屏幕
+        if (posX + offset.x < 0) {
+            offset.x = -posX; // 贴着左边
+        } else if (getChartView() != null && posX + getWidth() + offset.x > getChartView().getWidth()) {
+            offset.x = getChartView().getWidth() - posX - getWidth(); // 贴着右边
+        }
+
+        return offset;
     }
 }
