@@ -53,9 +53,12 @@ import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity{
@@ -69,7 +72,6 @@ public class MainActivity extends AppCompatActivity{
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
-    public static String udp_response;
     public static String[] info;
     public static String udpServerAddress;
     public static int udpServerPort=55555;
@@ -80,7 +82,6 @@ public class MainActivity extends AppCompatActivity{
     public static ArrayList<String> _M_Total_power = new ArrayList<>();
     public static ArrayList<String> _Y_Total_power = new ArrayList<>();
     public ArrayList<String> _time_value = new ArrayList<>();
-    public ArrayList<String> _mem_value = new ArrayList<>();
     public ArrayList<Entry> _value_list = new ArrayList<>();
     public ArrayList<BarEntry> _barChart_list = new ArrayList<>();
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
@@ -91,6 +92,8 @@ public class MainActivity extends AppCompatActivity{
     private ComponentName topActivity;
     public static LineDataSet bat_lineDataSet,mem_lineDataSet;
     public static int page_refresh_time;
+    private boolean isMemChartInitialized = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -335,6 +338,7 @@ public class MainActivity extends AppCompatActivity{
             }
         });
         start_Thread();
+
     }
 
     public void start_Thread(){
@@ -354,15 +358,13 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             int num = 0;
             stop_send = true;
-            udp_response = null;
+            String udp_response;
             while (num < 10) {
                 udp_response = udpClient.sendAndReceive(data);
                 about.log(TAG, "返回数据:" + udp_response);
                 if (udp_response != null && udp_response.contains("ACK")) {
                     result[0] = true; // 设置返回值
                     break;
-                } else {
-                    udp_response = null;
                 }
                 num++;
             }
@@ -379,38 +381,120 @@ public class MainActivity extends AppCompatActivity{
         return result[0]; // 返回结果
     }
     private void mData_pro_thread() {
-        request_homepage_date();
         new Thread(() -> {
             Thread_Run = true;
+            String udp_response = "";
             while (udp_connect) {
                 while (!isPaused) {
                     if (checkScreenStatus() && !stop_send) {
                         udp_response = udpClient.sendAndReceive("get_info");
                         sleep(page_refresh_time);
-                        about.log(TAG, "发送请求数据命令: ");
                     }
-                    if (udp_response != null && udp_response.contains("['AC_voltage")) {
+                    if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
                         about.log(TAG, "数据内容: " + udp_response);
+                        String[] sys_udp_response = new String[]{udp_response};
+                        udp_response = null;
                         Conn_status=false;
-                        String modifiedString = udp_response.substring(1, udp_response.length() - 1);
-                        modifiedString = modifiedString.replace("'", "");
-                        modifiedString = modifiedString.replace(",", ":");
-                        modifiedString = modifiedString.replace(" ", "");
-                        info = modifiedString.split(":");
-                        if (info[1] != null) {
-                            Message message = new Message();
+                        new Thread(() -> {
+                            if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
+                            String modifiedString = sys_udp_response[0].substring(1, sys_udp_response[0].length() - 1);
+                            modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
+                            info = modifiedString.split(":");
+                            Map<String, String> uiData = new HashMap<>();
+                            DecimalFormat df = new DecimalFormat("#.##");
+                            Float sj_power= 0.0F;
+                            //交流电压
+                            uiData.put("ac_voltage", info[1]);
+                            String ac = info[1];
+                            //交流电流
+                            Float jl_dl = Float.parseFloat(info[3]);
+                            String formattedValue_iv_Value = df.format(jl_dl);
+                            uiData.put("ac_current",formattedValue_iv_Value);
+                            String iv = info[3];
+                            //交流功率
+                            uiData.put("ac_power",info[5]);
+                            //交流视在功率
+                            if (ac != null) {
+                                sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                                String formattedValue = df.format(sj_power);
+                                uiData.put("shizai_power",formattedValue);
+                            }
+                            //功率因数
+                            String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
+                            uiData.put("power_yinshu",pf_value);
+                            //交流频率
+                            uiData.put("ac_freq",info[7]+" hz");
+                            //负载使用率
+                            if (unicodeToString(info[17]).equals("逆变供电")) {
+                                String power_use = df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
+                                uiData.put("power_use",power_use);
+                            }else{
+                                uiData.put("power_use","市电无限制");
+                            }
+                            //储能电池电压
+                            uiData.put("bat_voltage",info[9]);
+                            //光伏板电压
+                            uiData.put("pv_voltage",info[11]);
+                            //光伏板电流
+                            uiData.put("pv_current",info[13]);
+                            //逆变器不同模式下电池的充放电电流计算
+                            float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
+                            if (unicodeToString(info[17]).equals("逆变供电")) {
+                                //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
+                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                                } else {
+                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                                }
+                            }else if (unicodeToString(info[17]).equals("电池电压过低")){
+                                if ((pw - 3.6) > 0) {
+                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                                }
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                            } else{
+                                //手动市电供电模式下,逆变为开启状态的时的放电电流
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
+                            }
+                            //为MPPT散热片温度
+                            uiData.put("mppt温度",info[15]+"°C");
+                            //当前输出模式
+                            uiData.put("当前输出模式",unicodeToString(info[17]));
+                            //内存使用信息
+                            uiData.put("内存使用信息",info[19]);
+                            //市电切换阈值
+                            saveData("power",info[21]);
+                            //电池低于此值则市电常开
+                            saveData("low_voltage",info[23]);
+                            //输出模式
+                            saveData("out_mode", info[25]);
+                            //主功率板散执片风扇开启温度
+                            saveData("mos_temp",info[27]);
+                            //主功率板散热片实时温度
+                            String raw = info[29];
+                            String readable = raw.replace("\\xb0", "°");
+                            uiData.put("散热片实时温度",readable);
+                            //主功率板散热风扇转速值
+                            uiData.put("散热风扇转速值",info[31]);
+                            //开启逆变的电压阈值
+                            saveData("open_pv_value",info[33]);
+
+                            Message message = messageProHandler.obtainMessage();
                             message.what = 2;
+                            message.obj = uiData;  // 将计算结果放入Message
                             messageProHandler.sendMessage(message);
-                        }
+                            }
+                        }).start();
                     }
-                    if (udp_response != null && udp_response.contains("live>") && data_rec_finish && !stop_send && checkScreenStatus()
-                            && getTopActivity().toString().equals(top_m) && bat_lineDataSet.getLabel().contains("每15分钟电压")) {
-                        String[] _l = udp_response.split(">"); //按>进行分隔
-                        if (_l[1] != null && !_l[1].isEmpty()) {
-                            about.log(TAG, "动态分时数据:" + _l[1]);
-                            _min_bat_list.add(_l[1]);
-                            pro_chart_data(_min_bat_list, "每15分钟电压");
-                        }
+                    if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus()){
+                        new Thread(() -> {
+                            stop_send = true;
+                            request_homepage_date();
+                        }).start();
                     }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
@@ -431,94 +515,54 @@ public class MainActivity extends AppCompatActivity{
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
         @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
-            DecimalFormat df = new DecimalFormat("#.##");
-            String ac;
-            Float sj_power= 0.0F;
             if (msg.what == 1) {
                 if (Conn_status) {
-                    mark_status.setVisibility(View.VISIBLE);
+                    int currentVisibility = mark_status.getVisibility();
+                    if (currentVisibility == View.VISIBLE) {
+                        mark_status.setVisibility(View.INVISIBLE);
+                        sleep(100);
+                    }else{
+                        mark_status.setVisibility(View.VISIBLE);
+                        sleep(100);
+                    }
                 } else {
                     mark_status.setVisibility(View.INVISIBLE);
                 }
-            }else if (msg.what == 2) {
+            }else if (msg.what == 2 && msg.obj instanceof Map) {
+                Map<String, String> uiData = (Map<String, String>) msg.obj;
                 //交流电压
-                out_Voltage.setText(info[1]);
-                ac = info[1];
+                out_Voltage.setText(uiData.get("ac_voltage"));
                 //交流电流
-                Float jl_dl = Float.parseFloat(info[3]);
-                String formattedValue_iv_Value = df.format(jl_dl);
-                out_Current.setText(formattedValue_iv_Value);
-                String iv = info[3];
+                out_Current.setText(uiData.get("ac_current"));
                 //交流有功功率
-                power_kw.setText(info[5]);
+                power_kw.setText(uiData.get("ac_power"));
                 //交流视在功率
-                if (ac != null) {
-                    sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
-                    String formattedValue = df.format(sj_power);
-                    sj_power_kw.setText(formattedValue);
-                }
+                sj_power_kw.setText(uiData.get("shizai_power"));
                 //功率因数
-                String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
-                pf.setText(pf_value);
+                pf.setText(uiData.get("power_yinshu"));
                 //交流频率
-                out_frequency.setText(info[7]+" hz");
+                out_frequency.setText(uiData.get("ac_freq"));
                 //负载使用率
-                if (unicodeToString(info[17]).equals("逆变供电")) {
-                    load_rate_value.setText(df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"); //这里使用功率切换阈值作为最大功率
-                }else{
-                    load_rate_value.setText("市电无限制");
-                }
+                load_rate_value.setText(uiData.get("power_use"));
                 //为电池电压
-                bat_Voltage.setText(info[9]);
+                bat_Voltage.setText(uiData.get("bat_voltage"));
                 //为光伏电压
-                sun_voltage_value.setText(info[11]);
+                sun_voltage_value.setText(uiData.get("pv_voltage"));
                 //为太阳能电流
-                le_current.setText(info[13]);
+                le_current.setText(uiData.get("pv_current"));
                 //为逆变模式时计算电池的充放电电流
-                float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
-                if (unicodeToString(info[17]).equals("逆变供电")) {
-                    //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
-                    if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
-                        current_direction.setText("\uD83D\uDCA7 电池充电电流(A):");
-                        bat_out_current.setText(df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
-                    } else {
-                        current_direction.setText("\uD83D\uDCA7 电池放电电流(A):");
-                        bat_out_current.setText(df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
-                    }
-                }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                    if ((pw - 3.6) > 0) {
-                        current_direction.setText("\uD83D\uDCA7 无逆变电池充电电流(A):");
-                        bat_out_current.setText(df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
-                    }
-                    current_direction.setText("\uD83D\uDCA7 无逆变电池放电电流(A):");
-                    bat_out_current.setText(df.format(3.6 / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
-                } else{
-                    //手动市电供电模式下,逆变为开启状态的时的放电电流
-                    current_direction.setText("\uD83D\uDCA7 有逆变电池放电电流(A):");
-                    bat_out_current.setText(df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
-                }
+                current_direction.setText(uiData.get("修改电池充放电电流text"));
+                bat_out_current.setText(uiData.get("修改电池充放电电流值"));
                 //为MPPT散热片温度
-                temp0_value.setText(info[15]+"°C");
+                temp0_value.setText(uiData.get("mppt温度"));
                 //当前输出模式
-                out_mode.setText(unicodeToString(info[17]));
+                out_mode.setText(uiData.get("当前输出模式"));
                 //内存使用信息
-                mem_data_display_to_chart();//把内存使用信息放到折线图上
-                //市电切换阈值
-                saveData("power",info[21]);
-                //电池低于此值则市电常开
-                saveData("low_voltage",info[23]);
-                //输出模式
-                saveData("out_mode", info[25]);
-                //主功率板散执片风扇开启温度
-                saveData("mos_temp",info[27]);
+                mem_data_display_to_chart(uiData.get("内存使用信息"));
                 //主功率板散热片实时温度
-                String raw = info[29];
-                String readable = raw.replace("\\xb0", "°");
-                temp1_value.setText(readable);
+                temp1_value.setText(uiData.get("散热片实时温度"));
                 //主功率板散热风扇转速值
-                fan_value.setText(info[31]);
-                //开启逆变的电压阈值
-                saveData("open_pv_value",info[33]);
+                fan_value.setText(uiData.get("散热风扇转速值"));
             }
         }
     };
@@ -540,70 +584,58 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
     public void pro_data_request(){
-        stop_send = true;
         _min_bat_list.clear();
         _H_Total_power.clear();
         _D_Total_power.clear();
         _M_Total_power.clear();
         _Y_Total_power.clear();
         debugList.clear();
-        udp_response=null;
         about.log(TAG, "请求全部数据");
-        udpClient.sendMessage("get_all_file");
-        while (!data_rec_finish) {
-            udp_response=udpClient.receiveMessage();
-            if (udp_response != null && udp_response.contains("min>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+        String udp_response = udpClient.sendAndReceive("get_all_file");
+        if (udp_response!=null){
+            String[] all_data = udp_response.split("\n");
+            int dataLength = all_data.length;
+            about.log(TAG, "数据行数: " + dataLength);
+            ArrayList<String> dataList = new ArrayList<>(Arrays.asList(all_data));
+            for (String line : dataList) {
+                if (line != null && line.contains("min>")) {
+                    Log.i(TAG, "发现包含 min> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     _min_bat_list.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("H_Total_power>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+                if (line != null && line.contains("H_Total_power>")) {
+                    Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     _H_Total_power.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("D_Total_power>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+                if (line != null && line.contains("D_Total_power>")) {
+                    Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     _D_Total_power.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("M_Total_power>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+                if (line != null && line.contains("M_Total_power>")) {
+                    Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     _M_Total_power.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("Y_Total_power>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+                if (line != null && line.contains("Y_Total_power>")) {
+                    Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     _Y_Total_power.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("debug>")) {
-                Log.e(TAG, udp_response);
-                String[] _l = udp_response.split(">"); //按>进行分隔
-                int length = _l.length; // 获取数组长度
-                if (length > 1) {
+                if (line != null && line.contains("debug>")) {
+                    Log.i(TAG, "发现包含 debug> 的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
                     debugList.add(_l[1]);
                 }
-            } else if (udp_response != null && udp_response.contains("all_file_send_finish")) {
-                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
-                data_rec_finish = true;
-                stop_send=false;
-                isPaused=false;
-            } else {
-                about.log(TAG, "数据接收不完整!");
-                stop_send=false;
-                isPaused=false;
-                break;
+                if (line != null && line.contains("all_file_send_finish")) {
+                    Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
+                    about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
+                            " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                    data_rec_finish = true;
+                    stop_send = false;
+                    isPaused = false;
+                }
             }
         }
     }
@@ -619,7 +651,8 @@ public class MainActivity extends AppCompatActivity{
                 String[] _u = _e[1].split(":");
                 _time_value.add(_u[0] + ":" + _u[1]);
                 String[] _split_bat_value = _e[2].split(":");
-                _value_list.add(new Entry(i, Float.parseFloat(_split_bat_value[1])));
+                String[] _bat_voltage = _split_bat_value[1].split(",");
+                _value_list.add(new Entry(i, Float.parseFloat(_bat_voltage[0])));
             }
             bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
             bat_line_chart.notifyDataSetChanged();//通知数据巳改变
@@ -726,48 +759,111 @@ public class MainActivity extends AppCompatActivity{
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
     }
-    @SuppressLint({"DefaultLocale", "SetTextI18n"})
-    public void mem_data_display_to_chart(){
-        float _mem = Float.parseFloat(info[19]);
+
+    @SuppressLint("SetTextI18n")
+    public void mem_data_display_to_chart(String _s){
+        float _mem = Float.parseFloat(_s);
+
+        // 1. 更新内存使用百分比（这部分很快，可以保留在主线程）
         DecimalFormat decimalFormat = new DecimalFormat("#.0");
-        String formattedValue = decimalFormat.format(_mem/150*100);
+        String formattedValue = decimalFormat.format(_mem/150 * 100);
         mm_use.setText(formattedValue + "%");
-        _mem_value.add("");
-        if (!_mem_use_list.isEmpty()) {
-            if (_mem_use_list.size() <= 100) {
-                _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
-            }else{
-                _mem_use_list.clear();
-                _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
-            }
-        }else{
-            _mem_use_list.add(new Entry(_mem_use_list.size(), _mem));
+
+        // 2. 优化后的图表更新逻辑
+        updateMemoryChart(_mem);
+    }
+
+    /**
+     * 优化的内存图表更新方法
+     */
+    private void updateMemoryChart(float memValue) {
+        // 如果图表未初始化，先进行初始化
+        if (!isMemChartInitialized) {
+            initMemoryChart();
         }
-        mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况(巳使用:"+_mem+" kb"+"  空闲:"+String.format("%.2f", (150-_mem))+"kb)");
-        mem_lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
-        mem_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
-        mem_lineDataSet.setDrawCircles(false);//在点上画圆 默认true
-        /*mem_lineDataSet.setCircleRadius(2f);
-        mem_lineDataSet.setCircleColor(Color.GREEN);//关键点的圆点颜色
-        mem_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-        mem_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
-        mem_lineDataSet.setDrawFilled(true);//设置是否填充
-        LineData mem_data = new LineData(mem_lineDataSet);
-        mem_use_chart.getXAxis().setAxisMinimum(1f);
-        mem_use_chart.getXAxis().setAxisMaximum(100f);
+        // 添加新数据点
+        if (mem_lineDataSet != null) {
+            addMemDataPoint(memValue);
+        }
+    }
+
+    /**
+     * 初始化内存图表（只执行一次）
+     */
+    private void initMemoryChart() {
+        _mem_use_list = new ArrayList<>();
+        _mem_use_list.add(new Entry(0, 0)); // 初始点
+
+        mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况");
+        mem_lineDataSet.setValueFormatter(new NoValueFormatter());
+        mem_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        mem_lineDataSet.setDrawCircles(false);
+        mem_lineDataSet.setLineWidth(1.5f);
+        mem_lineDataSet.setDrawFilled(true);
+        mem_lineDataSet.setFillColor(Color.parseColor("#1A4CAF50")); // 浅绿色填充
+        mem_lineDataSet.setColor(Color.parseColor("#4CAF50")); // 绿色线条
+
+        // 配置图表属性（只配置一次）
+        mem_use_chart.getDescription().setText(" ");
+        mem_use_chart.setExtraTopOffset(5f);
         mem_use_chart.getXAxis().setEnabled(false);
-        mem_use_chart.setTouchEnabled(false);//完全禁用触摸交互,包括不显示点击时的高亮坐标十字线
-        mem_use_chart.getDescription().setText(" ");//右下角描述
-        mem_use_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
-        //mem_use_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-        //mem_use_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-        mem_use_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
-        mem_use_chart.getAxisLeft().setAxisMaximum(160f);//左侧Y轴最大值
-        mem_use_chart.getAxisRight().setAxisMinimum(0f);//右侧Y轴最小值
-        mem_use_chart.getAxisRight().setAxisMaximum(160f);//右侧Y轴最大值
-        mem_use_chart.setData(mem_data);//调置数据
-        mem_use_chart.notifyDataSetChanged();//通知数据巳改变
-        mem_use_chart.invalidate();//清理无效数据,用于动态刷新
+        mem_use_chart.setTouchEnabled(false);
+        mem_use_chart.getXAxis().setAxisMinimum(0f);
+        mem_use_chart.getXAxis().setAxisMaximum(100f);
+        mem_use_chart.getAxisLeft().setAxisMinimum(0f);
+        mem_use_chart.getAxisLeft().setAxisMaximum(160f);
+        mem_use_chart.getAxisRight().setAxisMinimum(0f);
+        mem_use_chart.getAxisRight().setAxisMaximum(160f);
+
+        // 设置动画
+        mem_use_chart.animateY(1000);
+
+        LineData data = new LineData(mem_lineDataSet);
+        mem_use_chart.setData(data);
+
+        isMemChartInitialized = true;
+    }
+
+    /**
+     * 添加新的数据点（高效更新）
+     */
+    private void addMemDataPoint(float memValue) {
+        if (mem_use_chart.getData() != null && mem_use_chart.getData().getDataSetCount() > 0) {
+            LineDataSet set = (LineDataSet) mem_use_chart.getData().getDataSetByIndex(0);
+
+            // 添加新点
+            int newIndex = set.getEntryCount();
+            set.addEntry(new Entry(newIndex, memValue));
+
+            // 动态更新图表标签
+            @SuppressLint("DefaultLocale") String label = String.format("设备内存使用情况(已使用:%.1f kb  空闲:%.1f kb)", memValue, 150 - memValue);
+            set.setLabel(label);
+
+            // 限制数据点数量（保持最近100个点）
+            if (set.getEntryCount() > 100) {
+                set.removeEntry(0);
+
+                // 重新索引所有点
+                List<Entry> entries = new ArrayList<>();
+                for (int i = 0; i < set.getEntryCount(); i++) {
+                    Entry entry = set.getEntryForIndex(i);
+                    entries.add(new Entry(i, entry.getY()));
+                }
+                set.setValues(entries);
+            }
+
+            // 自动调整X轴范围
+            int dataCount = set.getEntryCount();
+            if (dataCount > 0) {
+                mem_use_chart.getXAxis().setAxisMinimum(0f);
+                mem_use_chart.getXAxis().setAxisMaximum(Math.max(dataCount, 100f));
+            }
+
+            // 通知图表更新
+            mem_use_chart.getData().notifyDataChanged();
+            mem_use_chart.notifyDataSetChanged();
+            mem_use_chart.invalidate();
+        }
     }
     public void bat_data_display_to_chart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
         String[] bat_value = String.valueOf(_value_list.get(_value_list.size()-1)).split(":");
@@ -778,7 +874,7 @@ public class MainActivity extends AppCompatActivity{
         /*bat_lineDataSet.setCircleRadius(2f);
         bat_lineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
         bat_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
-        bat_lineDataSet.setLineWidth(1.5f);//设置线条的宽度，最大10f,最小0.2f
+        bat_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
         // --- 添加以下代码来强化焦点显示 ---
         // 1. 开启十字线指示器（必须）
         bat_lineDataSet.setHighlightEnabled(true);
@@ -1101,13 +1197,18 @@ class CustomMarkerView extends MarkerView {
     @SuppressLint("SetTextI18n")
     @Override
     public void refreshContent(Entry e, Highlight highlight) {
+        DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
+        Log.i("_tmp数据:", Arrays.toString(_tmp));
         m_year.setText(_tmp[0]);
         m_time.setText(_tmp[1]);
-        m_value.setText("电压值:" + e.getY());
-        pv_voltage.setText("光伏电压:");
-        pv_current.setText("光伏电流:");
-        pv_power.setText("光伏功率:");
+        String [] all_data = _tmp[2].split(",");
+        m_value.setText("电压值:" + all_data[0].split(":")[1]);
+        pv_voltage.setText("光伏电压:" + all_data[1].split(":")[1]);
+        pv_current.setText("光伏电流:" + all_data[2].split(":")[1]);
+        Float _pv_power = Float.parseFloat(all_data[1].split(":")[1])* Float.parseFloat(all_data[2].split(":")[1]);
+        String pv_power_result = df.format(_pv_power);
+        pv_power.setText("光伏功率:"+ pv_power_result);
 
         super.refreshContent(e, highlight);
     }

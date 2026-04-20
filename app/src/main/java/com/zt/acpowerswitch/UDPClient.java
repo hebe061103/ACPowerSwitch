@@ -47,28 +47,43 @@ public class UDPClient {
             }
         } catch (Exception e) {
             about.log(TAG, "发送异常: " + e.getMessage());
+            Conn_status = true;
         }
     }
 
     public String receiveMessage() {
+        if (socket == null || socket.isClosed()) return null;
+
+        StringBuilder responseBuilder = new StringBuilder();
+        byte[] receiveData = new byte[4096]; // 提高到 4KB 缓冲，更稳健
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         try {
-            if (socket == null || socket.isClosed()) return null;
 
-            byte[] receiveData = new byte[1024];
-            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            try {
+                socket.receive(receivePacket);
+                String firstPart = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
+                responseBuilder.append(firstPart);
+                // 2. 持续接收后续包
+                // 注意：Python 端文件间 sleep 了 100ms，所以这里至少设为 300-500ms
+                // 这样才能跨过文件间的停顿，把所有文件连成一串
+                socket.setSoTimeout(300);
+                while (true) {
+                    try {
+                        socket.receive(receivePacket);
+                        String data = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
+                        responseBuilder.append(data);
+                    } catch (SocketTimeoutException e) {
+                        break;
+                    }
+                }
+            } catch (SocketTimeoutException e) {
+                return null; // 一个包都没收到
+            }
 
-            // 物理上的超时控制（核心：由 Socket 自身处理超时）
-            socket.setSoTimeout(3000); // 缩短至3秒，提高响应
-            socket.receive(receivePacket);
+            return responseBuilder.toString();
 
-            return new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-
-        } catch (SocketTimeoutException e) {
-            about.log(TAG, "接收超时");
-            Conn_status = true;
-            return null;
         } catch (IOException e) {
-            about.log(TAG, "读取异常: " + e.getMessage());
+            about.log(TAG, "Socket异常: " + e.getMessage());
             return null;
         }
     }
@@ -76,12 +91,10 @@ public class UDPClient {
     // 整个通讯过程加锁，防止多线程同时挤占同一个 Socket
     public synchronized String sendAndReceive(String message) {
         if (socket == null) return null;
-
-        // --- 1. 暴力清空底层缓冲区 ---
         try {
             // 设置一个极短的超时，快速试探
             socket.setSoTimeout(1);
-            byte[] trash = new byte[1024];
+            byte[] trash = new byte[4096];
             DatagramPacket trashPacket = new DatagramPacket(trash, trash.length);
             while (true) {
                 socket.receive(trashPacket); // 只要能收到东西，就说明有存货
@@ -92,8 +105,6 @@ public class UDPClient {
         } catch (IOException e) {
             // 其他错误
         }
-
-        // --- 2. 恢复正常的超时设置，发送新请求 ---
         try {
             socket.setSoTimeout(3000); // 设回正常的 3 秒
             sendMessage(message);
