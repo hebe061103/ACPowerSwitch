@@ -417,11 +417,11 @@ public class MainActivity extends AppCompatActivity{
                             if (ac != null) {
                                 sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
                                 String formattedValue = df.format(sj_power);
-                                uiData.put("shizai_power",formattedValue);
+                                uiData.put("sj_power",formattedValue);
                             }
                             //功率因数
                             String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
-                            uiData.put("power_yinshu",pf_value);
+                            uiData.put("power_ys",pf_value);
                             //交流频率
                             uiData.put("ac_freq",info[7]+" hz");
                             //负载使用率
@@ -460,8 +460,8 @@ public class MainActivity extends AppCompatActivity{
                                 uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池放电电流(A):");
                                 uiData.put("修改电池充放电电流值",df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                             }
-                            //为MPPT散热片温度
-                            uiData.put("mppt温度",info[15]+"°C");
+                            //为MPTT散热片温度
+                            uiData.put("mptt温度",info[15]+"°C");
                             //当前输出模式
                             uiData.put("当前输出模式",unicodeToString(info[17]));
                             //内存使用信息
@@ -490,9 +490,10 @@ public class MainActivity extends AppCompatActivity{
                             }
                         }).start();
                     }
-                    if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus()){
+                    if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus() && !Conn_status){
                         new Thread(() -> {
                             stop_send = true;
+                            sleep(500);
                             request_homepage_date();
                         }).start();
                     }
@@ -537,9 +538,9 @@ public class MainActivity extends AppCompatActivity{
                 //交流有功功率
                 power_kw.setText(uiData.get("ac_power"));
                 //交流视在功率
-                sj_power_kw.setText(uiData.get("shizai_power"));
+                sj_power_kw.setText(uiData.get("sj_power"));
                 //功率因数
-                pf.setText(uiData.get("power_yinshu"));
+                pf.setText(uiData.get("power_ys"));
                 //交流频率
                 out_frequency.setText(uiData.get("ac_freq"));
                 //负载使用率
@@ -553,8 +554,8 @@ public class MainActivity extends AppCompatActivity{
                 //为逆变模式时计算电池的充放电电流
                 current_direction.setText(uiData.get("修改电池充放电电流text"));
                 bat_out_current.setText(uiData.get("修改电池充放电电流值"));
-                //为MPPT散热片温度
-                temp0_value.setText(uiData.get("mppt温度"));
+                //为MPTT散热片温度
+                temp0_value.setText(uiData.get("mptt温度"));
                 //当前输出模式
                 out_mode.setText(uiData.get("当前输出模式"));
                 //内存使用信息
@@ -599,37 +600,37 @@ public class MainActivity extends AppCompatActivity{
             ArrayList<String> dataList = new ArrayList<>(Arrays.asList(all_data));
             for (String line : dataList) {
                 if (line != null && line.contains("min>")) {
-                    Log.i(TAG, "发现包含 min> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 min> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _min_bat_list.add(_l[1]);
                 }
                 if (line != null && line.contains("H_Total_power>")) {
-                    Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _H_Total_power.add(_l[1]);
                 }
                 if (line != null && line.contains("D_Total_power>")) {
-                    Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _D_Total_power.add(_l[1]);
                 }
                 if (line != null && line.contains("M_Total_power>")) {
-                    Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _M_Total_power.add(_l[1]);
                 }
                 if (line != null && line.contains("Y_Total_power>")) {
-                    Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _Y_Total_power.add(_l[1]);
                 }
                 if (line != null && line.contains("debug>")) {
-                    Log.i(TAG, "发现包含 debug> 的数据: " + line);
+                    //Log.i(TAG, "发现包含 debug> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     debugList.add(_l[1]);
                 }
                 if (line != null && line.contains("all_file_send_finish")) {
-                    Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
+                    //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                             " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                     data_rec_finish = true;
