@@ -84,7 +84,7 @@ public class about extends AppCompatActivity {
         });
     }
     public static void log(String tag, String m) {
-        Log.e(tag, m);
+        Log.i(tag, m);
         if (gHandler != null) {
             gHandler.post(() -> {
                 if (logList.size() < 1000) {

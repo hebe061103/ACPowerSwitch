@@ -106,10 +106,11 @@ public class UDPClient {
             // 其他错误
         }
         try {
-            socket.setSoTimeout(3000); // 设回正常的 3 秒
+            socket.setSoTimeout(1000);
             sendMessage(message);
             return receiveMessage();
         } catch (SocketException e) {
+            about.log(TAG, "接收超时1秒: " + e);
             return null;
         }
     }
