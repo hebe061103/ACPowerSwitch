@@ -396,8 +396,7 @@ public class MainActivity extends AppCompatActivity{
                         String[] sys_udp_response = new String[]{udp_response};
                         udp_response = null;
                         Conn_status=false;
-                        new Thread(() -> {
-                            if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
+                        if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
                             String modifiedString = sys_udp_response[0].substring(1, sys_udp_response[0].length() - 1);
                             modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                             info = modifiedString.split(":");
@@ -492,8 +491,7 @@ public class MainActivity extends AppCompatActivity{
                             message.what = 2;
                             message.obj = uiData;  // 将计算结果放入Message
                             messageProHandler.sendMessage(message);
-                            }
-                        }).start();
+                        }
                     }
                     if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus() && !Conn_status){
                         new Thread(() -> {

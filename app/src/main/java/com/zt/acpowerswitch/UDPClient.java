@@ -92,24 +92,40 @@ public class UDPClient {
     public synchronized String sendAndReceive(String message) {
         if (socket == null) return null;
         try {
-            // 设置一个极短的超时，快速试探
-            socket.setSoTimeout(1);
+            // 1. 安全地清空缓冲区（添加最大尝试次数）
+            socket.setSoTimeout(10);  // 改为10ms，更合理
             byte[] trash = new byte[4096];
             DatagramPacket trashPacket = new DatagramPacket(trash, trash.length);
-            while (true) {
-                socket.receive(trashPacket); // 只要能收到东西，就说明有存货
-                // 循环直到抛出 SocketTimeoutException，说明清空了
+
+            int maxClearAttempts = 3;  // 最多尝试3次
+            for (int i = 0; i < maxClearAttempts; i++) {
+                try {
+                    socket.receive(trashPacket);
+                    about.log(TAG, "清空缓冲区数据: " + i);
+                    // 收到数据，继续清空
+                } catch (SocketTimeoutException e) {
+                    // 超时，说明缓冲区已空
+                    break;
+                }
             }
-        } catch (SocketTimeoutException e) {
-            // 缓冲区已空，这是正常现象，跳出循环
+        } catch (SocketException e) {
+            about.log(TAG, "设置超时异常: " + e.getMessage());
+            return null;
         } catch (IOException e) {
-            // 其他错误
+            about.log(TAG, "清空缓冲区异常: " + e.getMessage());
         }
+        // 2. 发送和接收消息
         try {
             socket.setSoTimeout(3000);
             sendMessage(message);
-            return receiveMessage();
+            String response = receiveMessage();
+
+            Conn_status = response == null;  // 通信成功
+
+            return response;
         } catch (SocketException e) {
+            about.log(TAG, "设置接收超时异常: " + e.getMessage());
+            Conn_status = true;
             return null;
         }
     }
