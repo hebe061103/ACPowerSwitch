@@ -106,7 +106,7 @@ public class UDPClient {
             // 其他错误
         }
         try {
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(3000);
             sendMessage(message);
             return receiveMessage();
         } catch (SocketException e) {

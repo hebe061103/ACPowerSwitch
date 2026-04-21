@@ -106,10 +106,23 @@
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
+                    android:id="@+id/pv_power_result"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="12dp"
+                    android:hint="暂无"
+                    android:textColorHint="#37373F"
+                    android:textSize="18sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/le_current"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
                     android:id="@+id/pv_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="光伏电池信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
@@ -122,7 +135,7 @@
                     android:id="@+id/sun_voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="☀️ 光伏输出电压(V):"
                     android:textColor="#7B84E4"
                     android:textSize="18sp"
@@ -140,6 +153,18 @@
                     android:textSize="18sp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/sun_voltage"
+                    tools:ignore="HardcodedText,TextContrastCheck" />
+
+                <TextView
+                    android:id="@+id/sun_power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="🍵 光伏输出功率( W ):"
+                    android:textColor="#0BF1F4"
+                    android:textSize="18sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -186,13 +211,13 @@
                     android:id="@+id/sys_temperature"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="系统温度信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/sun_ic"
+                    app:layout_constraintTop_toBottomOf="@+id/sun_power"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <TextView
@@ -200,7 +225,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="0dp"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="🌡️ MPPT实时温度(℃):"
                     android:textColor="#EB92B3"
                     android:textSize="18sp"
@@ -316,7 +341,7 @@
                     android:id="@+id/textView6"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="⚡ 输出电压(V):"
                     android:textColor="#00BCD4"
                     android:textSize="18sp"
@@ -388,7 +413,7 @@
                     android:id="@+id/out_Voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:layout_marginEnd="12dp"
                     android:hint="暂无"
                     android:textColorHint="#37373F"
@@ -464,7 +489,7 @@
                     android:id="@+id/textView16"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="储能电池信息:"
                     android:textColor="#78909C"
                     android:textSize="18sp"
@@ -477,7 +502,7 @@
                     android:id="@+id/textView19"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:text="🔋 电池电压(V):"
                     android:textColor="#07F893"
                     android:textSize="18sp"

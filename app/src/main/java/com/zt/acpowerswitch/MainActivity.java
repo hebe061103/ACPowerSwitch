@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity{
     public static ImageView mark_status;
     public long lastBack = 0;
     public static final UDPClient udpClient = new UDPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,temp0_value,fan_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use;
     public static String[] info;
     public static String udpServerAddress;
     public static int udpServerPort=55555;
@@ -142,6 +142,7 @@ public class MainActivity extends AppCompatActivity{
         fan_value = findViewById(R.id.fan_value);//定义为主功率板散热风扇转速值
         load_rate_value = findViewById(R.id.load_rate_value);
         le_current = findViewById(R.id.le_current);
+        pv_power_result = findViewById(R.id.pv_power_result);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
         bat_line_chart = findViewById(R.id.line_chart);
@@ -437,6 +438,10 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("pv_voltage",info[11]);
                             //光伏板电流
                             uiData.put("pv_current",info[13]);
+                            //光伏实时输出功率
+                            Float pv_result = Float.parseFloat(info[11])*Float.parseFloat(info[13]);
+                            String pv_Value = df.format(pv_result);
+                            uiData.put("光伏实时输出功率",pv_Value);
                             //逆变器不同模式下电池的充放电电流计算
                             float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
                             if (unicodeToString(info[17]).equals("逆变供电")) {
@@ -545,12 +550,14 @@ public class MainActivity extends AppCompatActivity{
                 out_frequency.setText(uiData.get("ac_freq"));
                 //负载使用率
                 load_rate_value.setText(uiData.get("power_use"));
-                //为电池电压
+                //电池电压
                 bat_Voltage.setText(uiData.get("bat_voltage"));
-                //为光伏电压
+                //光伏电压
                 sun_voltage_value.setText(uiData.get("pv_voltage"));
-                //为太阳能电流
+                //太阳能电流
                 le_current.setText(uiData.get("pv_current"));
+                //光伏实时输出功率
+                pv_power_result.setText(uiData.get("光伏实时输出功率"));
                 //为逆变模式时计算电池的充放电电流
                 current_direction.setText(uiData.get("修改电池充放电电流text"));
                 bat_out_current.setText(uiData.get("修改电池充放电电流值"));
@@ -604,32 +611,32 @@ public class MainActivity extends AppCompatActivity{
                     String[] _l = line.split(">"); //按>进行分隔
                     _min_bat_list.add(_l[1]);
                 }
-                if (line != null && line.contains("H_Total_power>")) {
+                else if (line != null && line.contains("H_Total_power>")) {
                     //Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _H_Total_power.add(_l[1]);
                 }
-                if (line != null && line.contains("D_Total_power>")) {
+                else if (line != null && line.contains("D_Total_power>")) {
                     //Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _D_Total_power.add(_l[1]);
                 }
-                if (line != null && line.contains("M_Total_power>")) {
+                else if (line != null && line.contains("M_Total_power>")) {
                     //Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _M_Total_power.add(_l[1]);
                 }
-                if (line != null && line.contains("Y_Total_power>")) {
+                else if (line != null && line.contains("Y_Total_power>")) {
                     //Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     _Y_Total_power.add(_l[1]);
                 }
-                if (line != null && line.contains("debug>")) {
+                else if (line != null && line.contains("debug>")) {
                     //Log.i(TAG, "发现包含 debug> 的数据: " + line);
                     String[] _l = line.split(">"); //按>进行分隔
                     debugList.add(_l[1]);
                 }
-                if (line != null && line.contains("all_file_send_finish")) {
+                else if (line != null && line.contains("all_file_send_finish")) {
                     //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                             " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
@@ -638,6 +645,11 @@ public class MainActivity extends AppCompatActivity{
                     isPaused = false;
                 }
             }
+        }
+        // 检查是否完成，如果没完成则递归调用自身
+        if (!data_rec_finish) {
+            about.log(TAG, "数据接收未完成，重新请求...");
+            pro_data_request();  // 递归调用自身
         }
     }
     @SuppressLint("DefaultLocale")
@@ -1200,7 +1212,6 @@ class CustomMarkerView extends MarkerView {
     public void refreshContent(Entry e, Highlight highlight) {
         DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        Log.i("_tmp数据:", Arrays.toString(_tmp));
         m_year.setText(_tmp[0]);
         m_time.setText(_tmp[1]);
         String [] all_data = _tmp[2].split(",");
