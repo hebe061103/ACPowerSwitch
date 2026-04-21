@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity{
             goAnim(MainActivity.this, 50);
             new AlertDialog.Builder(this)
                     .setTitle("注意:")
-                    .setMessage("该操作将重置远端设备网络,请慬慎执行!!!")
+                    .setMessage("该操作将重置逆变器的网络,如果你不在逆变器旁边,请慬慎执行!!!")
                     .setPositiveButton("取消",null)
                     .setNegativeButton("执行", (dialogInterface, i) -> {
                         goAnim(MainActivity.this, 50);
@@ -164,14 +164,13 @@ public class MainActivity extends AppCompatActivity{
                                     .setMessage("重置成功")
                                     .setNegativeButton("完成", (dialogInterface1, i1) -> {
                                         goAnim(MainActivity.this, 50);
-                                        deleteData("wifi_ip");
                                         deleteData("power");
-                                        deleteData("adc2_offset_value");
-                                        deleteData("adc3_vcc_value");
-                                        deleteData("adc3vsens");
                                         deleteData("low_voltage");
-                                        deleteData("refresh_time");
                                         deleteData("out_mode");
+                                        deleteData("mos_temp");
+                                        deleteData("open_pv_value");
+                                        deleteData("wifi_ip");
+                                        deleteData("refresh_time");
                                         udpClient.close();
                                     }).show();
                         }else{

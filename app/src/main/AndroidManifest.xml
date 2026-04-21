@@ -63,6 +63,9 @@
         <activity android:name="com.zt.acpowerswitch.set_tcp_page"
             android:screenOrientation="portrait"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
+        <activity android:name="com.zt.acpowerswitch.WifiClientActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
     </application>
 
 </manifest>
