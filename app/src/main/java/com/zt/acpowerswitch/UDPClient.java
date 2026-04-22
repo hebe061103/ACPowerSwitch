@@ -3,7 +3,6 @@ package com.zt.acpowerswitch;
 import static com.zt.acpowerswitch.MainActivity.Conn_status;
 import static com.zt.acpowerswitch.MainActivity.udpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.udpServerPort;
-import static com.zt.acpowerswitch.MainActivity.udp_connect;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -16,23 +15,18 @@ import java.nio.charset.StandardCharsets;
 public class UDPClient {
     private static final String TAG = "UDPClient:";
     public static DatagramSocket socket;
-
-    // 移除不必要的单线程池，改为复用 InetAddress
     private InetAddress cachedServerAddress = null;
 
-    public void udpConnect() {
-        new Thread(() -> {
-            try {
-                if (!udp_connect) {
-                    socket = new DatagramSocket();
-                    socket.setSoTimeout(3000);
-                    udp_connect = true;
-                    about.log(TAG, "创建套接字成功");
-                }
-            } catch (SocketException e) {
-                about.log(TAG, "创建套接字失败");
-            }
-        }).start();
+    public boolean udpConnect() {
+        try {
+            socket = new DatagramSocket();
+            socket.setSoTimeout(3000);
+            about.log(TAG, "创建套接字成功");
+            return true;
+        } catch (SocketException e) {
+            about.log(TAG, "创建套接字失败");
+            return false;
+        }
     }
 
     public void sendMessage(String message) {
@@ -129,10 +123,8 @@ public class UDPClient {
             return null;
         }
     }
-
     public void close() {
         socket.close();
-        udp_connect = false;
         about.log(TAG, "关闭网络连接");
     }
 }

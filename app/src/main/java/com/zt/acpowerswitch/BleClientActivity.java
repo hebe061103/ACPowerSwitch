@@ -260,6 +260,7 @@ public class BleClientActivity extends AppCompatActivity {
                                 }
                                 if(topActivity!=null && !topActivity.toString().equals("ComponentInfo{com.zt.wirelesssw/com.zt.wirelesssw.WifiListActivity}")) {
                                     Intent intent = new Intent(BleClientActivity.this, WifiListActivity.class);
+                                    intent.putExtra("value", "bl");
                                     startActivities(new Intent[]{intent});
                                 }
                             }

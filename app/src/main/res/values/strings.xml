@@ -2,5 +2,7 @@
     <string name="app_name">逆变器监控</string>
     <string name="about_about">关于</string>
     <string name="other_option">参数设置</string>
-    <string name="wifi_readme">在此处选择电源切换模块需要连接到的wifi网络，给模块进行配网操作</string>
+    <string name="wifi_readme">选择逆变器要连接到的网络,进行配网操作,在配网之前请确保巳经连接到逆变器的热点,否则配网不会成功!</string>
+    <string name="config_network_readme">注意!当配置完逆变器网络,返回后依然回到该界面,是因为没有配置APP端的访问域名或IP,配置完就可以!</string>
+
 </resources>

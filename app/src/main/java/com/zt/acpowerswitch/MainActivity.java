@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public static String[] info;
     public static String udpServerAddress;
     public static int udpServerPort=55555;
-    public static boolean udp_connect,data_rec_finish, stop_send,Thread_Run,Conn_status,isPaused;
+    public static boolean data_rec_finish, stop_send,Thread_Run,Conn_status,isPaused;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -342,9 +342,8 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void start_Thread(){
-        udpClient.udpConnect();
         while (!Thread_Run) {
-            if (udp_connect) {
+            if (udpClient.udpConnect()) {
                 about.log(TAG, "开始调用线程");
                 mData_pro_thread();
                 break;
@@ -383,131 +382,138 @@ public class MainActivity extends AppCompatActivity{
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
-            String udp_response = "";
-            while (udp_connect) {
-                while (!isPaused) {
-                    if (checkScreenStatus() && !stop_send) {
-                        udp_response = udpClient.sendAndReceive("get_info");
-                        sleep(page_refresh_time);
-                    }
-                    if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
-                        about.log(TAG, "数据内容: " + udp_response);
-                        String[] sys_udp_response = new String[]{udp_response};
-                        udp_response = null;
-                        Conn_status=false;
-                        if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
-                            String modifiedString = sys_udp_response[0].substring(1, sys_udp_response[0].length() - 1);
-                            modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
-                            info = modifiedString.split(":");
-                            Map<String, String> uiData = new HashMap<>();
-                            DecimalFormat df = new DecimalFormat("#.##");
-                            Float sj_power= 0.0F;
-                            //交流电压
-                            uiData.put("ac_voltage", info[1]);
-                            String ac = info[1];
-                            //交流电流
-                            Float jl_dl = Float.parseFloat(info[3]);
-                            String formattedValue_iv_Value = df.format(jl_dl);
-                            uiData.put("ac_current",formattedValue_iv_Value);
-                            String iv = info[3];
-                            //交流功率
-                            uiData.put("ac_power",info[5]);
-                            //交流视在功率
-                            if (ac != null) {
-                                sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
-                                String formattedValue = df.format(sj_power);
-                                uiData.put("sj_power",formattedValue);
-                            }
-                            //功率因数
-                            String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
-                            uiData.put("power_ys",pf_value);
-                            //交流频率
-                            uiData.put("ac_freq",info[7]+" hz");
-                            //负载使用率
-                            if (unicodeToString(info[17]).equals("逆变供电")) {
-                                String power_use = df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
-                                uiData.put("power_use",power_use);
-                            }else{
-                                uiData.put("power_use","市电无限制");
-                            }
-                            //储能电池电压
-                            uiData.put("bat_voltage",info[9]);
-                            //光伏板电压
-                            uiData.put("pv_voltage",info[11]);
-                            //光伏板电流
-                            uiData.put("pv_current",info[13]);
-                            //光伏实时输出功率
-                            Float pv_result = Float.parseFloat(info[11])*Float.parseFloat(info[13]);
-                            String pv_Value = df.format(pv_result);
-                            uiData.put("光伏实时输出功率",pv_Value);
-                            //逆变器不同模式下电池的充放电电流计算
-                            float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
-                            if (unicodeToString(info[17]).equals("逆变供电")) {
-                                //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
-                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
-                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
-                                    uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
-                                } else {
-                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
-                                    uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
-                                }
-                            }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                                if ((pw - 3.6) > 0) {
-                                    uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
-                                    uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
-                                }
-                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池放电电流(A):");
-                                uiData.put("修改电池充放电电流值",df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
-                            } else{
-                                //手动市电供电模式下,逆变为开启状态的时的放电电流
-                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池放电电流(A):");
-                                uiData.put("修改电池充放电电流值",df.format(30 / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
-                            }
-                            //为MPTT散热片温度
-                            uiData.put("mptt温度",info[15]+"°C");
-                            //当前输出模式
-                            uiData.put("当前输出模式",unicodeToString(info[17]));
-                            //内存使用信息
-                            uiData.put("内存使用信息",info[19]);
-                            //市电切换阈值
-                            saveData("power",info[21]);
-                            //电池低于此值则市电常开
-                            saveData("low_voltage",info[23]);
-                            //输出模式
-                            saveData("out_mode", info[25]);
-                            //主功率板散执片风扇开启温度
-                            saveData("mos_temp",info[27]);
-                            //主功率板散热片实时温度
-                            String raw = info[29];
-                            String readable = raw.replace("\\xb0", "°");
-                            uiData.put("散热片实时温度",readable);
-                            //主功率板散热风扇转速值
-                            uiData.put("散热风扇转速值",info[31]);
-                            //开启逆变的电压阈值
-                            saveData("open_pv_value",info[33]);
-
-                            Message message = messageProHandler.obtainMessage();
-                            message.what = 2;
-                            message.obj = uiData;  // 将计算结果放入Message
-                            messageProHandler.sendMessage(message);
+            while (!isPaused) {
+                String udp_response = udpClient.sendAndReceive("get_info");
+                sleep(page_refresh_time);
+                if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
+                    about.log(TAG, "数据内容: " + udp_response);
+                    String[] sys_udp_response = new String[]{udp_response};
+                    Conn_status=false;
+                    if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
+                        String modifiedString = sys_udp_response[0].substring(1, sys_udp_response[0].length() - 1);
+                        modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
+                        info = modifiedString.split(":");
+                        Map<String, String> uiData = new HashMap<>();
+                        DecimalFormat df = new DecimalFormat("#.##");
+                        Float sj_power= 0.0F;
+                        //交流电压
+                        uiData.put("ac_voltage", info[1]);
+                        String ac = info[1];
+                        //交流电流
+                        Float jl_dl = Float.parseFloat(info[3]);
+                        String formattedValue_iv_Value = df.format(jl_dl);
+                        uiData.put("ac_current",formattedValue_iv_Value);
+                        String iv = info[3];
+                        //交流功率
+                        uiData.put("ac_power",info[5]);
+                        //交流视在功率
+                        if (ac != null) {
+                            sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
+                            String formattedValue = df.format(sj_power);
+                            uiData.put("sj_power",formattedValue);
                         }
+                        //功率因数
+                        String pf_value = df.format(Float.parseFloat(info[5])/sj_power);
+                        uiData.put("power_ys",pf_value);
+                        //交流频率
+                        uiData.put("ac_freq",info[7]+" hz");
+                        //负载使用率
+                        if (unicodeToString(info[17]).equals("逆变供电")) {
+                            String power_use = df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
+                            uiData.put("power_use",power_use);
+                        }else{
+                            uiData.put("power_use","市电无限制");
+                        }
+                        //储能电池电压
+                        uiData.put("bat_voltage",info[9]);
+                        //光伏板电压
+                        uiData.put("pv_voltage",info[11]);
+                        //光伏板电流
+                        uiData.put("pv_current",info[13]);
+                        //光伏实时输出功率
+                        Float pv_result = Float.parseFloat(info[11])*Float.parseFloat(info[13]);
+                        String pv_Value = df.format(pv_result);
+                        uiData.put("光伏实时输出功率",pv_Value);
+                        //逆变器不同模式下电池的充放电电流计算
+                        float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
+                        if (unicodeToString(info[17]).equals("逆变供电")) {
+                            //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
+                            if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                            } else {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                            }
+                        }else if (unicodeToString(info[17]).equals("电池电压过低")){
+                            if ((pw - 3.6) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                            }
+                            uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池放电电流(A):");
+                            uiData.put("修改电池充放电电流值",df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                        } else if (unicodeToString(info[17]).equals("固定逆变模式")){
+                            if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                            } else {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                            }
+                        } else {
+                            //手动市电模式和市电供电模式下,逆变器的充放电电流计算方法相同,因为逆变均为开启状态
+                            if (pw - 30 > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - 30) / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
+                            } else {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(30 / Float.parseFloat(info[9])));
+                            }
+                        }
+                        //为MPTT散热片温度
+                        uiData.put("mptt温度",info[15]+"°C");
+                        //当前输出模式
+                        uiData.put("当前输出模式",unicodeToString(info[17]));
+                        //内存使用信息
+                        uiData.put("内存使用信息",info[19]);
+                        //市电切换阈值
+                        saveData("power",info[21]);
+                        //电池低于此值则市电常开
+                        saveData("low_voltage",info[23]);
+                        //输出模式
+                        saveData("out_mode", info[25]);
+                        //主功率板散执片风扇开启温度
+                        saveData("mos_temp",info[27]);
+                        //主功率板散热片实时温度
+                        String raw = info[29];
+                        String readable = raw.replace("\\xb0", "°");
+                        uiData.put("散热片实时温度",readable);
+                        //主功率板散热风扇转速值
+                        uiData.put("散热风扇转速值",info[31]);
+                        //开启逆变的电压阈值
+                        saveData("open_pv_value",info[33]);
+
+                        Message message = messageProHandler.obtainMessage();
+                        message.what = 2;
+                        message.obj = uiData;  // 将计算结果放入Message
+                        messageProHandler.sendMessage(message);
                     }
-                    if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus() && !Conn_status){
-                        new Thread(() -> {
-                            stop_send = true;
-                            sleep(500);
-                            request_homepage_date();
-                        }).start();
-                    }
-                    if (!checkScreenStatus()) {
-                        about.log(TAG, "屏幕关闭");
-                        udpClient.close();
-                        isPaused=true;
-                    }
-                    Message message = new Message();
-                    message.what = 1;
-                    messageProHandler.sendMessage(message);
                 }
+                if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus() && !Conn_status){
+                    new Thread(() -> {
+                        stop_send = true;
+                        sleep(500);
+                        request_homepage_date();
+                    }).start();
+                }
+                if (!checkScreenStatus()) {
+                    about.log(TAG, "屏幕关闭");
+                    udpClient.close();
+                    isPaused=true;
+                }
+                Message message = new Message();
+                message.what = 1;
+                messageProHandler.sendMessage(message);
             }
             isPaused=false;
             Thread_Run = false;

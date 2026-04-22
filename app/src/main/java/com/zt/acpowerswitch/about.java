@@ -113,11 +113,9 @@ public class about extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
             }
             if (msg.what == 2) {
-                run_log.setText("暂停刷新:");
                 stop_refresh=true;
             }
             if (msg.what == 3) {
-                run_log.setText("运行日志:");
                 stop_refresh=false;
             }
         }

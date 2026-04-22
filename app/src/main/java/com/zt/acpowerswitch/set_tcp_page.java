@@ -1,5 +1,6 @@
 package com.zt.acpowerswitch;
 
+import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
 public class set_tcp_page extends AppCompatActivity {
     //private static final String TAG = "set_tcp_page:";
     public Button bl_ip_get,wf_ip_get,manual_set;
+    public long lastBack = 0;
     public EditText ip_input;
     // 正则表达式用于匹配域名或子域名
     private static final String DOMAIN_PATTERN =
@@ -45,7 +47,8 @@ public class set_tcp_page extends AppCompatActivity {
 
         wf_ip_get.setOnClickListener(view -> {
             goAnim(set_tcp_page.this,50);
-            Intent intent = new Intent(set_tcp_page.this, WifiClientActivity.class);
+            Intent intent = new Intent(set_tcp_page.this, WifiListActivity.class);
+            intent.putExtra("value", "wf");
             startActivities(new Intent[]{intent});
         });
         manual_set.setOnClickListener(view -> {
@@ -56,6 +59,7 @@ public class set_tcp_page extends AppCompatActivity {
                     saveData("wifi_ip", ip_input.getText().toString());
                     Intent intent = new Intent(set_tcp_page.this, MainActivity.class);
                     startActivities(new Intent[]{intent});
+                    finish();
                 } else {
                     Toast.makeText(this, "请输入正确的IP地址或域名", Toast.LENGTH_SHORT).show();
                 }
@@ -81,12 +85,20 @@ public class set_tcp_page extends AppCompatActivity {
         Matcher matcher = pattern.matcher(domain);
         return matcher.matches();
     }
+    /**
+     * 再次返回键退出程序
+     */
     @Override
     public void onBackPressed() {
-        // 默认返回键行为
-        super.onBackPressed(); // 或者你可以自定义返回逻辑
+        if (lastBack == 0 || System.currentTimeMillis() - lastBack > 2000) {
+            Toast.makeText(set_tcp_page.this, "再按一次返回退出", LENGTH_SHORT).show();
+            lastBack = System.currentTimeMillis();
+            return;
+        }
+        super.onBackPressed();
     }
     protected void onResume() {
         super.onResume();
     }
+
 }

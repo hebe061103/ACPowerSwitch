@@ -6,7 +6,7 @@
     <TextView
         android:id="@+id/list_text"
         android:textSize="16sp"
-        android:textColor="#8BC34A"
+        android:textColor="#E9EBE8"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1" />

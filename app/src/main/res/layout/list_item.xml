@@ -5,10 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="0dp"
-    android:hint="这里显示元素"
     android:padding="2dp"
-    android:textColor="#4CAF50"
-    android:textColorHint="#546E7A"
+    android:textColor="#0F9D8F"
     android:textSize="14sp"
     tools:ignore="HardcodedText"> <!-- 设置行间距 -->
 </TextView>

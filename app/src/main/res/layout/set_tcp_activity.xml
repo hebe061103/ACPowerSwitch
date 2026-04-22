@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="10dp">
 
     <TextView
         android:layout_width="wrap_content"
@@ -14,6 +15,21 @@
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline14"
         tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/readme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="@string/config_network_readme"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.92"
+        tools:ignore="TextSizeCheck" />
 
     <EditText
         android:id="@+id/ip_input"
@@ -33,7 +49,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="16dp" />
+        app:layout_constraintGuide_begin="3dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline14"
@@ -48,8 +64,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="方式一.使用蓝牙配置逆变器网络"
-        android:textColor="#7CB342"
-        android:textSize="16sp"
+        android:textColor="#DD2C00"
+        android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
         tools:ignore="HardcodedText" />
@@ -60,11 +76,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="方式二.使用WIFI热点配置逆变器网络"
-        android:textColor="#7CB342"
-        android:textSize="16sp"
+        android:textColor="#30BF09"
+        android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline16"
-        tools:ignore="HardcodedText" />
+        tools:ignore="HardcodedText,TextContrastCheck" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline15"
@@ -95,7 +111,7 @@
         android:text="配置网络"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
-        tools:ignore="HardcodedText" />
+        tools:ignore="HardcodedText,DuplicateSpeakableTextCheck" />
 
     <Button
         android:id="@+id/wf_ip_get"
@@ -127,7 +143,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:layout_marginTop="48dp"
         android:text="配置逆变器的网络:"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
@@ -137,7 +153,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:text="配置APP网络:"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline17"
