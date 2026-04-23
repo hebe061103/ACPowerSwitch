@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 
 public class UDPClient {
     private static final String TAG = "UDPClient:";
-    public static DatagramSocket socket;
+    public static volatile DatagramSocket socket;
     private InetAddress cachedServerAddress = null;
 
     public boolean udpConnect() {
@@ -52,7 +52,6 @@ public class UDPClient {
         byte[] receiveData = new byte[4096]; // 提高到 4KB 缓冲，更稳健
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         try {
-
             try {
                 socket.receive(receivePacket);
                 String firstPart = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
@@ -82,45 +81,48 @@ public class UDPClient {
         }
     }
 
-    // 整个通讯过程加锁，防止多线程同时挤占同一个 Socket
-    public synchronized String sendAndReceive(String message) {
+    public String sendAndReceive(String message) {
         if (socket == null) return null;
+
+        // 1. 清空缓冲区（不涉及共享资源竞争，不需要锁）
+        clearBuffer();
+
+        // 2. 发送和接收消息（发送时需要加锁防止并发发送，但接收不需要）
         try {
-            // 1. 安全地清空缓冲区（添加最大尝试次数）
-            socket.setSoTimeout(10);  // 改为10ms，更合理
+            socket.setSoTimeout(3000);
+
+            // 只对发送加锁
+            synchronized (this) {
+                sendMessage(message);
+            }
+
+            // 接收操作不加锁，允许多个线程同时接收（实际上不会，因为每个线程有独立的响应）
+            String response = receiveMessage();
+            Conn_status = response == null;
+            return response;
+        } catch (SocketException e) {
+            about.log(TAG, "接收超时异常: " + e.getMessage());
+            Conn_status = true;
+            return null;
+        }
+    }
+
+    private void clearBuffer() {
+        try {
+            socket.setSoTimeout(1);
             byte[] trash = new byte[4096];
             DatagramPacket trashPacket = new DatagramPacket(trash, trash.length);
 
-            int maxClearAttempts = 3;  // 最多尝试3次
-            for (int i = 0; i < maxClearAttempts; i++) {
+            while (true){
                 try {
                     socket.receive(trashPacket);
-                    about.log(TAG, "清空缓冲区数据: " + i);
-                    // 收到数据，继续清空
+                    about.log(TAG, "清空: " + trashPacket.getLength() + " 字节");
                 } catch (SocketTimeoutException e) {
-                    // 超时，说明缓冲区已空
                     break;
                 }
             }
-        } catch (SocketException e) {
-            about.log(TAG, "设置超时异常: " + e.getMessage());
-            return null;
-        } catch (IOException e) {
+        } catch (Exception e) {
             about.log(TAG, "清空缓冲区异常: " + e.getMessage());
-        }
-        // 2. 发送和接收消息
-        try {
-            socket.setSoTimeout(3000);
-            sendMessage(message);
-            String response = receiveMessage();
-
-            Conn_status = response == null;  // 通信成功
-
-            return response;
-        } catch (SocketException e) {
-            about.log(TAG, "设置接收超时异常: " + e.getMessage());
-            Conn_status = true;
-            return null;
         }
     }
     public void close() {

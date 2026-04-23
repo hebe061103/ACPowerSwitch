@@ -1,6 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
+import static com.zt.acpowerswitch.UDPClient.socket;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -18,7 +19,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity{
     public static LineDataSet bat_lineDataSet,mem_lineDataSet;
     public static int page_refresh_time;
     private boolean isMemChartInitialized = false;
+    public SmartRefreshLayout smartRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
-        SmartRefreshLayout smartRefreshLayout = findViewById(R.id.refreshLayout);
+        smartRefreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
@@ -113,16 +114,7 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.clear();//清除图表
                 power_chart.invalidate(); // 使改变生效
             }
-            if (mem_use_chart.getData() != null){
-                mem_use_chart.clear();//清除图表
-                mem_use_chart.invalidate(); // 使改变生效
-            }
-            isPaused=true;
-            stop_send=true;
-            data_rec_finish=false;
             request_homepage_date();
-            smartRefreshLayout.finishRefresh(3000);
-            Log.e(TAG,"刷新完成");
         });
         mark_status = findViewById(R.id.mark_status);
         date_num = getCurrentMonthLastDay();
@@ -350,6 +342,18 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         about.log(TAG, "线程调用完成");
+        new Thread(() -> {
+            while (socket == null) {
+                try {
+                    Thread.sleep(100); // 每次检查休眠 100ms，降低 CPU 占用
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (bat_line_chart.isEmpty() || power_chart.isEmpty()) {
+                request_homepage_date();
+            }
+        }).start();
     }
     public static boolean send_command_to_server(String data) {
         CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1
@@ -383,14 +387,13 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             Thread_Run = true;
             while (!isPaused) {
-                String udp_response = udpClient.sendAndReceive("get_info");
-                sleep(page_refresh_time);
-                if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
-                    about.log(TAG, "数据内容: " + udp_response);
-                    String[] sys_udp_response = new String[]{udp_response};
-                    Conn_status=false;
-                    if (sys_udp_response[0] != null && !sys_udp_response[0].isEmpty()){
-                        String modifiedString = sys_udp_response[0].substring(1, sys_udp_response[0].length() - 1);
+                if (!stop_send){
+                    String udp_response = udpClient.sendAndReceive("get_info");
+                    sleep(page_refresh_time);
+                    if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
+                        about.log(TAG, "数据内容: " + udp_response);
+                        Conn_status=false;
+                        String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
                         Map<String, String> uiData = new HashMap<>();
@@ -498,22 +501,15 @@ public class MainActivity extends AppCompatActivity{
                         message.obj = uiData;  // 将计算结果放入Message
                         messageProHandler.sendMessage(message);
                     }
+                    if (!checkScreenStatus()) {
+                        about.log(TAG, "屏幕关闭");
+                        udpClient.close();
+                        isPaused=true;
+                    }
+                    Message message = new Message();
+                    message.what = 1;
+                    messageProHandler.sendMessage(message);
                 }
-                if (getTopActivity().toString().equals(top_m) && !stop_send && !data_rec_finish && checkScreenStatus() && !Conn_status){
-                    new Thread(() -> {
-                        stop_send = true;
-                        sleep(500);
-                        request_homepage_date();
-                    }).start();
-                }
-                if (!checkScreenStatus()) {
-                    about.log(TAG, "屏幕关闭");
-                    udpClient.close();
-                    isPaused=true;
-                }
-                Message message = new Message();
-                message.what = 1;
-                messageProHandler.sendMessage(message);
             }
             isPaused=false;
             Thread_Run = false;
@@ -595,16 +591,19 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
     public void pro_data_request(){
+        String[] all_data;
         _min_bat_list.clear();
         _H_Total_power.clear();
         _D_Total_power.clear();
         _M_Total_power.clear();
         _Y_Total_power.clear();
         debugList.clear();
+        stop_send = true;
+        data_rec_finish=false;
         about.log(TAG, "请求全部数据");
         String udp_response = udpClient.sendAndReceive("get_all_file");
         if (udp_response!=null){
-            String[] all_data = udp_response.split("\n");
+            all_data = udp_response.split("\n");
             int dataLength = all_data.length;
             about.log(TAG, "数据行数: " + dataLength);
             ArrayList<String> dataList = new ArrayList<>(Arrays.asList(all_data));
@@ -643,15 +642,17 @@ public class MainActivity extends AppCompatActivity{
                     //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                             " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                    smartRefreshLayout.finishRefresh();
                     data_rec_finish = true;
                     stop_send = false;
-                    isPaused = false;
                 }
             }
         }
         // 检查是否完成，如果没完成则递归调用自身
-        if (!data_rec_finish) {
-            about.log(TAG, "数据接收未完成，重新请求...");
+        if (!data_rec_finish && checkScreenStatus()) {
+            stop_send = false;
+            about.log(TAG, "数据不完整，等待5秒重新请求...");
+            sleep(5000);
             pro_data_request();  // 递归调用自身
         }
     }
@@ -1075,7 +1076,7 @@ public class MainActivity extends AppCompatActivity{
         if (wifilist != null) {
             wifilist.clear();
         }
-        if (UDPClient.socket!=null) {
+        if (socket!=null) {
             udpClient.close();
         }
     }
