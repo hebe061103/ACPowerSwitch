@@ -126,15 +126,16 @@ public class otherOption extends AppCompatActivity {
                 .setPositiveButton("取消", null)
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(otherOption.this, 50);
-                    deleteData("wifi_ip");
                     deleteData("power");
-                    deleteData("adc2_offset_value");
-                    deleteData("adc3_vcc_value");
-                    deleteData("adc3vsens");
                     deleteData("low_voltage");
-                    deleteData("refresh_time");
                     deleteData("out_mode");
+                    deleteData("mos_temp");
+                    deleteData("open_pv_value");
+                    deleteData("wifi_ip");
+                    deleteData("refresh_time");
+                    if (!MainActivity.isPaused){MainActivity.isPaused=true;}
                     udpClient.close();
+                    finish();
                 })
                 .show();
         });

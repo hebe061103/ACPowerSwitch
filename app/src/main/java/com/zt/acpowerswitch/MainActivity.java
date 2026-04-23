@@ -330,7 +330,6 @@ public class MainActivity extends AppCompatActivity{
             }
         });
         start_Thread();
-
     }
 
     public void start_Thread(){
@@ -342,18 +341,18 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         about.log(TAG, "线程调用完成");
-        new Thread(() -> {
-            while (socket == null) {
-                try {
-                    Thread.sleep(100); // 每次检查休眠 100ms，降低 CPU 占用
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        if (bat_line_chart.isEmpty() || power_chart.isEmpty() && !out_Voltage.getText().equals("")) {
+            new Thread(() -> {
+                while (socket == null) {
+                    try {
+                        Thread.sleep(100); // 每次检查休眠 100ms，降低 CPU 占用
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-            if (bat_line_chart.isEmpty() || power_chart.isEmpty()) {
                 request_homepage_date();
-            }
-        }).start();
+            }).start();
+        }
     }
     public static boolean send_command_to_server(String data) {
         CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1

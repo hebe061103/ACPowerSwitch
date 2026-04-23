@@ -47,18 +47,14 @@ public class UDPClient {
 
     public String receiveMessage() {
         if (socket == null || socket.isClosed()) return null;
-
         StringBuilder responseBuilder = new StringBuilder();
         byte[] receiveData = new byte[4096]; // 提高到 4KB 缓冲，更稳健
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         try {
             try {
                 socket.receive(receivePacket);
-                String firstPart = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-                responseBuilder.append(firstPart);
-                // 2. 持续接收后续包
-                // 注意：Python 端文件间 sleep 了 100ms，所以这里至少设为 300-500ms
-                // 这样才能跨过文件间的停顿，把所有文件连成一串
+                String Part = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
+                responseBuilder.append(Part);
                 socket.setSoTimeout(300);
                 while (true) {
                     try {
@@ -70,11 +66,9 @@ public class UDPClient {
                     }
                 }
             } catch (SocketTimeoutException e) {
-                return null; // 一个包都没收到
+                return null;
             }
-
             return responseBuilder.toString();
-
         } catch (IOException e) {
             about.log(TAG, "Socket异常: " + e.getMessage());
             return null;
@@ -83,19 +77,13 @@ public class UDPClient {
 
     public String sendAndReceive(String message) {
         if (socket == null) return null;
-
-        // 1. 清空缓冲区（不涉及共享资源竞争，不需要锁）
         clearBuffer();
-
-        // 2. 发送和接收消息（发送时需要加锁防止并发发送，但接收不需要）
         try {
             socket.setSoTimeout(3000);
-
             // 只对发送加锁
             synchronized (this) {
                 sendMessage(message);
             }
-
             // 接收操作不加锁，允许多个线程同时接收（实际上不会，因为每个线程有独立的响应）
             String response = receiveMessage();
             Conn_status = response == null;

@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="配置网络"
+        android:text="设备网络配置"
         android:textSize="25sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
@@ -36,7 +36,7 @@
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:autofillHints=""
-        android:hint="输入域名或IP地址"
+        android:hint="输入逆变器域名或IP地址"
         android:minHeight="48dp"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
@@ -56,7 +56,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_begin="20dp" />
+        app:layout_constraintGuide_begin="10dp" />
 
     <TextView
         android:id="@+id/textView14"
@@ -143,9 +143,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="56dp"
         android:text="配置逆变器的网络:"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline14"
         tools:ignore="HardcodedText" />
@@ -154,7 +154,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="18sp"
-        android:text="配置APP网络:"
+        android:text="配置手机APP网络:"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline17"
         tools:ignore="HardcodedText" />
