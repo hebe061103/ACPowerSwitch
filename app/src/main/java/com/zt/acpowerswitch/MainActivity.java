@@ -343,7 +343,7 @@ public class MainActivity extends AppCompatActivity{
         about.log(TAG, "线程调用完成");
         if (bat_line_chart.isEmpty() || power_chart.isEmpty() && !out_Voltage.getText().equals("")) {
             new Thread(() -> {
-                while (socket == null) {
+                while (socket == null || out_Voltage.getText().toString().isEmpty()) {
                     try {
                         Thread.sleep(100); // 每次检查休眠 100ms，降低 CPU 占用
                     } catch (InterruptedException e) {
@@ -386,7 +386,7 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             Thread_Run = true;
             while (!isPaused) {
-                if (!stop_send){
+                if (!stop_send && getTopActivity().toString().equals(top_m)){
                     String udp_response = udpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
@@ -641,18 +641,11 @@ public class MainActivity extends AppCompatActivity{
                     //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                             " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
-                    smartRefreshLayout.finishRefresh();
                     data_rec_finish = true;
-                    stop_send = false;
                 }
             }
-        }
-        // 检查是否完成，如果没完成则递归调用自身
-        if (!data_rec_finish && checkScreenStatus()) {
             stop_send = false;
-            about.log(TAG, "数据不完整，等待5秒重新请求...");
-            sleep(5000);
-            pro_data_request();  // 递归调用自身
+            smartRefreshLayout.finishRefresh();
         }
     }
     @SuppressLint("DefaultLocale")
