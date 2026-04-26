@@ -44,75 +44,54 @@ public class UDPClient {
             Conn_status = true;
         }
     }
-
     public String receiveMessage() {
         if (socket == null || socket.isClosed()) return null;
         StringBuilder responseBuilder = new StringBuilder();
-        byte[] receiveData = new byte[4096]; // 提高到 4KB 缓冲，更稳健
-        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        byte[] buffer = new byte[4096];
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
         try {
-            try {
-                socket.receive(receivePacket);
-                String Part = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-                responseBuilder.append(Part);
-                socket.setSoTimeout(300);
-                while (true) {
-                    try {
-                        socket.receive(receivePacket);
-                        String data = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-                        responseBuilder.append(data);
-                    } catch (SocketTimeoutException e) {
-                        break;
-                    }
+            socket.setSoTimeout(1000);
+
+            while (true) {
+                // 接收一个数据块
+                socket.receive(packet);
+
+                // 将接收到的字节转换为字符串
+                String chunk = new String(buffer, 0, packet.getLength(), StandardCharsets.UTF_8);
+                if (!chunk.isEmpty()) {
+                    responseBuilder.append(chunk);
                 }
-            } catch (SocketTimeoutException e) {
-                return null;
+                //Log.i(TAG,"responseBuilder内容:"+responseBuilder);
+                // 检查是否包含结束标记
+                String current = responseBuilder.toString();
+                if (current.contains("mark1") || current.contains("mark2") || current.contains("ACK")) {
+                    break;
+                }
+
+                // 重置缓冲区接收下一个数据块
+                buffer = new byte[4096];
+                packet.setData(buffer);
             }
-            return responseBuilder.toString();
+        } catch (SocketTimeoutException e) {
+            // 超时，返回已接收的部分
         } catch (IOException e) {
-            about.log(TAG, "Socket异常: " + e.getMessage());
-            return null;
+            throw new RuntimeException(e);
         }
+
+        return responseBuilder.toString();
     }
 
     public String sendAndReceive(String message) {
         if (socket == null) return null;
-        clearBuffer();
-        try {
-            socket.setSoTimeout(3000);
-            // 只对发送加锁
-            synchronized (this) {
-                sendMessage(message);
-            }
-            // 接收操作不加锁，允许多个线程同时接收（实际上不会，因为每个线程有独立的响应）
+        synchronized (this) {
+            sendMessage(message);
             String response = receiveMessage();
             Conn_status = response == null;
             return response;
-        } catch (SocketException e) {
-            about.log(TAG, "接收超时异常: " + e.getMessage());
-            Conn_status = true;
-            return null;
         }
     }
 
-    private void clearBuffer() {
-        try {
-            socket.setSoTimeout(1);
-            byte[] trash = new byte[4096];
-            DatagramPacket trashPacket = new DatagramPacket(trash, trash.length);
-
-            while (true){
-                try {
-                    socket.receive(trashPacket);
-                    about.log(TAG, "清空: " + trashPacket.getLength() + " 字节");
-                } catch (SocketTimeoutException e) {
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            about.log(TAG, "清空缓冲区异常: " + e.getMessage());
-        }
-    }
     public void close() {
         socket.close();
         about.log(TAG, "关闭网络连接");

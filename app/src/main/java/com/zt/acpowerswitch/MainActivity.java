@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity{
     public static int page_refresh_time;
     private boolean isMemChartInitialized = false;
     public SmartRefreshLayout smartRefreshLayout;
+    private boolean request_homepage_run;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.clear();//清除图表
                 power_chart.invalidate(); // 使改变生效
             }
+            about.log(TAG, "下拉刷新");
             request_homepage_date();
         });
         mark_status = findViewById(R.id.mark_status);
@@ -341,7 +343,7 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         about.log(TAG, "线程调用完成");
-        if (bat_line_chart.isEmpty() || power_chart.isEmpty() && !out_Voltage.getText().equals("")) {
+        if (bat_line_chart.isEmpty() || power_chart.isEmpty()) {
             new Thread(() -> {
                 while (socket == null || out_Voltage.getText().toString().isEmpty()) {
                     try {
@@ -350,7 +352,11 @@ public class MainActivity extends AppCompatActivity{
                         e.printStackTrace();
                     }
                 }
-                request_homepage_date();
+                if (!request_homepage_run) {
+                    request_homepage_run=true;
+                    about.log(TAG, "调用请求首页数据");
+                    request_homepage_date();
+                }
             }).start();
         }
     }
@@ -390,7 +396,7 @@ public class MainActivity extends AppCompatActivity{
                     String udp_response = udpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
-                        about.log(TAG, "数据内容: " + udp_response);
+                        about.log(TAG, "数据内容: " + udp_response );
                         Conn_status=false;
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
@@ -601,10 +607,10 @@ public class MainActivity extends AppCompatActivity{
         data_rec_finish=false;
         about.log(TAG, "请求全部数据");
         String udp_response = udpClient.sendAndReceive("get_all_file");
-        if (udp_response!=null){
+        if (udp_response!=null && !udp_response.isEmpty()){
             all_data = udp_response.split("\n");
             int dataLength = all_data.length;
-            about.log(TAG, "数据行数: " + dataLength);
+            about.log(TAG, "数据行数: " + dataLength );
             ArrayList<String> dataList = new ArrayList<>(Arrays.asList(all_data));
             for (String line : dataList) {
                 if (line != null && line.contains("min>")) {
@@ -637,16 +643,17 @@ public class MainActivity extends AppCompatActivity{
                     String[] _l = line.split(">"); //按>进行分隔
                     debugList.add(_l[1]);
                 }
-                else if (line != null && line.contains("all_file_send_finish")) {
+                else if (line != null && line.contains("mark2")) {
                     //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                             " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                     data_rec_finish = true;
                 }
             }
-            stop_send = false;
-            smartRefreshLayout.finishRefresh();
         }
+        stop_send = false;
+        request_homepage_run = false;
+        smartRefreshLayout.finishRefresh();
     }
     @SuppressLint("DefaultLocale")
     public void pro_chart_data(List<String> _sd, String label){
