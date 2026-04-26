@@ -62,7 +62,6 @@ public class UDPClient {
                 if (!chunk.isEmpty()) {
                     responseBuilder.append(chunk);
                 }
-                //Log.i(TAG,"responseBuilder内容:"+responseBuilder);
                 // 检查是否包含结束标记
                 String current = responseBuilder.toString();
                 if (current.contains("mark1") || current.contains("mark2") || current.contains("ACK")) {

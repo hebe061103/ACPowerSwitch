@@ -4,15 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="15dp"
+    android:padding="10dp"
     tools:ignore="VisualLintBounds">
 
     <TextView
         android:id="@+id/about"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="0dp"
         android:text="ABOUT:"
         android:textSize="25sp"
         android:textStyle="bold"
@@ -24,7 +24,7 @@
         android:id="@+id/run_log"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
+        android:layout_marginStart="0dp"
         android:layout_marginTop="8dp"
         android:background="#00E676"
         android:text="运行日志长按这里清除:"

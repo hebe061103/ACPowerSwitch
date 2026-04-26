@@ -53,7 +53,6 @@ import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +115,9 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.invalidate(); // 使改变生效
             }
             about.log(TAG, "下拉刷新");
-            request_homepage_date();
+            if (socket!=null) {
+                request_homepage_date();
+            }
         });
         mark_status = findViewById(R.id.mark_status);
         date_num = getCurrentMonthLastDay();
@@ -352,9 +353,8 @@ public class MainActivity extends AppCompatActivity{
                         e.printStackTrace();
                     }
                 }
-                if (!request_homepage_run) {
+                if (!request_homepage_run && socket!=null) {
                     request_homepage_run=true;
-                    about.log(TAG, "调用请求首页数据");
                     request_homepage_date();
                 }
             }).start();
@@ -596,7 +596,6 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
     public void pro_data_request(){
-        String[] all_data;
         _min_bat_list.clear();
         _H_Total_power.clear();
         _D_Total_power.clear();
@@ -605,50 +604,40 @@ public class MainActivity extends AppCompatActivity{
         debugList.clear();
         stop_send = true;
         data_rec_finish=false;
-        about.log(TAG, "请求全部数据");
-        String udp_response = udpClient.sendAndReceive("get_all_file");
-        if (udp_response!=null && !udp_response.isEmpty()){
-            all_data = udp_response.split("\n");
-            int dataLength = all_data.length;
-            about.log(TAG, "数据行数: " + dataLength );
-            ArrayList<String> dataList = new ArrayList<>(Arrays.asList(all_data));
-            for (String line : dataList) {
-                if (line != null && line.contains("min>")) {
-                    //Log.i(TAG, "发现包含 min> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _min_bat_list.add(_l[1]);
-                }
-                else if (line != null && line.contains("H_Total_power>")) {
-                    //Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _H_Total_power.add(_l[1]);
-                }
-                else if (line != null && line.contains("D_Total_power>")) {
-                    //Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _D_Total_power.add(_l[1]);
-                }
-                else if (line != null && line.contains("M_Total_power>")) {
-                    //Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _M_Total_power.add(_l[1]);
-                }
-                else if (line != null && line.contains("Y_Total_power>")) {
-                    //Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _Y_Total_power.add(_l[1]);
-                }
-                else if (line != null && line.contains("debug>")) {
-                    //Log.i(TAG, "发现包含 debug> 的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    debugList.add(_l[1]);
-                }
-                else if (line != null && line.contains("mark2")) {
-                    //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
-                    about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
-                            " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
-                    data_rec_finish = true;
-                }
+        about.log(TAG, "请求所有历史记录数据");
+        String result = udpClient.sendAndReceive("get_all_file");
+        // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
+        String[] all_data = (result != null) ? result.split("\n") : new String[0];
+        for (String line : all_data) {
+            if (line != null && line.contains("min>")) {
+                //Log.i(TAG, "发现包含 min> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                _min_bat_list.add(_l[1]);
+            } else if (line != null && line.contains("H_Total_power>")) {
+                //Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                _H_Total_power.add(_l[1]);
+            } else if (line != null && line.contains("D_Total_power>")) {
+                //Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                _D_Total_power.add(_l[1]);
+            } else if (line != null && line.contains("M_Total_power>")) {
+                //Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                _M_Total_power.add(_l[1]);
+            } else if (line != null && line.contains("Y_Total_power>")) {
+                //Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                _Y_Total_power.add(_l[1]);
+            } else if (line != null && line.contains("debug>")) {
+                //Log.i(TAG, "发现包含 debug> 的数据: " + line);
+                String[] _l = line.split(">"); //按>进行分隔
+                debugList.add(_l[1]);
+            } else if (line != null && line.contains("mark2")) {
+                //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
+                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
+                        " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                data_rec_finish = true;
             }
         }
         stop_send = false;
