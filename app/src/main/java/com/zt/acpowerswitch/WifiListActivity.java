@@ -1,7 +1,6 @@
 package com.zt.acpowerswitch;
 
 import static com.zt.acpowerswitch.BleClientActivity.chara;
-import static com.zt.acpowerswitch.BleClientActivity.connect_ok;
 import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.saveData;
@@ -41,7 +40,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     private static final String TAG = "WifiListActivity:";
     public static List<String> wifilist = new ArrayList<>();
     public static AlertDialog.Builder builder;
-    private RecyclerView mRecyclerViewList;
     public  wifiListAdapter mRecycler;
     public String wifi_ap_name,IP_address;
     public ProgressDialog pd;
@@ -53,19 +51,26 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     @SuppressLint("SetTextI18n")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate called, taskId: " + getTaskId() +
+                ", intent: " + getIntent() +
+                ", hashCode: " + hashCode());
         setContentView(R.layout.wifi_list_activity);
         tvStatus = findViewById(R.id.tvStatus);
+        pd = new ProgressDialog(WifiListActivity.this);
         Intent intent = getIntent();
         if (intent != null) {
             tmp = intent.getStringExtra("value");
         }
-        pd = new ProgressDialog(WifiListActivity.this);
-        if (tmp.equals("wf")) {
+        if (tmp!=null && tmp.equals("wf")) {
+            get_wifi_info();
             wifiHelper = new WiFiConnectionHelper(this, this);
             tvStatus.setText("正在检查WiFi连接...");
             wifiHelper.startChecking();
         }
-        get_wifi_info();
+        if (tmp!=null && tmp.equals("bl")) {
+            get_wifi_info();
+        }
+        display_wifiList();
     }
     public void get_wifi_info(){
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
@@ -85,16 +90,17 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
                 }
             }
         }
-        display_wifiList();
     }
     private void display_wifiList() {
-        mRecyclerViewList = findViewById(R.id.wifi_dev_list);//设置固定大小
+        RecyclerView mRecyclerViewList = findViewById(R.id.wifi_dev_list);//设置固定大小
         mRecyclerViewList.setHasFixedSize(true);//创建线性布局
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(RecyclerView.VERTICAL);
         mRecyclerViewList.addItemDecoration(new LinearSpacingItemDecoration(8));//添加间距
         mRecyclerViewList.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL)); //添加分隔线
         mRecyclerViewList.setLayoutManager(layoutManager);
+        mRecycler = new wifiListAdapter(wifilist, WifiListActivity.this);
+        mRecyclerViewList.setAdapter(mRecycler);
     }
     private void bl_send_data(String data) {
         pd.setMessage("正在设置WIFI,请稍等......");
@@ -185,11 +191,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     public void wait_callback(){
         Thread thread = new Thread(() -> {
             while(true) {
-                if (!connect_ok) {
-                    if (pd !=null) {
-                        pd.dismiss();
-                    }
-                }
                 if (chara != null && chara.contains("rec_ok")) {
                     about.log(TAG, "发送成功");
                     Message message = new Message();
@@ -226,8 +227,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     Handler myHandler = new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
-                mRecycler = new wifiListAdapter(wifilist, WifiListActivity.this);
-                mRecyclerViewList.setAdapter(mRecycler);
                 mRecycler.setRecyclerItemClickListener(position -> {
                     if (tmp.equals("bl")){
                         goAnim(WifiListActivity.this,50);
@@ -327,16 +326,20 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     @Override
     protected void onResume() {
         super.onResume();
-        wifiHelper.checkWiFiConnectionWithRetry();
+    }
+
+    protected void onDestroy(){
+        super.onDestroy();
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-    @Override
-    protected void onPause() {
-        super.onPause();
+    public void onBackPressed() {
+        // 然后结束 Activity
+        if (wifilist != null) {
+            wifilist.clear();
+        }
+        tmp = null;
+        super.onBackPressed();
     }
 
     @SuppressLint("SetTextI18n")
@@ -354,19 +357,12 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     @SuppressLint("SetTextI18n")
     @Override
     public void onTargetWiFiConnected(String ssid) {
-        runOnUiThread(() -> {
-            tvStatus.setText("✓ 已连接到目标WiFi: " + ssid);
-            // 这里可以开始你的业务逻辑，比如连接 UDP 服务器
-            get_wifi_info();
-        });
+        runOnUiThread(() -> tvStatus.setText("✓ 已连接到目标WiFi: " + ssid));
     }
 
     @SuppressLint("SetTextI18n")
     @Override
     public void onTargetWiFiNotConnected() {
-        runOnUiThread(() -> {
-            tvStatus.setText("⚠ 连接到非目标WiFi");
-            // 用户选择继续使用当前 WiFi
-        });
+        runOnUiThread(() -> tvStatus.setText("⚠ 连接到非目标WiFi"));
     }
 }

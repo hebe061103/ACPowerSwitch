@@ -56,6 +56,7 @@
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.WifiListActivity"
             android:screenOrientation="portrait"
+            android:launchMode="singleInstance"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.otherOption"
             android:screenOrientation="portrait"

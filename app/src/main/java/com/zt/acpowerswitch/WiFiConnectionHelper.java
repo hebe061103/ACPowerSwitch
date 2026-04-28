@@ -1,11 +1,14 @@
 package com.zt.acpowerswitch;
 
+import static com.zt.acpowerswitch.MainActivity.TAG;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -161,6 +164,10 @@ public class WiFiConnectionHelper {
      * 提示用户连接到目标 WiFi
      */
     private void showConnectToTargetWiFiDialog(String currentSsid) {
+        Log.d(TAG, "showConnectToTargetWiFiDialog() 被调用，调用栈：");
+        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+            Log.d(TAG, "    " + element.toString());
+        }
         activity.runOnUiThread(() -> {
             String message = currentSsid == null ?
                     "当前连接到未知WiFi" :

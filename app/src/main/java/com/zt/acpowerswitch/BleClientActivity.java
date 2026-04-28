@@ -50,13 +50,11 @@ public class BleClientActivity extends AppCompatActivity {
     private ProgressDialog pd;
     public Button re_scan;
     public static int item_locale;
-    public static boolean connect_ok;
     public static BluetoothGatt bluetoothGatt;
     public BluetoothManager bluetoothManager;
     public BluetoothAdapter bluetoothAdapter;
     public BluetoothDevice bluetoothDeviceName;
     public static BluetoothGattCharacteristic writeCharacteristic;
-    public boolean discoveryFinished;
     private static ProgressDialog pd1;
     private ComponentName topActivity;
     @SuppressLint("MissingPermission")
@@ -98,16 +96,16 @@ public class BleClientActivity extends AppCompatActivity {
         mlist.clear();
         mRecycler = new BlueDeviceItemAdapter(mlist, BleClientActivity.this);
         mRecyclerView.setAdapter(mRecycler);
+        searchBluetooth();
+    }
+    @SuppressLint({"ObsoleteSdkInt", "MissingPermission"})
+    public void searchBluetooth() {
         IntentFilter iFilter = new IntentFilter();
         iFilter.addAction(BluetoothDevice.ACTION_FOUND);
         iFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         iFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         iFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         registerReceiver(foundReceiver, iFilter);
-        searchBluetooth();
-    }
-    @SuppressLint({"ObsoleteSdkInt", "MissingPermission"})
-    public void searchBluetooth() {
         bluetoothAdapter.startDiscovery();
         about.log(TAG, "开始搜索设备");
         re_scan.setText("正在扫描");
@@ -115,22 +113,30 @@ public class BleClientActivity extends AppCompatActivity {
         pd.setMessage("正在扫描,请稍等......");
         pd.setCancelable(false);
         pd.show();
-        new Thread(() -> {
-            while (!discoveryFinished) {
-                try {
-                    Thread.sleep(500);
-                    Message message = new Message();
-                    message.what = 1;
-                    myHandler.sendMessage(message);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            Message message = new Message();
-            message.what = 2;
-            myHandler.sendMessage(message);
-        }).start();
     }
+    public final BroadcastReceiver foundReceiver = new BroadcastReceiver() {
+        @SuppressLint({"MissingPermission", "SetTextI18n", "UnsafeIntentLaunch"})
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);//获取此时找到的远程设备对象
+            if (device != null && device.getName() != null) {
+                about.log(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
+                if (!mlist.contains(device)) {
+                    mlist.add(device);
+                }
+                Message message = new Message();
+                message.what = 1;
+                myHandler.sendMessage(message);
+            }
+            if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
+                about.log(TAG, "扫描完成");
+                Message message = new Message();
+                message.what = 2;
+                myHandler.sendMessage(message);
+            }
+        }
+    };
+
     @SuppressLint("HandlerLeak")
     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -150,34 +156,14 @@ public class BleClientActivity extends AppCompatActivity {
             }
         }
     };
-    /**
-     * 当找到一个远程蓝牙设备时执行的广播接收者
-     *
-     */
-    public final BroadcastReceiver foundReceiver = new BroadcastReceiver() {
-        @SuppressLint({"MissingPermission", "SetTextI18n", "UnsafeIntentLaunch"})
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!discoveryFinished){
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);//获取此时找到的远程设备对象
-                if (device != null && device.getName() != null) {
-                    about.log(TAG, "发现蓝牙设备:" + device.getName() + "\n" + device.getAddress());
-                    if (!mlist.contains(device)) {
-                        mlist.add(device);
-                    }
-                }
-                if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
-                    about.log(TAG, "扫描完成");
-                    discoveryFinished = true;
-                }
-            }
-        }
-    };
+
     @SuppressLint("MissingPermission")
     private void stopDiscovery() {
-        connect_ok=false;
-        discoveryFinished=false;
         pd.dismiss();
+        unregisterReceiver(foundReceiver);
+        if (myHandler != null) {
+            myHandler.removeCallbacksAndMessages(null);
+        }
         re_scan.setTextSize(16);
         re_scan.setText("重新扫描");
     }
@@ -219,10 +205,8 @@ public class BleClientActivity extends AppCompatActivity {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 about.log(TAG, "连接成功");
                 gatt.discoverServices();
-                connect_ok = true;
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 about.log(TAG, "连接断开");
-                connect_ok = false;
                 if (bluetoothDeviceName!=null){
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                         bluetoothAdapter.cancelDiscovery();
@@ -318,15 +302,20 @@ public class BleClientActivity extends AppCompatActivity {
             }
         }
     }
+
     @SuppressLint("MissingPermission")
-    public static void close_ble(){
+    public void close_ble() {
         if (bluetoothGatt != null) {
-            connect_ok = false;
-            bluetoothGatt.close();
-            bluetoothGatt.disconnect();
+            try {
+                bluetoothGatt.disconnect();
+                bluetoothGatt.close();
+            } catch (Exception e) {
+                about.log(TAG, "关闭蓝牙异常: " + e.getMessage());
+            }
             bluetoothGatt = null;
         }
     }
+
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
@@ -336,9 +325,13 @@ public class BleClientActivity extends AppCompatActivity {
     }
     protected void onDestroy() {
         super.onDestroy();
-        if (foundReceiver != null) unregisterReceiver(foundReceiver); //停止监听
         bluetoothDeviceName = null;
         close_ble();
     }
 
+    @Override
+    public void onBackPressed() {
+        // 然后结束 Activity
+        super.onBackPressed();
+    }
 }
