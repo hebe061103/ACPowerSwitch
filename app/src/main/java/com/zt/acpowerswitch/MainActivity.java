@@ -443,9 +443,10 @@ public class MainActivity extends AppCompatActivity{
                         String pv_Value = df.format(pv_result);
                         uiData.put("光伏实时输出功率",pv_Value);
                         //逆变器不同模式下电池的充放电电流计算
+                        //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
                         float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
                         if (unicodeToString(info[17]).equals("逆变供电")) {
-                            //为电池充放电电流,其中的30为逆变器自身功耗的估算,具体要测量才知道
+                            //逆变供电模式下,逆变器为开启状态的充放电电流计算
                             if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                                 uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
                                 uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
@@ -453,29 +454,41 @@ public class MainActivity extends AppCompatActivity{
                                 uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
                                 uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                             }
-                        }else if (unicodeToString(info[17]).equals("电池电压过低")){
-                            if ((pw - 3.6) > 0) {
-                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
-                                uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
-                            }
-                            uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池放电电流(A):");
-                            uiData.put("修改电池充放电电流值",df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
-                        } else if (unicodeToString(info[17]).equals("固定逆变模式")){
-                            if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
-                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
-                                uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
-                            } else {
-                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
-                                uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
-                            }
-                        } else {
-                            //手动市电模式和市电供电模式下,逆变器的充放电电流计算方法相同,因为逆变均为开启状态
-                            if (pw - 30 > 0) {
+                        }else if (unicodeToString(info[17]).equals("市电供电")){
+                            //市电供电模式下,逆变器为开启状态的充放电电流计算
+                            if ((pw - 30) > 0) {
                                 uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池充电电流(A):");
                                 uiData.put("修改电池充放电电流值",df.format((pw - 30) / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
                             } else {
                                 uiData.put("修改电池充放电电流text","\uD83D\uDCA7 有逆变电池放电电流(A):");
                                 uiData.put("修改电池充放电电流值",df.format(30 / Float.parseFloat(info[9])));
+                            }
+                        }else if (unicodeToString(info[17]).equals("电池电压过低")){
+                            //电池电压过低,逆变器为关闭状态的充放电电流计算
+                            if ((pw - 3.6) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                            } else {
+                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                            }
+                        } else if (unicodeToString(info[17]).equals("固定逆变模式")){
+                            //固定逆变模式下,逆变器为开启状态的充放电电流计算
+                            if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                            } else {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                            }
+                        } else if (unicodeToString(info[17]).equals("固定市电模式")){
+                            //固定市电模式下,逆变器为关闭状态的充放电电流计算
+                            if ((pw - 3.6) > 0) {
+                                uiData.put("修改电池充放电电流text","\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                uiData.put("修改电池充放电电流值",df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                            } else {
+                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                             }
                         }
                         //为MPTT散热片温度
@@ -604,7 +617,7 @@ public class MainActivity extends AppCompatActivity{
         debugList.clear();
         stop_send = true;
         data_rec_finish=false;
-        about.log(TAG, "请求所有历史记录数据");
+        about.log(TAG, "获取所有历史记录数据");
         String result = udpClient.sendAndReceive("get_all_file");
         // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
@@ -613,20 +626,20 @@ public class MainActivity extends AppCompatActivity{
                 //Log.i(TAG, "发现包含 min> 的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _min_bat_list.add(_l[1]);
-            } else if (line != null && line.contains("H_Total_power>")) {
-                //Log.i(TAG, "发现包含 H_Total_power> 的数据: " + line);
+            } else if (line != null && line.contains("hour_pw>")) {
+                //Log.i(TAG, "发现包含 hour_pw> 的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _H_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("D_Total_power>")) {
-                //Log.i(TAG, "发现包含 D_Total_power> 的数据: " + line);
+            } else if (line != null && line.contains("day_pw>")) {
+                //Log.i(TAG, "发现包含 day_pw> 的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _D_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("M_Total_power>")) {
-                //Log.i(TAG, "发现包含 M_Total_power> 的数据: " + line);
+            } else if (line != null && line.contains("month_pw>")) {
+                //Log.i(TAG, "发现包含 month_pw> 的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _M_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("Y_Total_power>")) {
-                //Log.i(TAG, "发现包含 Y_Total_power> 的数据: " + line);
+            } else if (line != null && line.contains("year_pw>")) {
+                //Log.i(TAG, "发现包含 year_pw> 的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _Y_Total_power.add(_l[1]);
             } else if (line != null && line.contains("debug>")) {
@@ -655,9 +668,8 @@ public class MainActivity extends AppCompatActivity{
                 minute_des= _e[0];
                 String[] _u = _e[1].split(":");
                 _time_value.add(_u[0] + ":" + _u[1]);
-                String[] _split_bat_value = _e[2].split(":");
-                String[] _bat_voltage = _split_bat_value[1].split(",");
-                _value_list.add(new Entry(i, Float.parseFloat(_bat_voltage[0])));
+                String[] _split_bat_value = _e[2].split(",");
+                _value_list.add(new Entry(i, Float.parseFloat(_split_bat_value[0])));
             }
             bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
             bat_line_chart.notifyDataSetChanged();//通知数据巳改变
@@ -1207,10 +1219,10 @@ class CustomMarkerView extends MarkerView {
         m_year.setText(_tmp[0]);
         m_time.setText(_tmp[1]);
         String [] all_data = _tmp[2].split(",");
-        m_value.setText("电压值:" + all_data[0].split(":")[1]);
-        pv_voltage.setText("光伏电压:" + all_data[1].split(":")[1]);
-        pv_current.setText("光伏电流:" + all_data[2].split(":")[1]);
-        Float _pv_power = Float.parseFloat(all_data[1].split(":")[1])* Float.parseFloat(all_data[2].split(":")[1]);
+        m_value.setText("电压值:" + all_data[0]);
+        pv_voltage.setText("光伏电压:" + all_data[1]);
+        pv_current.setText("光伏电流:" + all_data[2]);
+        Float _pv_power = Float.parseFloat(all_data[1])* Float.parseFloat(all_data[2]);
         String pv_power_result = df.format(_pv_power);
         pv_power.setText("光伏功率:"+ pv_power_result);
 
