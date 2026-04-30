@@ -927,6 +927,12 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
         bat_line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
         bat_line_chart.setData(bat_data);//调置数据
+        bat_line_chart.setScaleEnabled(false); // 彻底禁用缩放（最强力开关）
+        bat_line_chart.setDoubleTapToZoomEnabled(false); // 禁用双击缩放（很多时候是这个在起作用）
+        bat_line_chart.setDragEnabled(true); // 必须启用拖拽（否则你设置了 setVisibleXRangeMaximum 后无法滑动查看）
+        bat_line_chart.setScaleXEnabled(false); // 如果你想针对单轴（保险起见）
+        bat_line_chart.setScaleYEnabled(false);
+        bat_line_chart.setPinchZoom(false);// 禁用捏合缩放
     }
     /**
      * 初始化BarChart图表
@@ -974,12 +980,12 @@ public class MainActivity extends AppCompatActivity{
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
-        power_chart.setVisibleXRangeMaximum(18f); // 设置屏幕最多显示 6 个柱子（比如 24 小时数据，设为 6 则需要滑动看后面的）
-        power_chart.moveViewToX(0f); // 如果你想让图表刚加载时自动滚动到最左边或最右边
+        power_chart.setVisibleXRangeMaximum(18f);
+        power_chart.moveViewToX(0f);
         power_chart.invalidate();
         power_chart.setScaleXEnabled(false); // 允许水平缩放（或设为 false 仅允许滑动）
         power_chart.setScaleYEnabled(false); // 禁止垂直缩放，防止 Y 轴乱跳
-
+        power_chart.setDragEnabled(true); // 必须开启，否则无法滑动查看后面的数据
     }
 
     @NonNull
