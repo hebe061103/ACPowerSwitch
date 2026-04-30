@@ -63,19 +63,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="方式一.使用蓝牙配置逆变器网络"
-        android:textColor="#DD2C00"
+        android:text="方式一:使用蓝牙配置逆变器网络"
+        android:textColor="#30BF09"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"
         app:layout_constraintTop_toTopOf="@+id/guideline15"
-        tools:ignore="HardcodedText" />
+        tools:ignore="HardcodedText,TextContrastCheck" />
 
     <TextView
         android:id="@+id/textView15"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="方式二.使用WIFI热点配置逆变器网络"
+        android:text="方式二:使用WIFI配置逆变器网络"
         android:textColor="#30BF09"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@+id/guideline13"

@@ -19,6 +19,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -94,6 +95,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean isMemChartInitialized = false;
     public SmartRefreshLayout smartRefreshLayout;
     private boolean request_homepage_run;
+    public static int year,month,day;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +103,10 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
     }
     private void init_module(){
+        Calendar calendar = Calendar.getInstance();
+        year = calendar.get(Calendar.YEAR);       // 年
+        month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
+        day = calendar.get(Calendar.DAY_OF_MONTH); // 日
         CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
         smartRefreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
@@ -622,32 +628,32 @@ public class MainActivity extends AppCompatActivity{
         // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
         for (String line : all_data) {
-            if (line != null && line.contains("min>")) {
-                //Log.i(TAG, "发现包含 min> 的数据: " + line);
+            if (line != null && line.contains("f>")) {
+                Log.i(TAG, "发现包含分时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _min_bat_list.add(_l[1]);
-            } else if (line != null && line.contains("hour_pw>")) {
-                //Log.i(TAG, "发现包含 hour_pw> 的数据: " + line);
+            } else if (line != null && line.contains("h>")) {
+                Log.i(TAG, "发现包含小时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _H_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("day_pw>")) {
-                //Log.i(TAG, "发现包含 day_pw> 的数据: " + line);
+            } else if (line != null && line.contains("d>")) {
+                Log.i(TAG, "发现包含每天的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _D_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("month_pw>")) {
-                //Log.i(TAG, "发现包含 month_pw> 的数据: " + line);
+            } else if (line != null && line.contains("m>")) {
+                Log.i(TAG, "发现包含每月的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _M_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("year_pw>")) {
-                //Log.i(TAG, "发现包含 year_pw> 的数据: " + line);
+            } else if (line != null && line.contains("y>")) {
+                Log.i(TAG, "发现包含每年的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _Y_Total_power.add(_l[1]);
             } else if (line != null && line.contains("debug>")) {
-                //Log.i(TAG, "发现包含 debug> 的数据: " + line);
+                Log.i(TAG, "发现包含调试的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
-                //Log.i(TAG, "发现包含 all_file_send_finish 的数据: " + line);
+                Log.i(TAG, "发现包含结尾的数据: " + line);
                 about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                         " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 data_rec_finish = true;
@@ -666,10 +672,8 @@ public class MainActivity extends AppCompatActivity{
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
                 minute_des= _e[0];
-                String[] _u = _e[1].split(":");
-                _time_value.add(_u[0] + ":" + _u[1]);
-                String[] _split_bat_value = _e[2].split(",");
-                _value_list.add(new Entry(i, Float.parseFloat(_split_bat_value[0])));
+                String[] _u = _e[1].split(",");
+                _value_list.add(new Entry(i, Float.parseFloat(_u[0])));
             }
             bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
             bat_line_chart.notifyDataSetChanged();//通知数据巳改变
@@ -684,13 +688,13 @@ public class MainActivity extends AppCompatActivity{
                 String[] _e = _sd.get(i).split(" ");
                 if (_sd.size() > 1) {
                     if (i == 0) {
-                        begin_time = "今日: " + _e[0].split(":")[0] + ":" + _e[0].split(":")[1] + "  ->  ";
+                        begin_time = "今日: " + _e[0] + ":00" + "  ->  ";
                     } else if (i == _sd.size() - 1) {
-                        over_time = _e[0].split(":")[0] + ":" + _e[0].split(":")[1];
+                        over_time = _e[0]+ ":00";
                         last_power = _e[1];
                     }
                 }else{
-                    begin_time = "今日: " + _e[0].split(":")[0] + ":" + _e[0].split(":")[1];
+                    begin_time = "今日: " + _e[0]+ ":00";
                     over_time = "";
                     last_power = _e[1];
                 }
@@ -1216,9 +1220,9 @@ class CustomMarkerView extends MarkerView {
     public void refreshContent(Entry e, Highlight highlight) {
         DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        m_year.setText(_tmp[0]);
-        m_time.setText(_tmp[1]);
-        String [] all_data = _tmp[2].split(",");
+        m_year.setText(MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
+        m_time.setText(_tmp[0]);
+        String [] all_data = _tmp[1].split(",");
         m_value.setText("电压值:" + all_data[0]);
         pv_voltage.setText("光伏电压:" + all_data[1]);
         pv_current.setText("光伏电流:" + all_data[2]);
