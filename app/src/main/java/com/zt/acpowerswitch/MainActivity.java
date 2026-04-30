@@ -980,10 +980,8 @@ public class MainActivity extends AppCompatActivity{
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
-        power_chart.setVisibleXRangeMaximum(18f);
-        power_chart.moveViewToX(0f);
-        power_chart.invalidate();
-        power_chart.setScaleXEnabled(false); // 允许水平缩放（或设为 false 仅允许滑动）
+        power_chart.setDoubleTapToZoomEnabled(false);
+        power_chart.setScaleXEnabled(true); // 允许水平缩放（或设为 false 仅允许滑动）
         power_chart.setScaleYEnabled(false); // 禁止垂直缩放，防止 Y 轴乱跳
         power_chart.setDragEnabled(true); // 必须开启，否则无法滑动查看后面的数据
     }
