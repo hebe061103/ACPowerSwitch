@@ -19,7 +19,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -37,6 +36,7 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
@@ -629,31 +629,31 @@ public class MainActivity extends AppCompatActivity{
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
         for (String line : all_data) {
             if (line != null && line.contains("f>")) {
-                Log.i(TAG, "发现包含分时的数据: " + line);
+                //Log.i(TAG, "发现包含分时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _min_bat_list.add(_l[1]);
             } else if (line != null && line.contains("h>")) {
-                Log.i(TAG, "发现包含小时的数据: " + line);
+                //Log.i(TAG, "发现包含小时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _H_Total_power.add(_l[1]);
             } else if (line != null && line.contains("d>")) {
-                Log.i(TAG, "发现包含每天的数据: " + line);
+                //Log.i(TAG, "发现包含每天的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _D_Total_power.add(_l[1]);
             } else if (line != null && line.contains("m>")) {
-                Log.i(TAG, "发现包含每月的数据: " + line);
+                //Log.i(TAG, "发现包含每月的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _M_Total_power.add(_l[1]);
             } else if (line != null && line.contains("y>")) {
-                Log.i(TAG, "发现包含每年的数据: " + line);
+                //Log.i(TAG, "发现包含每年的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _Y_Total_power.add(_l[1]);
             } else if (line != null && line.contains("debug>")) {
-                Log.i(TAG, "发现包含调试的数据: " + line);
+                //Log.i(TAG, "发现包含调试的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
-                Log.i(TAG, "发现包含结尾的数据: " + line);
+                //Log.i(TAG, "发现包含结尾的数据: " + line);
                 about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                         " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 data_rec_finish = true;
@@ -688,19 +688,19 @@ public class MainActivity extends AppCompatActivity{
                 String[] _e = _sd.get(i).split(" ");
                 if (_sd.size() > 1) {
                     if (i == 0) {
-                        begin_time = "今日: " + _e[0] + ":00" + "  ->  ";
+                        begin_time = "今日: " + _e[0] + ":00:00" + "  ->  ";
                     } else if (i == _sd.size() - 1) {
-                        over_time = _e[0]+ ":00";
+                        over_time = _e[0]+ ":00:00";
                         last_power = _e[1];
                     }
                 }else{
-                    begin_time = "今日: " + _e[0]+ ":00";
+                    begin_time = "今日: " + _e[0]+ ":00:00";
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split(":")[0]), Float.parseFloat(String.format("%.1f", Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0]), Float.parseFloat(String.format("%.2f", Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"前一小时用电量统计(单位:"+ String.format("%.3f", Float.parseFloat(last_power)) +" kWh(度))",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"前一小时用电量统计(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -723,9 +723,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"前一日用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"日期");
+            pro_date_power_data(_barChart_list,"前一日用电量统计(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -748,9 +748,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"上一月用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"月份");
+            pro_date_power_data(_barChart_list,"上一月用电量统计(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -773,9 +773,9 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.1f",Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"前一年用电量统计(单位:"+ String.format("%.1f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"前一年用电量统计(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -931,10 +931,19 @@ public class MainActivity extends AppCompatActivity{
     /**
      * 初始化BarChart图表
      */
-    private void pro_date_power_data(ArrayList<BarEntry> barChart,String label,String des,String type) {
+    @SuppressLint("DefaultLocale")
+    private void pro_date_power_data(ArrayList<BarEntry> barChart, String label, String des, String type) {
         //X轴设置显示位置在底部
         XAxis xAxis = power_chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        YAxis leftAxis = power_chart.getAxisLeft();//左侧Y轴保留两位小数
+        leftAxis.setValueFormatter((value, axis) -> {
+            return String.format("%.2f", value); // value 就是坐标轴上的数值
+        });
+        YAxis rightAxis = power_chart.getAxisRight();//右侧Y轴保留两位小数
+        rightAxis.setValueFormatter((value, axis) -> {
+            return String.format("%.2f", value); // value 就是坐标轴上的数值
+        });
         switch (type) {
             case "小时":
                 xAxis.setAxisMinimum(-0.5f);
@@ -959,9 +968,18 @@ public class MainActivity extends AppCompatActivity{
         }
         xAxis.setGranularity(1f);
         BarData barData = getBarData(barChart, label);
+        barData.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> {
+            return String.format("%.2f", value); // value 就是该柱子的实际数值
+        });
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
+        power_chart.setVisibleXRangeMaximum(18f); // 设置屏幕最多显示 6 个柱子（比如 24 小时数据，设为 6 则需要滑动看后面的）
+        power_chart.moveViewToX(0f); // 如果你想让图表刚加载时自动滚动到最左边或最右边
+        power_chart.invalidate();
+        power_chart.setScaleXEnabled(false); // 允许水平缩放（或设为 false 仅允许滑动）
+        power_chart.setScaleYEnabled(false); // 禁止垂直缩放，防止 Y 轴乱跳
+
     }
 
     @NonNull
