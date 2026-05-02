@@ -525,6 +525,12 @@ public class MainActivity extends AppCompatActivity{
                         message.obj = uiData;  // 将计算结果放入Message
                         messageProHandler.sendMessage(message);
                     }
+                    if (checkScreenStatus() && udp_response != null && udp_response.startsWith("live>")){
+                        about.log(TAG, "收到实时分时数据,更新分时图表");
+                        String[] str = udp_response.split(">");
+                        _min_bat_list.add(str[1]);
+                        pro_chart_data(_min_bat_list, "每15分钟电压");
+                    }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
                         udpClient.close();

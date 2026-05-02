@@ -64,7 +64,7 @@ public class UDPClient {
                 }
                 // 检查是否包含结束标记
                 String current = responseBuilder.toString();
-                if (current.contains("mark1") || current.contains("mark2") || current.contains("ACK")) {
+                if (current.contains("mark1") || current.contains("mark2") || current.contains("mark3") || current.contains("ACK")) {
                     break;
                 }
 
