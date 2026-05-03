@@ -46,23 +46,29 @@
             </intent-filter>
         </activity>
         <activity android:name="com.zt.acpowerswitch.Engineering"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.about"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.BleClientActivity"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.WifiListActivity"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:launchMode="singleInstance"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.otherOption"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.set_tcp_page"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
     </application>
 
