@@ -665,6 +665,11 @@ public class MainActivity extends AppCompatActivity{
                 data_rec_finish = true;
             }
         }
+        if (!data_rec_finish){
+            about.log(TAG, "数据不完整,再次请求!");
+            sleep(2000);
+            pro_data_request();
+        }
         stop_send = false;
         request_homepage_run = false;
         smartRefreshLayout.finishRefresh();
