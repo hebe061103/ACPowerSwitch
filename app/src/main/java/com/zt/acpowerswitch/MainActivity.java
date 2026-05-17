@@ -682,13 +682,33 @@ public class MainActivity extends AppCompatActivity{
             String minute_des = "";
             _time_value.clear();
             _value_list.clear();
+            // 👇 新增：用于记录最高值和对应的 Entry
+            Entry maxEntry = null;
+            float maxValue = -Float.MAX_VALUE;
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                minute_des= _e[0];
+                minute_des= _e[0]+":00"; //分时时间
                 String[] _u = _e[1].split(",");
                 _value_list.add(new Entry(i, Float.parseFloat(_u[0])));
+                //寻找光伏最大功率
+                float pv = Float.parseFloat(_u[2]) * Float.parseFloat(_u[0]) / Float.parseFloat(_u[1]);
+                float max_pv_power = pv * Float.parseFloat(_u[1]);
+                if (max_pv_power > maxValue) {
+                    maxValue = max_pv_power;
+                    maxEntry = new Entry(i, Float.parseFloat(_u[0]));
+                }
             }
             bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
+            // 👇 新增：在数据填充后，为图表绑定自定义红点渲染器
+            if (maxEntry != null) {
+                MyLineChartRenderer customRenderer = new MyLineChartRenderer(
+                        bat_line_chart,
+                        bat_line_chart.getAnimator(),
+                        bat_line_chart.getViewPortHandler(),
+                        maxEntry
+                );
+                bat_line_chart.setRenderer(customRenderer);
+            }
             bat_line_chart.notifyDataSetChanged();//通知数据巳改变
             bat_line_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -1213,6 +1233,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 }
+
 class ExamModelOneXValueFormatter implements IAxisValueFormatter {
     private final ArrayList<String> list;
 
@@ -1262,12 +1283,14 @@ class CustomMarkerView extends MarkerView {
         DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
         m_year.setText(MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
-        m_time.setText(_tmp[0]);
+        m_time.setText(_tmp[0]+":00");
         String [] all_data = _tmp[1].split(",");
-        m_value.setText("电压值:" + all_data[0]);
+        m_value.setText("电池电压:" + all_data[0]);
         pv_voltage.setText("光伏电压:" + all_data[1]);
-        pv_current.setText("光伏电流:" + all_data[2]);
-        Float _pv_power = Float.parseFloat(all_data[1])* Float.parseFloat(all_data[2]);
+        Float _pv_i = Float.parseFloat(all_data[2]) * Float.parseFloat(all_data[0])/Float.parseFloat(all_data[1]);
+        String _pv_i_value = df.format(_pv_i);
+        pv_current.setText("光伏电流:" + _pv_i_value);
+        Float _pv_power = Float.parseFloat(all_data[1])* _pv_i;
         String pv_power_result = df.format(_pv_power);
         pv_power.setText("光伏功率:"+ pv_power_result);
 
