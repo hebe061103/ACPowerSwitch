@@ -443,14 +443,16 @@ public class MainActivity extends AppCompatActivity{
                         //光伏板电压
                         uiData.put("pv_voltage",info[11]);
                         //光伏板电流
-                        uiData.put("pv_current",info[13]);
+                        Float PV_I = Float.parseFloat(info[13]) * Float.parseFloat(info[9])/Float.parseFloat(info[11]);
+                        String pv_current = df.format(PV_I);
+                        uiData.put("pv_current",pv_current);
                         //光伏实时输出功率
-                        Float pv_result = Float.parseFloat(info[11])*Float.parseFloat(info[13]);
-                        String pv_Value = df.format(pv_result);
-                        uiData.put("光伏实时输出功率",pv_Value);
+                        Float pv_result = Float.parseFloat(info[11]) * PV_I ;
+                        String pv_power = df.format(pv_result);
+                        uiData.put("光伏实时输出功率",pv_power);
                         //逆变器不同模式下电池的充放电电流计算
                         //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
-                        float pw = Float.parseFloat(info[11]) * Float.parseFloat(info[13]);//太阳能板的发电功率
+                        float pw = Float.parseFloat(pv_power);//太阳能板的发电功率
                         if (unicodeToString(info[17]).equals("逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
                             if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
