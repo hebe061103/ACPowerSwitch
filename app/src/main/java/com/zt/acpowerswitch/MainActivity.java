@@ -443,6 +443,9 @@ public class MainActivity extends AppCompatActivity{
                         //光伏板电压
                         uiData.put("pv_voltage",info[11]);
                         //光伏板电流
+                        if (Float.parseFloat(info[13]) < 0.6){ //防止夜晚功率计算错误
+                            info[13] = String.valueOf(0);
+                        }
                         Float PV_I = Float.parseFloat(info[13]) * Float.parseFloat(info[9])/Float.parseFloat(info[11]);
                         String pv_current = df.format(PV_I);
                         uiData.put("pv_current",pv_current);
@@ -1287,6 +1290,9 @@ class CustomMarkerView extends MarkerView {
         String [] all_data = _tmp[1].split(",");
         m_value.setText("电池电压:" + all_data[0]);
         pv_voltage.setText("光伏电压:" + all_data[1]);
+        if (Float.parseFloat(all_data[2]) < 0.6){
+            all_data[2] = String.valueOf(0);
+        }
         Float _pv_i = Float.parseFloat(all_data[2]) * Float.parseFloat(all_data[0])/Float.parseFloat(all_data[1]);
         String _pv_i_value = df.format(_pv_i);
         pv_current.setText("光伏电流:" + _pv_i_value);
