@@ -67,7 +67,7 @@
             android:id="@+id/target_port"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="55555"
+            android:hint="2096"
             android:gravity="end"
             android:textSize="16sp"
             app:layout_constraintTop_toTopOf="@id/textView22"

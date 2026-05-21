@@ -7,8 +7,8 @@ import static com.zt.acpowerswitch.MainActivity.page_refresh_time;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
 import static com.zt.acpowerswitch.MainActivity.send_command_to_server;
-import static com.zt.acpowerswitch.MainActivity.udpClient;
-import static com.zt.acpowerswitch.MainActivity.udpServerPort;
+import static com.zt.acpowerswitch.MainActivity.tcpClient;
+import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
 import static com.zt.acpowerswitch.MainActivity.unicodeToString;
 
 import android.annotation.SuppressLint;
@@ -52,7 +52,7 @@ public class otherOption extends AppCompatActivity {
         TextView target_ip = findViewById(R.id.target_ip);
         target_ip.setText(readDate(otherOption.this, "wifi_ip"));
         TextView target_port = findViewById(R.id.target_port);
-        target_port.setText(String.valueOf(udpServerPort));
+        target_port.setText(String.valueOf(tcpServerPort));
         //功率设置
         w_edit = findViewById(R.id.w_edit);
         if (readDate(otherOption.this, "power") != null) {
@@ -134,7 +134,7 @@ public class otherOption extends AppCompatActivity {
                     deleteData("wifi_ip");
                     deleteData("refresh_time");
                     if (!MainActivity.isPaused){MainActivity.isPaused=true;}
-                    udpClient.close();
+                    tcpClient.close();
                     finish();
                 })
                 .show();

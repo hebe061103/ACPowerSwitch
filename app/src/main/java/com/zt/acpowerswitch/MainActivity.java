@@ -1,7 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.zt.acpowerswitch.UDPClient.socket;
+import static com.zt.acpowerswitch.TCPClient.socket;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -70,11 +70,11 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint("StaticFieldLeak")
     public static ImageView mark_status;
     public long lastBack = 0;
-    public static final UDPClient udpClient = new UDPClient();
+    public static final TCPClient tcpClient = new TCPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use;
     public static String[] info;
-    public static String udpServerAddress;
-    public static int udpServerPort=55555;
+    public static String tcpServerAddress;
+    public static int tcpServerPort=55555;
     public static boolean data_rec_finish, stop_send,Thread_Run,Conn_status,isPaused;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity{
         });
         mark_status = findViewById(R.id.mark_status);
         date_num = getCurrentMonthLastDay();
-        udpServerAddress = readDate(this, "wifi_ip");
+        tcpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity{
                                         deleteData("open_pv_value");
                                         deleteData("wifi_ip");
                                         deleteData("refresh_time");
-                                        udpClient.close();
+                                        tcpClient.close();
                                     }).show();
                         }else{
                             new AlertDialog.Builder(this)
@@ -342,13 +342,16 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void start_Thread(){
-        while (!Thread_Run) {
-            if (udpClient.udpConnect()) {
-                about.log(TAG, "开始调用线程");
-                mData_pro_thread();
-                break;
+        new Thread(() -> {
+            while (!Thread_Run) {
+                // 现在它在子线程运行，不会再报 NetworkOnMainThreadException 了
+                if (tcpClient.tcpConnect()&& !Thread_Run) {
+                    about.log(TAG, "开始调用线程");
+                    mData_pro_thread();
+                    break;
+                }
             }
-        }
+        }).start();
         about.log(TAG, "线程调用完成");
         if (bat_line_chart.isEmpty() || power_chart.isEmpty()) {
             new Thread(() -> {
@@ -374,7 +377,7 @@ public class MainActivity extends AppCompatActivity{
             stop_send = true;
             String udp_response;
             while (num < 10) {
-                udp_response = udpClient.sendAndReceive(data);
+                udp_response = tcpClient.sendAndReceive(data);
                 about.log(TAG, "返回数据:" + udp_response);
                 if (udp_response != null && udp_response.contains("ACK")) {
                     result[0] = true; // 设置返回值
@@ -398,8 +401,8 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             Thread_Run = true;
             while (!isPaused) {
-                if (!stop_send && getTopActivity().toString().equals(top_m)){
-                    String udp_response = udpClient.sendAndReceive("get_info");
+                if (!stop_send){
+                    String udp_response = tcpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
                         about.log(TAG, "数据内容: " + udp_response );
@@ -538,7 +541,7 @@ public class MainActivity extends AppCompatActivity{
                     }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
-                        udpClient.close();
+                        tcpClient.close();
                         isPaused=true;
                     }
                     Message message = new Message();
@@ -635,7 +638,7 @@ public class MainActivity extends AppCompatActivity{
         stop_send = true;
         data_rec_finish=false;
         about.log(TAG, "获取所有历史记录数据");
-        String result = udpClient.sendAndReceive("get_all_file");
+        String result = tcpClient.sendAndReceive("get_all_file");
         // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
         for (String line : all_data) {
@@ -1138,6 +1141,8 @@ public class MainActivity extends AppCompatActivity{
     }
     protected void onPause() {
         super.onPause();
+        isPaused=true;
+        tcpClient.close();
     }
     protected void onDestroy() {
         super.onDestroy();
@@ -1145,7 +1150,7 @@ public class MainActivity extends AppCompatActivity{
             wifilist.clear();
         }
         if (socket!=null) {
-            udpClient.close();
+            tcpClient.close();
         }
     }
     public static void goAnim(Context context, int millisecond) {

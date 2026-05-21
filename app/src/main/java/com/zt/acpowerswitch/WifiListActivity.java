@@ -4,8 +4,6 @@ import static com.zt.acpowerswitch.BleClientActivity.chara;
 import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.saveData;
-import static com.zt.acpowerswitch.MainActivity.udpClient;
-import static com.zt.acpowerswitch.UDPClient.socket;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -30,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,7 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     private TextView tvStatus;
     public WifiManager wifiManager;
     public WiFiConnectionHelper wifiHelper;
-    public String tmp,str;
+    public String tmp;
 
     @SuppressLint("SetTextI18n")
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,60 +133,71 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
 
     private void wifi_send_data(String data) {
         @SuppressLint("DefaultLocale") Thread thread = new Thread(() -> {
-            int ipAddress= wifiManager.getConnectionInfo().getIpAddress();
+            int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+            // 如果获取失败，直接返回，防止计算出错误的 IP
+            if (ipAddress == 0) {
+                runOnUiThread(() -> Toast.makeText(this, "未连接WiFi或无法获取IP", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
             String ip = String.format("%d.%d.%d.1",
                     (ipAddress & 0xff),
                     (ipAddress >> 8 & 0xff),
                     (ipAddress >> 16 & 0xff));
-            Log.i("逆变器UDPServerIP地址:",ip);
-            //开始发送wifi密码
-            if (udpClient.udpConnect()) {
-                try {
-                    byte[] byte_data = data.getBytes(StandardCharsets.UTF_8);
-                    DatagramPacket packet = new DatagramPacket(byte_data, byte_data.length, InetAddress.getByName(ip), 5000);
-                    if (socket != null && !socket.isClosed()) {
-                        socket.send(packet);
-                    }
-                } catch (Exception e) {
-                    about.log(TAG, "发送失败: " + e.getMessage());
-                }
+            Log.i("逆变器UDPServerIP地址:", ip);
 
-                // 开始接收返回信息
+            DatagramSocket udpSocket = null;
+            try {
+                // 1. 初始化 UDP Socket 并设置超时
+                udpSocket = new DatagramSocket();
+                udpSocket.setSoTimeout(2000); // 设置接收超时时间（2秒）
+
+                // 2. 开始发送数据
+                byte[] byte_data = data.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket packet = new DatagramPacket(byte_data, byte_data.length, InetAddress.getByName(ip), 5000);
+                udpSocket.send(packet);
+                about.log(TAG, "UDP数据发送成功");
+
+                // 3. 开始接收返回信息
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                try {
-                    // 设置接收超时时间（2秒）
-                    socket.setSoTimeout(2000);
-                    socket.receive(receivePacket);  // 这行必须要有！
-                    int length = receivePacket.getLength();// 获取接收到的数据长度
-                    if (length > 0) {
-                        String str = new String(receivePacket.getData(), 0, length, StandardCharsets.UTF_8);
-                        // 在主线程显示Toast
-                        runOnUiThread(() -> Toast.makeText(this, "返回数据:" + str, Toast.LENGTH_LONG).show());
-                        about.log(TAG, "返回数据:" + str);
-                    } else {
-                        runOnUiThread(() -> Toast.makeText(this, "收到空数据", Toast.LENGTH_LONG).show());
-                    }
-                } catch (SocketTimeoutException e) {
-                    // 超时处理
-                    runOnUiThread(() -> Toast.makeText(this, "接收超时，设备无响应", Toast.LENGTH_LONG).show());
-                    about.log(TAG, "接收超时: " + e.getMessage());
 
-                } catch (IOException e) {
-                    runOnUiThread(() -> Toast.makeText(this, "接收错误:" + e.getMessage(), Toast.LENGTH_LONG).show());
-                    about.log(TAG, "接收异常: " + e.getMessage());
+                udpSocket.receive(receivePacket); // 阻塞等待接收
+                int length = receivePacket.getLength(); // 获取接收到的数据真实长度
+
+                if (length > 0) {
+                    String str = new String(receivePacket.getData(), 0, length, StandardCharsets.UTF_8);
+                    about.log(TAG, "返回数据:" + str);
+
+                    // 在主线程更新UI
+                    runOnUiThread(() -> Toast.makeText(this, "返回数据:" + str, Toast.LENGTH_LONG).show());
+
+                    // 4. 业务逻辑判断（移入成功的逻辑块内，避免超时崩溃）
+                    if (str.equals(data)) {
+                        Message message = new Message();
+                        message.what = 6;
+                        myHandler.sendMessage(message);
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(this, "收到空数据", Toast.LENGTH_LONG).show());
                 }
 
-                str = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-                if (str.equals(data)) {
-                    Message message = new Message();
-                    message.what = 6;
-                    myHandler.sendMessage(message);
+            } catch (SocketTimeoutException e) {
+                runOnUiThread(() -> Toast.makeText(this, "接收超时，设备无响应", Toast.LENGTH_LONG).show());
+                about.log(TAG, "接收超时: " + e.getMessage());
+            } catch (IOException e) {
+                runOnUiThread(() -> Toast.makeText(this, "网络传输错误:" + e.getMessage(), Toast.LENGTH_LONG).show());
+                about.log(TAG, "发送/接收异常: " + e.getMessage());
+            } finally {
+                // 5. 释放资源，关闭 Socket
+                if (udpSocket != null && !udpSocket.isClosed()) {
+                    udpSocket.close();
                 }
             }
         });
         thread.start();
     }
+
     public void wait_callback(){
         Thread thread = new Thread(() -> {
             while(true) {
