@@ -67,15 +67,13 @@ public class MainActivity extends AppCompatActivity{
     public static SharedPreferences sp;
     public static SharedPreferences.Editor editor;
     public ImageView menu_bt;
-    @SuppressLint("StaticFieldLeak")
-    public static ImageView mark_status;
     public long lastBack = 0;
     public static final TCPClient tcpClient = new TCPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use;
     public static String[] info;
     public static String tcpServerAddress;
     public static int tcpServerPort=55555;
-    public static boolean data_rec_finish, stop_send,Thread_Run,Conn_status,isPaused;
+    public static boolean data_rec_finish, stop_send,Thread_Run,isPaused;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -125,7 +123,6 @@ public class MainActivity extends AppCompatActivity{
                 request_homepage_date();
             }
         });
-        mark_status = findViewById(R.id.mark_status);
         date_num = getCurrentMonthLastDay();
         tcpServerAddress = readDate(this, "wifi_ip");
         page_refresh_time = request_delay_ms();
@@ -406,7 +403,6 @@ public class MainActivity extends AppCompatActivity{
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
                         about.log(TAG, "数据内容: " + udp_response );
-                        Conn_status=false;
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
@@ -529,7 +525,7 @@ public class MainActivity extends AppCompatActivity{
                         saveData("open_pv_value",info[33]);
 
                         Message message = messageProHandler.obtainMessage();
-                        message.what = 2;
+                        message.what = 1;
                         message.obj = uiData;  // 将计算结果放入Message
                         messageProHandler.sendMessage(message);
                     }
@@ -544,9 +540,6 @@ public class MainActivity extends AppCompatActivity{
                         tcpClient.close();
                         isPaused=true;
                     }
-                    Message message = new Message();
-                    message.what = 1;
-                    messageProHandler.sendMessage(message);
                 }
             }
             isPaused=false;
@@ -558,20 +551,7 @@ public class MainActivity extends AppCompatActivity{
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
         @SuppressLint("SetTextI18n")
         public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                if (Conn_status) {
-                    int currentVisibility = mark_status.getVisibility();
-                    if (currentVisibility == View.VISIBLE) {
-                        mark_status.setVisibility(View.INVISIBLE);
-                        sleep(100);
-                    }else{
-                        mark_status.setVisibility(View.VISIBLE);
-                        sleep(100);
-                    }
-                } else {
-                    mark_status.setVisibility(View.INVISIBLE);
-                }
-            }else if (msg.what == 2 && msg.obj instanceof Map) {
+            if (msg.what == 1 && msg.obj instanceof Map) {
                 Map<String, String> uiData = (Map<String, String>) msg.obj;
                 //交流电压
                 out_Voltage.setText(uiData.get("ac_voltage"));

@@ -1,6 +1,5 @@
 package com.zt.acpowerswitch;
 
-import static com.zt.acpowerswitch.MainActivity.Conn_status;
 import static com.zt.acpowerswitch.MainActivity.tcpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
 import java.io.IOException;
@@ -45,7 +44,6 @@ public class TCPClient {
             if (socket == null || socket.isClosed() || !socket.isConnected() || outputStream == null) {
                 about.log(TAG, "检测到连接已断开，尝试自动重连...");
                 if (!tcpConnect()) {
-                    Conn_status = true;
                     return; // 重连失败则退出
                 }
             }
@@ -57,7 +55,6 @@ public class TCPClient {
 
         } catch (IOException e) {
             about.log(TAG, "发送异常 (可能连接已损坏): " + e.getMessage());
-            Conn_status = true;
 
             // 3. 核心：如果捕获到 Broken pipe 等 IO 异常，立即关闭旧 Socket，强制下次发送时重连
             close();
@@ -89,7 +86,6 @@ public class TCPClient {
             // 超时，返回已接收的部分
         } catch (IOException e) {
             about.log(TAG, "读取异常: " + e.getMessage());
-            Conn_status = true;
         }
 
         return responseBuilder.toString();
@@ -102,9 +98,7 @@ public class TCPClient {
         }
         synchronized (this) {
             sendMessage(message);
-            String response = receiveMessage();
-            Conn_status = (response == null || response.isEmpty());
-            return response;
+            return receiveMessage();
         }
     }
 
