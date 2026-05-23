@@ -1,5 +1,6 @@
 package com.zt.acpowerswitch;
 
+import static com.zt.acpowerswitch.MainActivity.sleep;
 import static com.zt.acpowerswitch.MainActivity.tcpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
 import java.io.IOException;
@@ -33,7 +34,8 @@ public class TCPClient {
             about.log(TAG, "创建连接成功");
             return true;
         } catch (IOException e) {
-            about.log(TAG, "创建连接失败: " + e.getMessage());
+            about.log(TAG, "创建连接失败,2秒后重试: " + e.getMessage());
+            sleep(2000);
             return false;
         }
     }
