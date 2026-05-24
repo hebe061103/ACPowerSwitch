@@ -39,7 +39,7 @@ public class MyLineChartRenderer extends LineChartRenderer {
             com.github.mikephil.charting.utils.MPPointD point = transformer.getPixelForValues(highestEntry.getX(), highestEntry.getY());
 
             // 3. 绘制红点（由于 Canvas.drawCircle 接收 float，记得将 double 强转为 float）
-            c.drawCircle((float) point.x, (float) point.y, 10f, redPaint);
+            c.drawCircle((float) point.x, (float) point.y, 12f, redPaint);
 
             // 4. 回收 MPPointD 实例以避免内存泄漏
             com.github.mikephil.charting.utils.MPPointD.recycleInstance(point);

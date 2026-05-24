@@ -19,6 +19,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -533,7 +534,7 @@ public class MainActivity extends AppCompatActivity{
                         about.log(TAG, "收到实时分时数据,更新分时图表");
                         String[] str = udp_response.split(">");
                         _min_bat_list.add(str[1]);
-                        pro_chart_data(_min_bat_list, "每15分钟电压");
+                        pro_chart_data(_min_bat_list, "每15分钟电压"); //接收实时数据并绘制
                     }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
@@ -673,7 +674,8 @@ public class MainActivity extends AppCompatActivity{
             float maxValue = -Float.MAX_VALUE;
             for (int i = 0; i < _sd.size(); i++) {
                 String[] _e = _sd.get(i).split(" ");
-                minute_des= _e[0]+":00"; //分时时间
+                minute_des= _e[0]; //分时时间
+                _time_value.add(minute_des.split(":")[0]);
                 String[] _u = _e[1].split(",");
                 _value_list.add(new Entry(i, Float.parseFloat(_u[0])));
                 //寻找光伏最大功率
@@ -684,7 +686,7 @@ public class MainActivity extends AppCompatActivity{
                     maxEntry = new Entry(i, Float.parseFloat(_u[0]));
                 }
             }
-            bat_data_display_to_chart(_time_value, _value_list, minute_des, label);
+            bat_data_display_to_chart(_time_value, _value_list, minute_des);
             // 👇 新增：在数据填充后，为图表绑定自定义红点渲染器
             if (maxEntry != null) {
                 MyLineChartRenderer customRenderer = new MyLineChartRenderer(
@@ -695,8 +697,6 @@ public class MainActivity extends AppCompatActivity{
                 );
                 bat_line_chart.setRenderer(customRenderer);
             }
-            bat_line_chart.notifyDataSetChanged();//通知数据巳改变
-            bat_line_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("小时柱状图表")) {
             String begin_time = "";
@@ -905,42 +905,32 @@ public class MainActivity extends AppCompatActivity{
             mem_use_chart.invalidate();
         }
     }
-    public void bat_data_display_to_chart(ArrayList<String> time_value,ArrayList<Entry> bat_list_value,String des,String label){
+    @SuppressLint("ClickableViewAccessibility")
+    public void bat_data_display_to_chart(ArrayList<String> time_value, ArrayList<Entry> bat_list_value, String des){
         String[] bat_value = String.valueOf(_value_list.get(_value_list.size()-1)).split(":");
-        bat_lineDataSet = new LineDataSet(bat_list_value, label+": " + bat_value[2] + " v");
+        bat_lineDataSet = new LineDataSet(bat_list_value, "最近一次更新电压为: " + bat_value[2] + " v");
         bat_lineDataSet.setValueFormatter(new NoValueFormatter());//使用自定义的值格式化器
         bat_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);//这里是圆滑曲线
         bat_lineDataSet.setDrawCircles(false);//在点上画圆 默认true
-        /*bat_lineDataSet.setCircleRadius(2f);
-        bat_lineDataSet.setCircleColor(Color.BLUE);//关键点的圆点颜色
-        bat_lineDataSet.setValueTextSize(6f);//关键点的字体大小*/
         bat_lineDataSet.setLineWidth(2f);//设置线条的宽度，最大10f,最小0.2f
-        // --- 添加以下代码来强化焦点显示 ---
-        // 1. 开启十字线指示器（必须）
         bat_lineDataSet.setHighlightEnabled(true);
         bat_lineDataSet.setDrawHighlightIndicators(true);
-        // 2. 设置十字线的样式
         bat_lineDataSet.setHighLightColor(Color.RED); // 十字线颜色
         bat_lineDataSet.setHighlightLineWidth(0.8f);   // 十字线粗细
-        // 3. 关键：设置焦点处的“准星”圆圈
-        // 注意：该功能在某些版本中通过控制间隔线或自定义渲染实现
-        // 最直接的方法是启用特定的指示器绘制
         bat_lineDataSet.setDrawVerticalHighlightIndicator(true);   // 垂直线
         bat_lineDataSet.setDrawHorizontalHighlightIndicator(true); // 水平线
-        // 设置为虚线：线长10，间距5，偏移0
-        bat_lineDataSet.enableDashedHighlightLine(10f, 20f, 0f);
+        bat_lineDataSet.enableDashedHighlightLine(10f, 20f, 0f); // 设置为虚线：线长10，间距5，偏移0
 
         LineData bat_data = new LineData(bat_lineDataSet);
-        bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//顶部X轴显示
+        bat_line_chart.getXAxis().setValueFormatter(new ExamModelOneXValueFormatter(time_value));//X轴时间显示
         bat_line_chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        bat_line_chart.getDescription().setText(des);//右下角描述
+        bat_line_chart.getDescription().setText("最后更新时间: "+des+":00");//右下角描述
         bat_line_chart.getDescription().setTextSize(9f);
         bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
-        //bat_line_chart.getAxisLeft().setTextColor(Color.BLUE); //Y轴左侧文本颜色
-        //bat_line_chart.getAxisRight().setTextColor(Color.BLUE); //Y轴左侧文本颜色
         bat_line_chart.getXAxis().setAxisMinimum(0f);
         bat_line_chart.getXAxis().setAxisMaximum(95f);
+        bat_line_chart.getXAxis().setSpaceMax(1.5f); //额外给 X 轴右侧虚设 1.5 个单位的空白缓冲区
         bat_line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
         bat_line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
         bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
@@ -952,6 +942,28 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.setScaleXEnabled(false); // 如果你想针对单轴（保险起见）
         bat_line_chart.setScaleYEnabled(false);
         bat_line_chart.setPinchZoom(false);// 禁用捏合缩放
+        bat_line_chart.notifyDataSetChanged();//通知数据巳改变
+        bat_line_chart.invalidate();//清理无效数据,用于动态刷新
+        // 强制拦截父布局手势，防止滑动坐标时“断线”
+        bat_line_chart.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                    // 当手指按下或在图表上滑动时，禁止父布局（如 ScrollView）拦截触摸事件
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    // 手指抬起或取消时，恢复父布局的手势控制
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    break;
+            }
+            return false; // 返回 false，让 MPAndroidChart 内部继续处理高亮十字线手势
+        });
     }
     /**
      * 初始化BarChart图表
