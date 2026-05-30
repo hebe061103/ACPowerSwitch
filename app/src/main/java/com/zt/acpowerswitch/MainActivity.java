@@ -1003,7 +1003,7 @@ public class MainActivity extends AppCompatActivity{
         }
         xAxis.setGranularity(1f);
         BarData barData = getBarData(barChart, label);
-        barData.setBarWidth(0.9f);
+        barData.setBarWidth(0.92f);//柱状图的分分隔宽度
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
@@ -1030,7 +1030,7 @@ public class MainActivity extends AppCompatActivity{
         dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.2f", value));// 自定义值格式
         dataSet.setColor(Color.GREEN); // 设置柱子的颜色
         dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
-        dataSet.setValueTextSize(8f);
+        dataSet.setValueTextSize(6f);
         return new BarData(dataSet);
     }
 
