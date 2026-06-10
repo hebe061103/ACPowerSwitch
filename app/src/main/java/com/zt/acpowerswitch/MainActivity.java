@@ -1017,7 +1017,8 @@ public class MainActivity extends AppCompatActivity{
         power_chart.setVisibleXRangeMaximum(18f);
         int count = barData.getEntryCount();
         if (count > 18) {
-            power_chart.moveViewToX(power_chart.getLowestVisibleX() + 1);
+            int x = count - 18;
+            power_chart.moveViewToX(power_chart.getLowestVisibleX() + x);
         }
         power_chart.invalidate(); // 最后统一刷新
     }
