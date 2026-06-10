@@ -45,6 +45,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.DefaultValueFormatter;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
@@ -1006,7 +1007,12 @@ public class MainActivity extends AppCompatActivity{
         BarData barData = getBarData(barChart, label);
         barData.setValueTextSize(8f);//柱状图顶部文字大小
         barData.setValueTypeface(Typeface.DEFAULT_BOLD);//顶部文字加粗
+        barData.setValueTextColor(Color.DKGRAY);
+        barData.setValueFormatter(new DefaultValueFormatter(2));
         barData.setBarWidth(0.92f);//柱状图的分分隔宽度
+        power_chart.getXAxis().setDrawGridLines(false);
+        //power_chart.getAxisLeft().setDrawGridLines(false);
+        //power_chart.getAxisRight().setDrawGridLines(false);
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
@@ -1018,7 +1024,7 @@ public class MainActivity extends AppCompatActivity{
         int count = barData.getEntryCount();
         if (count > 18) {
             int x = count - 18;
-            power_chart.moveViewToX(power_chart.getLowestVisibleX() + x);
+            power_chart.moveViewToX((power_chart.getLowestVisibleX() + x) + 1);
         }
         power_chart.invalidate(); // 最后统一刷新
     }
