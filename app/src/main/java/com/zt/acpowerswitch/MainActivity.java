@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -986,7 +987,7 @@ public class MainActivity extends AppCompatActivity{
                 power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
             case "日期":
-                xAxis.setAxisMinimum(0.5f);
+                xAxis.setAxisMinimum(1-0.5f);
                 xAxis.setAxisMaximum(date_num+0.5f);
                 power_chart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
                 break;
@@ -1003,23 +1004,20 @@ public class MainActivity extends AppCompatActivity{
         }
         xAxis.setGranularity(1f);
         BarData barData = getBarData(barChart, label);
+        barData.setValueTextSize(8f);//柱状图顶部文字大小
+        barData.setValueTypeface(Typeface.DEFAULT_BOLD);//顶部文字加粗
         barData.setBarWidth(0.92f);//柱状图的分分隔宽度
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
         power_chart.setDoubleTapToZoomEnabled(false);// 禁用双击缩放
-        power_chart.setScaleXEnabled(true); // 允许水平缩放（或设为 false 仅允许滑动）
+        power_chart.setScaleXEnabled(false); // 允许水平缩放（或设为 false 仅允许滑动）
         power_chart.setScaleYEnabled(false); // 禁止垂直缩放，防止 Y 轴乱跳
         power_chart.setDragEnabled(true); // 必须开启，否则无法滑动查看后面的数据
-        if (type.equals("小时")) {
-            power_chart.setVisibleXRangeMaximum(18f);
-            float maxX = barData.getXMax(); // 获取当前数据的最大 X 值
-            power_chart.moveViewToX(maxX); // 滚动到最新数据,如果数据超过 18 个，它会自动靠右；如果不足 18 个，它会停在左侧
-        }
-        if (type.equals("年份")) {
-            power_chart.setVisibleXRangeMaximum(18f);
-            float maxX = barData.getXMax(); // 获取当前数据的最大 X 值
-            power_chart.moveViewToX(maxX); // 滚动到最新数据,如果数据超过 18 个，它会自动靠右；如果不足 18 个，它会停在左侧
+        power_chart.setVisibleXRangeMaximum(18f);
+        int count = barData.getEntryCount();
+        if (count > 18) {
+            power_chart.moveViewToX(power_chart.getLowestVisibleX() + 1);
         }
         power_chart.invalidate(); // 最后统一刷新
     }
