@@ -1010,9 +1010,6 @@ public class MainActivity extends AppCompatActivity{
         barData.setValueTextColor(Color.DKGRAY);
         barData.setValueFormatter(new DefaultValueFormatter(2));
         barData.setBarWidth(0.92f);//柱状图的分分隔宽度
-        power_chart.getXAxis().setDrawGridLines(false);
-        //power_chart.getAxisLeft().setDrawGridLines(false);
-        //power_chart.getAxisRight().setDrawGridLines(false);
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
