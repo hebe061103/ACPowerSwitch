@@ -97,6 +97,8 @@ public class MainActivity extends AppCompatActivity{
     public SmartRefreshLayout smartRefreshLayout;
     private boolean request_homepage_run;
     public static int year,month,day;
+    private float startX = 0f;
+    private float startY = 0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -345,7 +347,7 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             while (!Thread_Run) {
                 // 现在它在子线程运行，不会再报 NetworkOnMainThreadException 了
-                if (tcpClient.tcpConnect()&& !Thread_Run) {
+                if (tcpClient.tcpConnect() && !Thread_Run) {
                     about.log(TAG, "开始调用线程");
                     mData_pro_thread();
                     break;
@@ -950,15 +952,32 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                case MotionEvent.ACTION_MOVE:
-                    // 当手指按下或在图表上滑动时，禁止父布局（如 ScrollView）拦截触摸事件
+                    // 1. 记录按下的初始绝对坐标
+                    startX = event.getRawX();
+                    startY = event.getRawY();
+                    // 按下时先默认不拦截，等待滑动方向明确
                     if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
                     }
                     break;
+
+                case MotionEvent.ACTION_MOVE:
+                    // 2. 计算当前位置与按下位置的绝对距离
+                    float distanceX = Math.abs(event.getRawX() - startX);
+                    float distanceY = Math.abs(event.getRawY() - startY);
+
+                    // 3. 判断是否为明显的横向滑动（横向位移大于纵向位移，且超过防误触阈值）
+                    if (distanceX > distanceY && distanceX > 10) {
+                        if (v.getParent() != null) {
+                            // 确认是横向滑动，强制禁止父布局拦截
+                            v.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                    }
+                    break;
+
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    // 手指抬起或取消时，恢复父布局的手势控制
+                    // 4. 手指抬起，恢复父布局拦截权限
                     if (v.getParent() != null) {
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                     }
