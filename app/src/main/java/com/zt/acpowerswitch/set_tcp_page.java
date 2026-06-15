@@ -1,12 +1,13 @@
 package com.zt.acpowerswitch;
 
-import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.readDate;
 import static com.zt.acpowerswitch.MainActivity.saveData;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,14 +21,10 @@ import java.util.regex.Pattern;
 public class set_tcp_page extends AppCompatActivity {
     //private static final String TAG = "set_tcp_page:";
     public Button bl_ip_get,wf_ip_get,manual_set;
-    public long lastBack = 0;
+    private long lastBack = 0;
     public EditText ip_input;
-    // 正则表达式用于匹配域名或子域名
-    private static final String DOMAIN_PATTERN =
-            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z]{2,}|[A-Za-z]{2,}\\.[A-Za-z]{2,})$";
 
-    private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
-
+    @SuppressLint("SetTextI18n")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.set_tcp_activity);
@@ -36,8 +33,10 @@ public class set_tcp_page extends AppCompatActivity {
         ip_input = findViewById(R.id.ip_input);
         wf_ip_get = findViewById(R.id.wf_ip_get);
 
-        if (readDate(this,"wifi_ip")!=null && !readDate(this,"wifi_ip").isEmpty()){
-            ip_input.setText(readDate(this,"wifi_ip"));
+        String wifiIp = readDate(this, "wifi_ip");
+        String tcpPort = readDate(this, "tcpServerPort");
+        if (!TextUtils.isEmpty(wifiIp) && !TextUtils.isEmpty(tcpPort)) {
+            ip_input.setText(wifiIp + ":" + tcpPort);
         }
         bl_ip_get.setOnClickListener((View view) -> {
             goAnim(set_tcp_page.this,50);
@@ -54,48 +53,101 @@ public class set_tcp_page extends AppCompatActivity {
         manual_set.setOnClickListener(view -> {
             // 执行一些后台工作
             goAnim(this, 50);
-            if (!ip_input.getText().toString().isEmpty()) {
-                if (isValidIPv4(ip_input.getText().toString())||isValidDomain(ip_input.getText().toString())) {
-                    saveData("wifi_ip", ip_input.getText().toString());
-                    Intent intent = new Intent(set_tcp_page.this, MainActivity.class);
-                    startActivities(new Intent[]{intent});
-                    finish();
-                } else {
-                    Toast.makeText(this, "请输入正确的IP地址或域名", Toast.LENGTH_SHORT).show();
-                }
-            } else {
+            String inputText = ip_input.getText().toString().trim(); // trim() 去除前后空格
+
+            if (inputText.isEmpty()) {
                 Toast.makeText(this, "你还没有输入地址或域名", Toast.LENGTH_SHORT).show();
+                return; // 提前退出，减少嵌套
             }
+
+            // 1. 严格校验格式，必须包含冒号且不能在开头或结尾
+            if (!inputText.contains(":") || inputText.startsWith(":") || inputText.endsWith(":")) {
+                Toast.makeText(this, "格式错误！请输入正确的 'IP/域名:端口'，例如 192.168.1.1:8080", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 2. 切割字符串
+            String[] ip_port = inputText.split(":");
+
+            // 安全防范：确保数组长度恰好为 2
+            if (ip_port.length != 2) {
+                Toast.makeText(this, "格式错误！只能包含一个冒号", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String inputIp = ip_port[0].trim();
+            String inputPortStr = ip_port[1].trim();
+
+            // 3. 校验 IP 或 域名
+            boolean isIpValid = isValidIPv4(inputIp) || isValidDomain(inputIp);
+            if (!isIpValid) {
+                Toast.makeText(this, "请输入正确的IP地址或域名", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 4. 校验端口号（加入 try-catch 防止用户输入非数字导致 Integer.parseInt 崩溃）
+            int portNumber;
+            try {
+                portNumber = Integer.parseInt(inputPortStr);
+                if (portNumber < 0 || portNumber > 65535) {
+                    throw new NumberFormatException(); // 手动抛出异常，走到下面的提示
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "请输入正确的端口号（0-65535之间的数字）", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 5. 校验全部通过，保存数据并跳转（无需再读取本地进行比对，因为上面的数据就是即将保存成功的）
+            saveData("wifi_ip", inputIp);
+            saveData("tcpServerPort", inputPortStr);
+
+            // 提示用户保存成功并跳转
+            Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(set_tcp_page.this, MainActivity.class);
+            startActivity(intent); // 注意：启动单个 Activity 用 startActivity 即可，原代码里的 startActivities 有些多余
+            finish();
+
         });
     }
-    // 检查字符串是否为有效的 IPv4 地址
+    // 1. 校验 IPv4 格式 (保持不变，你的正则很标准)
     public static boolean isValidIPv4(String ip) {
+        if (ip == null || ip.isEmpty()) return false;
+
         String ipv4Pattern = "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
                 "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
                 "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
                 "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+
         Pattern pattern = Pattern.compile(ipv4Pattern);
         Matcher matcher = pattern.matcher(ip);
         return matcher.matches();
     }
+
+    // 2. 校验 域名 格式 (修复了变量未定义的问题，并加入了通用的域名正则)
     public static boolean isValidDomain(String domain) {
         if (domain == null || domain.isEmpty()) {
             return false;
         }
-        Matcher matcher = pattern.matcher(domain);
+
+        // 这是一个标准的域名正则表达式，支持类似 h.zjw.cloudns.be 的多级域名
+        String domainPattern = "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$";
+
+        // 💡 注意：这里必须重新 Compile 域名专用的正则
+        Pattern domainRegex = Pattern.compile(domainPattern);
+        Matcher matcher = domainRegex.matcher(domain);
         return matcher.matches();
     }
     /**
      * 再次返回键退出程序
      */
-    @Override
+    @SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         if (lastBack == 0 || System.currentTimeMillis() - lastBack > 2000) {
-            Toast.makeText(set_tcp_page.this, "再按一次返回退出", LENGTH_SHORT).show();
+            Toast.makeText(set_tcp_page.this, "再按一次返回退出", Toast.LENGTH_SHORT).show();
             lastBack = System.currentTimeMillis();
             return;
         }
-        super.onBackPressed();
+        finishAffinity();
     }
     protected void onResume() {
         super.onResume();

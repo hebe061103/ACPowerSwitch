@@ -38,7 +38,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:autofillHints=""
-        android:hint="输入逆变器域名或IP地址"
+        android:hint="请输入逆变器域名或IP地址:端口"
         android:minHeight="48dp"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"

@@ -10,6 +10,8 @@ import static com.zt.acpowerswitch.MainActivity.send_command_to_server;
 import static com.zt.acpowerswitch.MainActivity.tcpClient;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
 import static com.zt.acpowerswitch.MainActivity.unicodeToString;
+import static com.zt.acpowerswitch.set_tcp_page.isValidDomain;
+import static com.zt.acpowerswitch.set_tcp_page.isValidIPv4;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
@@ -26,7 +28,7 @@ public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     public String _tmp;
     private volatile boolean mShouldCheckMode = true;
-    private TextView w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,10 +51,18 @@ public class otherOption extends AppCompatActivity {
 
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     public void str_pro() {
-        TextView target_ip = findViewById(R.id.target_ip);
-        target_ip.setText(readDate(otherOption.this, "wifi_ip"));
-        TextView target_port = findViewById(R.id.target_port);
-        target_port.setText(String.valueOf(tcpServerPort));
+        //逆变器IP设置
+        target_ip = findViewById(R.id.target_ip);
+        if (readDate(otherOption.this, "wifi_ip") != null) {
+            target_ip.setText(readDate(otherOption.this, "wifi_ip"));
+        }
+        target_ip.setOnClickListener(view -> send_arg_server("逆变器IP设置"));
+        //逆变器端口设置
+        target_port = findViewById(R.id.target_port);
+        if (readDate(otherOption.this, "tcpServerPort") != null) {
+            target_port.setText(readDate(otherOption.this, "tcpServerPort"));
+        }
+        target_port.setOnClickListener(view -> send_arg_server("逆变器端口设置"));
         //功率设置
         w_edit = findViewById(R.id.w_edit);
         if (readDate(otherOption.this, "power") != null) {
@@ -200,6 +210,18 @@ public class otherOption extends AppCompatActivity {
                             mos_trigger_value_set();
                         }
                         break;
+                    case "逆变器IP设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            target_ip.setText(editText.getText());
+                            target_ip_set();
+                        }
+                        break;
+                    case "逆变器端口设置":
+                        if (!editText.getText().toString().isEmpty()) {
+                            target_port.setText(editText.getText());
+                            target_port_set();
+                        }
+                        break;
                 }
             })
             .show();
@@ -303,20 +325,18 @@ public class otherOption extends AppCompatActivity {
         }).start();
     }
     public void refresh_time_set(){
-        new Thread(() -> {
-            if (!refresh_time_set.getText().toString().isEmpty() && !refresh_time_set.getText().toString().equals(readDate(otherOption.this,"refresh_time"))){
-                about.log(TAG,"页面刷新时间巳改变");
-                if(isInteger(refresh_time_set.getText().toString())) {
-                    saveData("refresh_time", refresh_time_set.getText().toString());
-                    page_refresh_time = Integer.parseInt(refresh_time_set.getText().toString());
-                }else {
-                    about.log(TAG,"页面刷新项请输入整数类型");
-                    Looper.prepare();
-                    Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
-                    Looper.loop();
-                }
+        if (!refresh_time_set.getText().toString().isEmpty() && !refresh_time_set.getText().toString().equals(readDate(otherOption.this,"refresh_time"))){
+            about.log(TAG,"页面刷新时间巳改变");
+            if(isInteger(refresh_time_set.getText().toString())) {
+                saveData("refresh_time", refresh_time_set.getText().toString());
+                page_refresh_time = Integer.parseInt(refresh_time_set.getText().toString());
+            }else {
+                about.log(TAG,"页面刷新项请输入整数类型");
+                Looper.prepare();
+                Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
+                Looper.loop();
             }
-        }).start();
+        }
     }
     public void mos_trigger_value_set(){
         new Thread(() -> {
@@ -350,6 +370,46 @@ public class otherOption extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+    public void target_ip_set(){
+        if (!target_ip.getText().toString().isEmpty() && !target_ip.getText().toString().equals(readDate(otherOption.this,"wifi_ip"))){
+            about.log(TAG,"目标IP巳改变");
+            String inputText = target_ip.getText().toString().trim(); // trim() 去除前后空格
+
+            if (inputText.isEmpty()) {
+                Toast.makeText(this, "你还没有输入地址或域名", Toast.LENGTH_SHORT).show();
+                target_ip.setText(readDate(otherOption.this,"wifi_ip"));
+                return; // 提前退出，减少嵌套
+            }
+            boolean isIpValid = isValidIPv4(inputText) || isValidDomain(inputText);
+            if (!isIpValid) {
+                Toast.makeText(this, "请输入正确的IP地址或域名", Toast.LENGTH_SHORT).show();
+                target_ip.setText(readDate(otherOption.this,"wifi_ip"));
+                return;
+            }
+            target_ip.setText(inputText);
+            saveData("wifi_ip", inputText);
+            MainActivity.tcpServerAddress = inputText;
+        }
+    }
+    public void target_port_set(){
+        if (!target_port.getText().toString().isEmpty() && !target_port.getText().toString().equals(readDate(otherOption.this,"tcpServerPort"))){
+            about.log(TAG,"目标端口巳改变");
+            try {
+                int portNumber = Integer.parseInt(target_port.getText().toString());
+                if (portNumber < 0 || portNumber > 65535) {
+                    throw new NumberFormatException(); // 手动抛出异常，走到下面的提示
+                }else{
+                    target_port.setText(target_port.getText().toString());
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "请输入正确的端口号（0-65535之间的数字）", Toast.LENGTH_SHORT).show();
+                target_port.setText(readDate(otherOption.this,"tcpServerPort"));
+                return;
+            }
+            saveData("tcpServerPort", target_port.getText().toString());
+            tcpServerPort = Integer.parseInt(target_port.getText().toString());
+        }
     }
     public boolean isInteger(String str) {
         try {

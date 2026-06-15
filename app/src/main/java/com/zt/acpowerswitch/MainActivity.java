@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use;
     public static String[] info;
     public static String tcpServerAddress;
-    public static int tcpServerPort=55555;
+    public static int tcpServerPort;
     public static boolean data_rec_finish, stop_send,Thread_Run,isPaused;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
@@ -130,6 +130,7 @@ public class MainActivity extends AppCompatActivity{
         });
         date_num = getCurrentMonthLastDay();
         tcpServerAddress = readDate(this, "wifi_ip");
+        tcpServerPort = Integer.parseInt(readDate(this, "tcpServerPort"));
         page_refresh_time = request_delay_ms();
         out_Voltage = findViewById(R.id.out_Voltage);
         out_Current = findViewById(R.id.out_Current);
@@ -1230,9 +1231,9 @@ public class MainActivity extends AppCompatActivity{
         } else {
             sp = getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);//获取 SharedPreferences对象
             editor = sp.edit(); // 获取编辑器对象
-            if (readDate(this, "wifi_ip") == null) {
+            if (readDate(this, "wifi_ip") == null || readDate(this, "tcpServerPort") == null) {
                 Intent intent = new Intent(this, set_tcp_page.class);
-                startActivities(new Intent[]{intent});
+                startActivity(intent);
             }else{
                 init_module();
             }
