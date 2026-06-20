@@ -749,7 +749,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0]), Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"前一小时用电量(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度)  " + "今日目前共计:"+ total_power_str + " kW/h(度))",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度))  |  " + "今日目前共计:("+ total_power_str + " kW/h(度))",begin_time  + over_time,"小时");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -777,7 +777,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"前一日用电量(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度)  " + "当月目前共计:"+ total_power_str + " kW/h(度))",begin_time + over_time,"日期");
+            pro_date_power_data(_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度))  |  " + "当月目前共计:("+ total_power_str + " kW/h(度))",begin_time + over_time,"日期");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -805,7 +805,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"上一月用电量(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度)  " + "本年度目前共计:"+ total_power_str + " kW/h(度))",begin_time + over_time,"月份");
+            pro_date_power_data(_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度))  |  " + "本年度目前共计:("+ total_power_str + " kW/h(度))",begin_time + over_time,"月份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -830,7 +830,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"前一年用电量(单位:"+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度))",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kW/h(度))",begin_time + over_time,"年份");
             power_chart.notifyDataSetChanged();//通知数据巳改变
             power_chart.invalidate();//清理无效数据,用于动态刷新
         }
@@ -1074,7 +1074,6 @@ public class MainActivity extends AppCompatActivity{
             int x = count - 18;
             power_chart.moveViewToX((power_chart.getLowestVisibleX() + x) + 1);
         }
-        power_chart.invalidate(); // 最后统一刷新
     }
 
     @NonNull
