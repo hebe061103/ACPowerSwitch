@@ -72,7 +72,9 @@ public class MainActivity extends AppCompatActivity{
     public ImageView menu_bt;
     public long lastBack = 0;
     public static final TCPClient tcpClient = new TCPClient();
-    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use;
+    private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,
+            current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use
+            ,bat_kwh_result,pv_kwh_result;
     public static String[] info;
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -142,6 +144,7 @@ public class MainActivity extends AppCompatActivity{
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
+        pv_kwh_result = findViewById(R.id.pv_kwh_result);
         temp0_value = findViewById(R.id.temp0_value);//temp0_value为主控板散热片温度
         temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为主功率板散热片温度
         fan_value = findViewById(R.id.fan_value);//定义为主功率板散热风扇转速值
@@ -150,6 +153,7 @@ public class MainActivity extends AppCompatActivity{
         pv_power_result = findViewById(R.id.pv_power_result);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
+        bat_kwh_result = findViewById(R.id.bat_kwh_result);
         bat_line_chart = findViewById(R.id.line_chart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
@@ -548,6 +552,8 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("散热风扇转速值", info[31]);
                             //开启逆变的电压阈值
                             safeSaveFlash(info, 33, "open_pv_value");
+                            uiData.put("光伏发电度数计量", info[35]);
+                            uiData.put("电池充电度数计量", info[37]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -603,6 +609,10 @@ public class MainActivity extends AppCompatActivity{
                 le_current.setText(uiData.get("pv_current"));
                 //光伏实时输出功率
                 pv_power_result.setText(uiData.get("光伏实时输出功率"));
+                //光伏发电度数计量
+                pv_kwh_result.setText(uiData.get("光伏发电度数计量"));
+                //电池充电度数计量
+                bat_kwh_result.setText(uiData.get("电池充电度数计量"));
                 //为逆变模式时计算电池的充放电电流
                 current_direction.setText(uiData.get("修改电池充放电电流text"));
                 bat_out_current.setText(uiData.get("修改电池充放电电流值"));
