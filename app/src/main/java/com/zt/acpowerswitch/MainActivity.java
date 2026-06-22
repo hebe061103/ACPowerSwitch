@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity{
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public static final TCPClient tcpClient = new TCPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,
             current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use
-            ,bat_kwh_result,pv_kwh_result;
+            ,pv_charged,tv_rollover,tv_charged,tv_discharged,tv_available;
     public static String[] info;
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -144,7 +145,6 @@ public class MainActivity extends AppCompatActivity{
         out_mode = findViewById(R.id.out_mode);
         sun_voltage_value = findViewById(R.id.sun_voltage_value);
         current_direction = findViewById(R.id.current_direction);
-        pv_kwh_result = findViewById(R.id.pv_kwh_result);
         temp0_value = findViewById(R.id.temp0_value);//temp0_value为主控板散热片温度
         temp1_value =  findViewById(R.id.temp1_value);//temp1_value定义为主功率板散热片温度
         fan_value = findViewById(R.id.fan_value);//定义为主功率板散热风扇转速值
@@ -153,11 +153,15 @@ public class MainActivity extends AppCompatActivity{
         pv_power_result = findViewById(R.id.pv_power_result);
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
-        bat_kwh_result = findViewById(R.id.bat_kwh_result);
         bat_line_chart = findViewById(R.id.line_chart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
         mm_use = findViewById(R.id.mm_use);
+        pv_charged = findViewById(R.id.pv_charged);
+        tv_rollover = findViewById(R.id.tv_rollover);
+        tv_charged = findViewById(R.id.tv_charged);
+        tv_discharged = findViewById(R.id.tv_discharged);
+        tv_available = findViewById(R.id.tv_available);
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -554,6 +558,8 @@ public class MainActivity extends AppCompatActivity{
                             safeSaveFlash(info, 33, "open_pv_value");
                             uiData.put("光伏发电度数计量", info[35]);
                             uiData.put("电池充电度数计量", info[37]);
+                            uiData.put("电池放电度数计量", info[39]);
+                            uiData.put("电池盈余度数计量", info[41]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -583,7 +589,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("HandlerLeak")
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
-        @SuppressLint("SetTextI18n")
+        @SuppressLint({"SetTextI18n", "DefaultLocale"})
         public void handleMessage(Message msg) {
             if (msg.what == 1 && msg.obj instanceof Map) {
                 Map<String, String> uiData = (Map<String, String>) msg.obj;
@@ -609,10 +615,6 @@ public class MainActivity extends AppCompatActivity{
                 le_current.setText(uiData.get("pv_current"));
                 //光伏实时输出功率
                 pv_power_result.setText(uiData.get("光伏实时输出功率"));
-                //光伏发电度数计量
-                pv_kwh_result.setText(uiData.get("光伏发电度数计量"));
-                //电池充电度数计量
-                bat_kwh_result.setText(uiData.get("电池充电度数计量"));
                 //为逆变模式时计算电池的充放电电流
                 current_direction.setText(uiData.get("修改电池充放电电流text"));
                 bat_out_current.setText(uiData.get("修改电池充放电电流值"));
@@ -626,6 +628,18 @@ public class MainActivity extends AppCompatActivity{
                 temp1_value.setText(uiData.get("散热片实时温度"));
                 //主功率板散热风扇转速值
                 fan_value.setText(uiData.get("散热风扇转速值"));
+                //电池充放电信息表
+                float p_charged = Float.parseFloat(Objects.requireNonNull(uiData.get("光伏发电度数计量")));
+                float charged = Float.parseFloat(Objects.requireNonNull(uiData.get("电池充电度数计量")));
+                float discharged = Float.parseFloat(Objects.requireNonNull(uiData.get("电池放电度数计量")));
+                float rollover = Float.parseFloat(Objects.requireNonNull(uiData.get("电池盈余度数计量")));
+
+                float available_battery_percentage = rollover + charged - discharged;
+                pv_charged.setText(String.format("☀️ 光伏发电: %.3f kwh", p_charged));
+                tv_rollover.setText(String.format("⛽️ 今日充电: %.3f kwh", charged));
+                tv_charged.setText(String.format("⚡ 今日放电: %.3f kwh", discharged));
+                tv_discharged.setText(String.format("📆 昨日结余: %.3f kwh", rollover));
+                tv_available.setText(String.format("🔋 可用电量: %.3f kwh", available_battery_percentage));
             }
         }
     };
@@ -893,6 +907,15 @@ public class MainActivity extends AppCompatActivity{
         mem_use_chart.getDescription().setText(" ");
         mem_use_chart.setExtraTopOffset(5f);
         mem_use_chart.getXAxis().setEnabled(false);
+        // X 轴网格
+        mem_use_chart.getXAxis().setGridColor(Color.GRAY);
+        mem_use_chart.getXAxis().setGridColor(0x26808080); // ✅ 隐约可见
+        // 左 Y 轴网格
+        mem_use_chart.getAxisLeft().setGridColor(Color.GRAY);
+        mem_use_chart.getAxisLeft().setGridColor(0x26808080);
+        // 这里不为false的话,网格线设置不起作用
+        mem_use_chart.getAxisRight().setDrawGridLines(false);// 右 Y 轴（通常关掉)
+        mem_use_chart.getAxisRight().setEnabled(false);// 直接禁用右侧 Y 轴
         mem_use_chart.setTouchEnabled(false);
         mem_use_chart.getXAxis().setAxisMinimum(0f);
         mem_use_chart.getXAxis().setAxisMaximum(100f);
@@ -974,6 +997,15 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.getDescription().setTextSize(9f);
         bat_line_chart.setExtraTopOffset(10f);//顶部数据距离边框距离
         bat_line_chart.getXAxis().setTextSize(10f); //设置顶部文字大小
+        // X 轴网格
+        bat_line_chart.getXAxis().setGridColor(Color.GRAY);
+        bat_line_chart.getXAxis().setGridColor(0x26808080); // ✅ 隐约可见
+        // 左 Y 轴网格
+        bat_line_chart.getAxisLeft().setGridColor(Color.GRAY);
+        bat_line_chart.getAxisLeft().setGridColor(0x26808080);
+        // 这里不为false的话,网格线设置不起作用
+        bat_line_chart.getAxisRight().setDrawGridLines(false);// 右 Y 轴（通常关掉）
+        bat_line_chart.getAxisRight().setEnabled(false);// 直接禁用右侧 Y 轴
         bat_line_chart.getXAxis().setAxisMinimum(0f);
         bat_line_chart.getXAxis().setAxisMaximum(95f);
         bat_line_chart.getXAxis().setSpaceMax(1.5f); //额外给 X 轴右侧虚设 1.5 个单位的空白缓冲区
@@ -1042,6 +1074,14 @@ public class MainActivity extends AppCompatActivity{
             return String.format("%.2f", value); // value 就是坐标轴上的数值
         });
         power_chart.getAxisRight().setEnabled(false);
+        // X 轴网格
+        power_chart.getXAxis().setGridColor(Color.GRAY);
+        power_chart.getXAxis().setGridColor(0x26808080); // ✅ 隐约可见
+        // 左 Y 轴网格
+        power_chart.getAxisLeft().setGridColor(Color.GRAY);
+        power_chart.getAxisLeft().setGridColor(0x26808080);
+        // 这里不为false的话,网格线设置不起作用
+        power_chart.getAxisRight().setDrawGridLines(false);// 右 Y 轴（通常关掉)
         switch (type) {
             case "小时":
                 xAxis.setAxisMinimum(-0.5f);
