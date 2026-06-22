@@ -1384,20 +1384,20 @@ class CustomMarkerView extends MarkerView {
     public void refreshContent(Entry e, Highlight highlight) {
         DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        m_year.setText(MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
-        m_time.setText(_tmp[0]+":00");
+        m_year.setText(" " + MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
+        m_time.setText(" " + _tmp[0]+":00");
         String [] all_data = _tmp[1].split(",");
-        m_value.setText("电池电压:" + all_data[0]);
-        pv_voltage.setText("光伏电压:" + all_data[1]);
+        m_value.setText(" 电池电压:" + all_data[0]);
+        pv_voltage.setText(" 光伏电压:" + all_data[1]);
         if (Float.parseFloat(all_data[2]) < 0.6){
             all_data[2] = String.valueOf(0);
         }
         Float _pv_i = Float.parseFloat(all_data[2]) * Float.parseFloat(all_data[0])/Float.parseFloat(all_data[1]);
         String _pv_i_value = df.format(_pv_i);
-        pv_current.setText("光伏电流:" + _pv_i_value);
+        pv_current.setText(" 光伏电流:" + _pv_i_value);
         Float _pv_power = Float.parseFloat(all_data[1])* _pv_i;
         String pv_power_result = df.format(_pv_power);
-        pv_power.setText("光伏功率:"+ pv_power_result);
+        pv_power.setText(" 光伏功率:"+ pv_power_result);
 
         super.refreshContent(e, highlight);
     }

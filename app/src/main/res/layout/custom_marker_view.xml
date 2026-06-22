@@ -4,70 +4,70 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="#CFDDE939">
+    android:background="@drawable/marker_bg_round">
 
     <TextView
         android:id="@+id/m_year"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="year:"
-        android:textSize="10sp"
-        android:textColor="#37BBFA"
+        android:textSize="8sp"
+        android:textColor="#2BB3F6"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
     <TextView
         android:id="@+id/m_time"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="time:"
-        android:textSize="10sp"
-        android:textColor="@color/black"
+        android:textSize="8sp"
+        android:textColor="#555555"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/m_year"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
     <TextView
         android:id="@+id/m_value"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="value:"
-        android:textSize="10sp"
-        android:textColor="#43A047"
+        android:textSize="8sp"
+        android:textColor="#1B5E20"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/m_time"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
     <TextView
         android:id="@+id/pv_voltage"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="value:"
-        android:textSize="10sp"
-        android:textColor="#43A047"
+        android:textSize="8sp"
+        android:textColor="#1B5E20"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/m_value"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
     <TextView
         android:id="@+id/pv_current"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="value:"
-        android:textSize="10sp"
-        android:textColor="#43A047"
+        android:textSize="8sp"
+        android:textColor="#1B5E20"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pv_voltage"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
     <TextView
         android:id="@+id/pv_power"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:hint="value:"
-        android:textSize="10sp"
-        android:textColor="#43A047"
+        android:textSize="8sp"
+        android:textColor="#1B5E20"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pv_current"
         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
