@@ -635,11 +635,15 @@ public class MainActivity extends AppCompatActivity{
                 float rollover = Float.parseFloat(Objects.requireNonNull(uiData.get("电池盈余度数计量")));
 
                 float available_battery_percentage = rollover + charged - discharged;
-                pv_charged.setText(String.format("☀️ 光伏发电: %.3f kwh", p_charged));
-                tv_rollover.setText(String.format("⛽️ 今日充电: %.3f kwh", charged));
-                tv_charged.setText(String.format("⚡ 今日放电: %.3f kwh", discharged));
-                tv_discharged.setText(String.format("📆 昨日结余: %.3f kwh", rollover));
-                tv_available.setText(String.format("🔋 可用电量: %.3f kwh", available_battery_percentage));
+                pv_charged.setText(String.format("☀️ 光伏发电: %.3f kWh", p_charged));
+                tv_rollover.setText(String.format("⛽️ 今日充电: %.3f kWh", charged));
+                tv_charged.setText(String.format("⚡ 今日放电: %.3f kWh", discharged));
+                tv_discharged.setText(String.format("📆 昨日结余: %.3f kWh", rollover));
+                if (available_battery_percentage > 0) {
+                    tv_available.setText(String.format("🔋 可用电量: %.3f kWh", available_battery_percentage));
+                }else{
+                    tv_available.setText(String.format("🔋 透支电量: %.3f kWh", available_battery_percentage));
+                }
             }
         }
     };
