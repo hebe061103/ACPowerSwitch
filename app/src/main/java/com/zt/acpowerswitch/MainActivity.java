@@ -642,7 +642,7 @@ public class MainActivity extends AppCompatActivity{
                 if (available_battery_percentage > 0) {
                     tv_available.setText(String.format("🔋 可用电量: %.3f kWh", available_battery_percentage));
                 }else{
-                    tv_available.setText(String.format("🔋 透支电量: %.3f kWh", available_battery_percentage));
+                    tv_available.setText(String.format("🪫 透支电量: %.3f kWh", available_battery_percentage));
                 }
             }
         }
