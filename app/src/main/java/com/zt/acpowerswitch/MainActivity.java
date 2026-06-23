@@ -575,6 +575,12 @@ public class MainActivity extends AppCompatActivity{
                         _min_bat_list.add(str[1]);
                         pro_chart_data(_min_bat_list, "每15分钟电压"); //接收实时数据并绘制
                     }
+                    if (checkScreenStatus() && udp_response != null && udp_response.startsWith("h>")){
+                        about.log(TAG, "收到实时小时数据,更新小时图表");
+                        String[] str = udp_response.split(">");
+                        _H_Total_power.add(str[1].split(",")[0]);
+                        pro_chart_data(_H_Total_power, "小时柱状图表"); //接收实时数据并绘制
+                    }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
                         tcpClient.close();
