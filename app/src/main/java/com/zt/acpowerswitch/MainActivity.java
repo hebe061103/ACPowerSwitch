@@ -571,15 +571,19 @@ public class MainActivity extends AppCompatActivity{
                     }
                     if (checkScreenStatus() && udp_response != null && udp_response.startsWith("live>")){
                         about.log(TAG, "收到实时分时数据,更新分时图表");
-                        String[] str = udp_response.split(">");
-                        _min_bat_list.add(str[1]);
+                        //live>0:00 26.2,0.6,0.4#h>9 0.03,mark3
+                        String[] str = udp_response.split("#");
+                        String[] min = str[0].split(">");
+                        _min_bat_list.add(min[1]);
                         pro_chart_data(_min_bat_list, "每15分钟电压"); //接收实时数据并绘制
-                    }
-                    if (checkScreenStatus() && udp_response != null && udp_response.startsWith("h>")){
-                        about.log(TAG, "收到实时小时数据,更新小时图表");
-                        String[] str = udp_response.split(">");
-                        _H_Total_power.add(str[1].split(",")[0]);
-                        pro_chart_data(_H_Total_power, "小时柱状图表"); //接收实时数据并绘制
+                        String[] t = min[1].split(" ");
+                        String[] m = t[0].split(":");
+                        if (m[1].equals("00")) {
+                            String[] h = str[1].split(">");
+                            String[] hour = h[1].split(",");
+                            _H_Total_power.add(hour[0]);
+                            pro_chart_data(_H_Total_power, "小时柱状图表"); //接收实时数据并绘制
+                        }
                     }
                     if (!checkScreenStatus()) {
                         about.log(TAG, "屏幕关闭");
