@@ -578,7 +578,7 @@ public class MainActivity extends AppCompatActivity{
                         pro_chart_data(_min_bat_list, "每15分钟电压"); //接收实时数据并绘制
                         String[] t = min[1].split(" ");
                         String[] m = t[0].split(":");
-                        if (m[1].equals("00")) {
+                        if (m[1].equals("00") && !str[1].contains("none")) {
                             String[] h = str[1].split(">");
                             String[] hour = h[1].split(",");
                             _H_Total_power.add(hour[0]);
