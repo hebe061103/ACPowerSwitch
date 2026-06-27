@@ -20,6 +20,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -435,7 +436,7 @@ public class MainActivity extends AppCompatActivity{
                     String udp_response = tcpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("['AC_voltage:")) {
-                        about.log(TAG, "数据内容: " + udp_response );
+                        Log.i(TAG, "数据内容: " + udp_response );
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
@@ -574,13 +575,16 @@ public class MainActivity extends AppCompatActivity{
                         //live>16:30 26.8,39.9,1.5#h>15 0.03,mark3
                         String[] str = udp_response.split("#");
                         String[] min = str[0].split(">");
-                        _min_bat_list.add(min[1]);
+                        String[] _f = min[1].split(" ");
+                        String[] _s = _f[0].split(":");
+                        String h = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[0]));
+                        String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[1]));
+                        String _min = h+":"+m+" "+_f[1];
+                        _min_bat_list.add(_min);
                         pro_chart_data(_min_bat_list, "每15分钟电压");
-                        String[] t = min[1].split(" ");
-                        String[] m = t[0].split(":");
-                        if (m[1].equals("00") && !str[1].contains("none")) {
-                            String[] h = str[1].split(">");
-                            String[] hour = h[1].split(",");
+                        if (!h.equals("00") && !str[1].contains("none")) {
+                            String[] h_ = str[1].split(">");
+                            String[] hour = h_[1].split(",");
                             _H_Total_power.add(hour[0]);
                             pro_chart_data(_H_Total_power, "小时柱状图表");
                         }
@@ -691,7 +695,13 @@ public class MainActivity extends AppCompatActivity{
             if (line != null && line.contains("f>")) {
                 //Log.i(TAG, "发现包含分时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _min_bat_list.add(_l[1]);
+                String[] _f = _l[1].split(" ");
+
+                String[] _s = _f[0].split(":");
+                String h = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[0]));
+                String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[1]));
+                String min = h+":"+m+" "+_f[1];
+                _min_bat_list.add(min);
             } else if (line != null && line.contains("h>")) {
                 //Log.i(TAG, "发现包含小时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
@@ -699,15 +709,22 @@ public class MainActivity extends AppCompatActivity{
             } else if (line != null && line.contains("d>")) {
                 //Log.i(TAG, "发现包含每天的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _D_Total_power.add(_l[1]);
+                _D_Total_power.add(year+"-"+_l[1]);
             } else if (line != null && line.contains("m>")) {
                 //Log.i(TAG, "发现包含每月的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _M_Total_power.add(_l[1]);
+                _M_Total_power.add(year+"-"+_l[1]);
             } else if (line != null && line.contains("y>")) {
                 //Log.i(TAG, "发现包含每年的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _Y_Total_power.add(_l[1]);
+                String[] _j = _l[1].split(" ");
+
+                String[] _n = _j[0].split("-");
+                int y = 2000 + Integer.parseInt(_n[0]);
+                String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_n[1]));
+                String d = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_n[2]));
+                String _y = y+"-"+m+"-"+d+" "+ _j[1];
+                _Y_Total_power.add(_y);
             } else if (line != null && line.contains("debug>")) {
                 //Log.i(TAG, "发现包含调试的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
@@ -832,12 +849,12 @@ public class MainActivity extends AppCompatActivity{
                 last_power = current_power;
                 if (_sd.size() > 1) {
                     if (i == 0) {
-                        begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"  ->  ";
+                        begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"月"+"  ->  ";
                     } else if (i == _sd.size() - 1) {
-                        over_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1];
+                        over_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"月";
                     }
                 }else{
-                    begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1];
+                    begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"月";
                     over_time = "";
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
@@ -856,13 +873,13 @@ public class MainActivity extends AppCompatActivity{
                 String[] _e = _sd.get(i).split(" ");
                 if (_sd.size() > 1) {
                     if (i == 0) {
-                        begin_time = _e[0].split("-")[0]+"  ->  ";
+                        begin_time = _e[0].split("-")[0]+"年"+"  ->  ";
                     } else if (i == _sd.size() - 1) {
                         over_time = _e[0].split("-")[0];
                         last_power = _e[1];
                     }
                 }else{
-                    begin_time = _e[0].split("-")[0];
+                    begin_time = _e[0].split("-")[0]+"年";
                     over_time = "";
                     last_power = _e[1];
                 }
