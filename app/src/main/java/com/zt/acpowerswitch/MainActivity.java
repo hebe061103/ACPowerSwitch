@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity{
     public static final TCPClient tcpClient = new TCPClient();
     private TextView out_Voltage,out_Current,power_kw,sj_power_kw,pf,out_frequency,out_mode,bat_Voltage,bat_out_current,
             current_direction,temp1_value,load_rate_value,sun_voltage_value,le_current,pv_power_result,temp0_value,fan_value,mm_use
-            ,pv_charged,tv_rollover,tv_charged,tv_discharged,tv_available;
+            ,pv_charged,tv_rollover,tv_charged,tv_discharged,tv_available,bat_health_cap;
     public static String[] info;
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -163,6 +163,7 @@ public class MainActivity extends AppCompatActivity{
         tv_charged = findViewById(R.id.tv_charged);
         tv_discharged = findViewById(R.id.tv_discharged);
         tv_available = findViewById(R.id.tv_available);
+        bat_health_cap = findViewById(R.id.bat_health_cap);
         TextView dev_ip_port = findViewById(R.id.dev_ip_port);
         dev_ip_port.setOnLongClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -561,6 +562,7 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("电池充电度数计量", info[37]);
                             uiData.put("电池放电度数计量", info[39]);
                             uiData.put("电池盈余度数计量", info[41]);
+                            uiData.put("电池可用容量计量", info[43]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -657,6 +659,20 @@ public class MainActivity extends AppCompatActivity{
                     tv_available.setText(String.format("🔋 可用电量: %.3f kWh", available_battery_percentage));
                 }else{
                     tv_available.setText(String.format("🪫 透支电量: %.3f kWh", available_battery_percentage));
+                }
+                float bat_cap_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
+                if (bat_cap_value > 0){
+                    if (bat_cap_value >= 90){
+                        bat_health_cap.setText(String.format("优秀: %.1f %%", bat_cap_value));
+                    }else if (bat_cap_value >= 85){
+                        bat_health_cap.setText(String.format("良好: %.1f %%", bat_cap_value));
+                    }else if (bat_cap_value >= 80){
+                        bat_health_cap.setText(String.format("预警: %.1f %%", bat_cap_value));
+                    }else{
+                        bat_health_cap.setText(String.format("严重衰减: %.1f %%", bat_cap_value));
+                    }
+                }else{
+                    bat_health_cap.setText("未校准");
                 }
             }
         }

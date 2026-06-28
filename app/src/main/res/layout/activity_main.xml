@@ -530,6 +530,17 @@
                     tools:ignore="HardcodedText,VisualLintOverlap" />
 
                 <TextView
+                    android:id="@+id/bat_cap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:text="🛢️ 电池健康状况(%):"
+                    android:textColor="#0EED19"
+                    android:textSize="16sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/current_direction"
+                    tools:ignore="HardcodedText,VisualLintOverlap" />
+                <TextView
                     android:id="@+id/bat_out_current"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -543,6 +554,19 @@
                     tools:ignore="HardcodedText,VisualLintOverlap,TextContrastCheck" />
 
                 <TextView
+                    android:id="@+id/bat_health_cap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:layout_marginEnd="12dp"
+                    android:hint="暂无"
+                    android:textColorHint="#37373F"
+                    android:textSize="16sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/bat_out_current"
+                    tools:ignore="HardcodedText,VisualLintOverlap,TextContrastCheck" />
+
+                <TextView
                     android:id="@+id/bat_chart"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -552,7 +576,7 @@
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/current_direction"
+                    app:layout_constraintTop_toBottomOf="@+id/bat_cap"
                     tools:ignore="HardcodedText,TextContrastCheck" />
 
                 <FrameLayout
