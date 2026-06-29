@@ -441,7 +441,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length > 33) {
+                        if (info.length >= 43) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -661,7 +661,7 @@ public class MainActivity extends AppCompatActivity{
                     tv_available.setText(String.format("🪫 透支电量: %.3f kWh", available_battery_percentage));
                 }
                 float bat_cap_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
-                if (bat_cap_value > 0){
+                if (bat_cap_value > 0 && bat_cap_value < 999){
                     if (bat_cap_value >= 90){
                         bat_health_cap.setText(String.format("优秀: %.1f %%", bat_cap_value));
                     }else if (bat_cap_value >= 85){
@@ -671,8 +671,10 @@ public class MainActivity extends AppCompatActivity{
                     }else{
                         bat_health_cap.setText(String.format("严重衰减: %.1f %%", bat_cap_value));
                     }
+                }else if (bat_cap_value >= 999){
+                    bat_health_cap.setText("正在校准");
                 }else{
-                    bat_health_cap.setText("未校准");
+                    bat_health_cap.setText("暂未校准");
                 }
             }
         }
@@ -821,8 +823,6 @@ public class MainActivity extends AppCompatActivity{
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(_barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "今日目前共计用电量:("+ total_power_str + " kWh(度))",begin_time  + over_time,"小时");
-            power_chart.notifyDataSetChanged();//通知数据巳改变
-            power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("日期柱状图表")) {
             String begin_time = "";
@@ -849,8 +849,6 @@ public class MainActivity extends AppCompatActivity{
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "当月目前共计用电量:("+ total_power_str + " kWh(度))",begin_time + over_time,"日期");
-            power_chart.notifyDataSetChanged();//通知数据巳改变
-            power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("月份柱状图表")) {
             String begin_time = "";
@@ -877,8 +875,6 @@ public class MainActivity extends AppCompatActivity{
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "本年度目前共计用电量:("+ total_power_str + " kWh(度))",begin_time + over_time,"月份");
-            power_chart.notifyDataSetChanged();//通知数据巳改变
-            power_chart.invalidate();//清理无效数据,用于动态刷新
         }
         if (label.equals("年份柱状图表")) {
             String begin_time = "";
@@ -902,8 +898,6 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
             pro_date_power_data(_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"年份");
-            power_chart.notifyDataSetChanged();//通知数据巳改变
-            power_chart.invalidate();//清理无效数据,用于动态刷新
         }
     }
 
@@ -1110,7 +1104,7 @@ public class MainActivity extends AppCompatActivity{
     /**
      * 初始化BarChart图表
      */
-    @SuppressLint("DefaultLocale")
+    @SuppressLint({"DefaultLocale", "ClickableViewAccessibility"})
     private void pro_date_power_data(ArrayList<BarEntry> barChart, String label, String des, String type) {
         //X轴设置显示位置在底部
         power_chart.fitScreen();
@@ -1171,6 +1165,45 @@ public class MainActivity extends AppCompatActivity{
             int x = count - 18;
             power_chart.moveViewToX((power_chart.getLowestVisibleX() + x) + 1);
         }
+        power_chart.notifyDataSetChanged();//通知数据巳改变
+        power_chart.invalidate();//清理无效数据,用于动态刷新
+        // 强制拦截父布局手势，防止滑动坐标时“断线”
+        power_chart.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    // 1. 记录按下的初始绝对坐标
+                    startX = event.getRawX();
+                    startY = event.getRawY();
+                    // 按下时先默认不拦截，等待滑动方向明确
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    // 2. 计算当前位置与按下位置的绝对距离
+                    float distanceX = Math.abs(event.getRawX() - startX);
+                    float distanceY = Math.abs(event.getRawY() - startY);
+
+                    // 3. 判断是否为明显的横向滑动（横向位移大于纵向位移，且超过防误触阈值）
+                    if (distanceX > distanceY && distanceX > 10) {
+                        if (v.getParent() != null) {
+                            // 确认是横向滑动，强制禁止父布局拦截
+                            v.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                    }
+                    break;
+
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    // 4. 手指抬起，恢复父布局拦截权限
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    break;
+            }
+            return false; // 返回 false，让 MPAndroidChart 内部继续处理手势
+        });
     }
 
     @NonNull
