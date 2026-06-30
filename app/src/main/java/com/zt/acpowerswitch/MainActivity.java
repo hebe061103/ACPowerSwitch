@@ -103,6 +103,8 @@ public class MainActivity extends AppCompatActivity{
     public static int year,month,day;
     private float startX = 0f;
     private float startY = 0f;
+    private float touchDownX;
+    private float touchDownY;
     Map<String, String> uiData = new HashMap<>();
 
     @Override
@@ -672,7 +674,7 @@ public class MainActivity extends AppCompatActivity{
                         bat_health_cap.setText(String.format("严重衰减: %.1f %%", bat_cap_value));
                     }
                 }else if (bat_cap_value >= 999){
-                    bat_health_cap.setText("正在校准");
+                    bat_health_cap.setText("校准中...");
                 }else{
                     bat_health_cap.setText("暂未校准");
                 }
@@ -1151,7 +1153,7 @@ public class MainActivity extends AppCompatActivity{
         barData.setValueTypeface(Typeface.DEFAULT_BOLD);//顶部文字加粗
         barData.setValueTextColor(Color.DKGRAY);
         barData.setValueFormatter(new DefaultValueFormatter(2));
-        barData.setBarWidth(0.92f);//柱状图的分分隔宽度
+        barData.setBarWidth(0.92f);//柱状图的分隔宽度
         power_chart.getDescription().setText(des);//右下角描述
         power_chart.getDescription().setTextSize(9f);
         power_chart.setData(barData);//调置数据
@@ -1167,42 +1169,25 @@ public class MainActivity extends AppCompatActivity{
         }
         power_chart.notifyDataSetChanged();//通知数据巳改变
         power_chart.invalidate();//清理无效数据,用于动态刷新
-        // 强制拦截父布局手势，防止滑动坐标时“断线”
         power_chart.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    // 1. 记录按下的初始绝对坐标
-                    startX = event.getRawX();
-                    startY = event.getRawY();
-                    // 按下时先默认不拦截，等待滑动方向明确
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                    }
+                    touchDownX = event.getX();
+                    touchDownY = event.getY();
+                    power_chart.getParent().requestDisallowInterceptTouchEvent(true);
                     break;
-
                 case MotionEvent.ACTION_MOVE:
-                    // 2. 计算当前位置与按下位置的绝对距离
-                    float distanceX = Math.abs(event.getRawX() - startX);
-                    float distanceY = Math.abs(event.getRawY() - startY);
-
-                    // 3. 判断是否为明显的横向滑动（横向位移大于纵向位移，且超过防误触阈值）
-                    if (distanceX > distanceY && distanceX > 10) {
-                        if (v.getParent() != null) {
-                            // 确认是横向滑动，强制禁止父布局拦截
-                            v.getParent().requestDisallowInterceptTouchEvent(true);
-                        }
-                    }
+                    float dx = Math.abs(event.getX() - touchDownX);
+                    float dy = Math.abs(event.getY() - touchDownY);
+                    v.getParent().requestDisallowInterceptTouchEvent(dy <= dx);
                     break;
-
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    // 4. 手指抬起，恢复父布局拦截权限
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                    }
+                    power_chart.getParent().requestDisallowInterceptTouchEvent(false);
                     break;
             }
-            return false; // 返回 false，让 MPAndroidChart 内部继续处理手势
+            // 返回 false，让 chart 内部的 onTouchEvent 继续处理（拖动、点击等）
+            return false;
         });
     }
 
