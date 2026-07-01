@@ -594,6 +594,13 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/chart_shape" />
 
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pieChart"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="4dp"/>
+
                 <LinearLayout
                     android:id="@+id/overlay_summary"
                     android:layout_width="wrap_content"

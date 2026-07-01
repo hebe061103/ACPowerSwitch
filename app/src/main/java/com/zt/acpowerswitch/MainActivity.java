@@ -20,6 +20,10 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,7 +39,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.components.XAxis;
@@ -46,9 +52,13 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.DefaultValueFormatter;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
+import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.MPPointF;
@@ -92,6 +102,7 @@ public class MainActivity extends AppCompatActivity{
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
     public static ArrayList<String> debugList = new ArrayList<>();
     public LineChart bat_line_chart,mem_use_chart;
+    public PieChart pieChart;
     public BarChart power_chart;
     public int date_num;
     private ComponentName topActivity;
@@ -106,7 +117,7 @@ public class MainActivity extends AppCompatActivity{
     private float touchDownX;
     private float touchDownY;
     Map<String, String> uiData = new HashMap<>();
-
+    private float lastCapValue = -1f;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,7 +128,6 @@ public class MainActivity extends AppCompatActivity{
         year = calendar.get(Calendar.YEAR);       // 年
         month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
         day = calendar.get(Calendar.DAY_OF_MONTH); // 日
-        CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view);
         smartRefreshLayout = findViewById(R.id.refreshLayout);
         //设置 Header 为 贝塞尔雷达 样式
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
@@ -157,6 +167,9 @@ public class MainActivity extends AppCompatActivity{
         bat_Voltage = findViewById(R.id.bat_Voltage);
         bat_out_current = findViewById(R.id.bat_out_current);
         bat_line_chart = findViewById(R.id.line_chart);
+        CustomMarkerView mv = new CustomMarkerView(this,R.layout.custom_marker_view,bat_line_chart);
+        mv.setChartView(bat_line_chart);
+        pieChart = findViewById(R.id.pieChart);
         power_chart = findViewById(R.id.power_chart);
         mem_use_chart = findViewById(R.id.mem_use_chart);
         mm_use = findViewById(R.id.mm_use);
@@ -343,10 +356,6 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight highlight) {
-                /*// 显示被选中的数值
-                String selectedValue = "X-Index: " + entry.getX() + ", Y-Value: " + entry.getY();
-                Toast.makeText(getApplicationContext(), selectedValue, Toast.LENGTH_SHORT).show();*/
-                //点击指示器可显示更多详情
                 bat_line_chart.setMarkerView(mv);
             }
             @Override
@@ -431,6 +440,92 @@ public class MainActivity extends AppCompatActivity{
 
         return result[0]; // 返回结果
     }
+    private void updateChart(float percent) {
+        // 防止超过100%
+        if (percent > 100) percent = 100;
+        if (percent < 0) percent = 0;
+
+        float decayPercent = 100f - percent;
+
+        List<PieEntry> entries = new ArrayList<>();
+        // 第一个是剩余容量（天蓝色），第二个是衰减（灰色）
+        entries.add(new PieEntry(percent, ""));
+        entries.add(new PieEntry(decayPercent, ""));
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+
+        // 颜色设置：天蓝色 (#4FC3F7) + 浅灰色 (#E0E0E0)
+        dataSet.setColors(
+                Color.parseColor("#98EBFC"),  // 天蓝色
+                Color.parseColor("#E0E0E0")   // 灰色
+        );
+
+        // 不显示扇区上的默认数值，我们自己画中间的
+        dataSet.setDrawValues(false); // 如果想在扇区上也显示百分比，设为 true
+        dataSet.setValueTextSize(8f);
+        dataSet.setValueTextColor(Color.WHITE);
+        dataSet.setValueFormatter(new PercentFormatter()); // 格式化显示为 %
+
+        PieData data = new PieData(dataSet);
+        pieChart.setData(data);
+
+        // --- 关键：设置成圆环效果 ---
+        pieChart.setAlpha(0.7f); // 0.0~1.0，值越小越透明
+        pieChart.setDrawHoleEnabled(true);
+        pieChart.setHoleRadius(70f); // 内圆大小（越小环越粗）
+        pieChart.setTransparentCircleRadius(80f); // 外圈透明半径（制造图中那种浅色过渡环）
+        pieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF")); // 半透明白，模拟图中的光晕感
+
+        // --- 中间文字 ---
+        pieChart.setCenterText(generateCenterText(percent));
+        pieChart.setCenterTextSize(8f);
+        pieChart.setCenterTextColor(Color.parseColor("#333333")); // 深灰色文字
+        pieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+
+        // 其他配置
+        pieChart.getDescription().setEnabled(false);
+        pieChart.getLegend().setEnabled(false);
+        pieChart.setTouchEnabled(false); // 禁用触摸
+
+        // 动画
+        pieChart.animateY(1000);
+        pieChart.invalidate();
+    }
+
+    // 生成中间的文字
+    private SpannableString generateCenterText(float percent) {
+        // 你的标称参数（和 MicroPython 端一致）
+        float NOMINAL_VOLTAGE = 25.6f;
+        float NOMINAL_CAPACITY = 200f;
+        float NOMINAL_ENERGY = NOMINAL_VOLTAGE * NOMINAL_CAPACITY / 1000f; // 5.12 kWh
+        float effective = NOMINAL_ENERGY * 0.8f; // 4.096 kWh（可用容量）
+
+        // 当前实际容量 kWh
+        float currentKwh = effective * percent / 100f;
+
+        String text = String.format(Locale.getDefault(),
+                "剩余容量\n%.1f%%\n%.2f kWh", percent, currentKwh);
+
+        SpannableString s = new SpannableString(text);
+
+        // "剩余容量" 加粗
+        s.setSpan(new StyleSpan(Typeface.BOLD), 0, 4, 0);
+        // "剩余容量" 大小
+        s.setSpan(new RelativeSizeSpan(1.0f), 0, 4, 0);
+
+        // "85.3%" 放大加粗
+        int line2Start = text.indexOf("\n") + 1;
+        int line2End = text.indexOf("\n", line2Start);
+        s.setSpan(new RelativeSizeSpan(1.5f), line2Start, line2End, 0);
+        s.setSpan(new StyleSpan(Typeface.BOLD), line2Start, line2End, 0);
+
+        // "4.10 kWh" 正常大小，灰色
+        int line3Start = line2End + 1;
+        s.setSpan(new RelativeSizeSpan(1.0f), line3Start, text.length(), 0);
+        s.setSpan(new ForegroundColorSpan(Color.parseColor("#888888")), line3Start, text.length(), 0);
+
+        return s;
+    }
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
@@ -443,7 +538,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length >= 43) {
+                        if (info.length >= 45) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -502,13 +597,13 @@ public class MainActivity extends AppCompatActivity{
                                     uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("市电供电")) {
-                                //市电供电模式下,逆变器为开启状态的充放电电流计算
-                                if ((pw - 30) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 有逆变电池充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - 30) / Float.parseFloat(info[9]))); //30w为逆变器自身功耗的估算,具体要测量才知道
+                                //市电供电模式下,逆变器为关闭状态的充放电电流计算
+                                if ((pw - 3.6) > 0) {
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 有逆变电池放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(30 / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
                             } else if (unicodeToString(info[17]).equals("电池电压过低")) {
                                 //电池电压过低,逆变器为关闭状态的充放电电流计算
@@ -564,7 +659,8 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("电池充电度数计量", info[37]);
                             uiData.put("电池放电度数计量", info[39]);
                             uiData.put("电池盈余度数计量", info[41]);
-                            uiData.put("电池可用容量计量", info[43]);
+                            uiData.put("电池健康度计量", info[43]);
+                            uiData.put("电池可用容量计量", info[45]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -653,16 +749,16 @@ public class MainActivity extends AppCompatActivity{
                 float rollover = Float.parseFloat(Objects.requireNonNull(uiData.get("电池盈余度数计量")));
 
                 float available_battery_percentage = rollover + charged - discharged;
-                pv_charged.setText(String.format("☀️ 光伏发电: %.3f kWh", p_charged));
-                tv_rollover.setText(String.format("⛽️ 今日充电: %.3f kWh", charged));
-                tv_charged.setText(String.format("⚡ 今日放电: %.3f kWh", discharged));
-                tv_discharged.setText(String.format("📆 昨日结余: %.3f kWh", rollover));
+                pv_charged.setText(String.format("☀️ 今日光伏发电: %.3f kWh", p_charged));
+                tv_rollover.setText(String.format("⛽️ 今日电池充电: %.3f kWh", charged));
+                tv_charged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
+                tv_discharged.setText(String.format("📆 昨日电池结余: %.3f kWh", rollover));
                 if (available_battery_percentage > 0) {
-                    tv_available.setText(String.format("🔋 可用电量: %.3f kWh", available_battery_percentage));
+                    tv_available.setText(String.format("🔋 今日可用电量: %.3f kWh", available_battery_percentage));
                 }else{
-                    tv_available.setText(String.format("🪫 透支电量: %.3f kWh", available_battery_percentage));
+                    tv_available.setText(String.format("🪫 今日透支电量: %.3f kWh", available_battery_percentage));
                 }
-                float bat_cap_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
+                float bat_cap_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
                 if (bat_cap_value > 0 && bat_cap_value < 999){
                     if (bat_cap_value >= 90){
                         bat_health_cap.setText(String.format("优秀: %.1f %%", bat_cap_value));
@@ -677,6 +773,13 @@ public class MainActivity extends AppCompatActivity{
                     bat_health_cap.setText("校准中...");
                 }else{
                     bat_health_cap.setText("暂未校准");
+                }
+                // 在你的数据更新回调里
+                float capValue = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
+
+                if (capValue != lastCapValue) {
+                    lastCapValue = capValue;
+                    updateChart(lastCapValue);
                 }
             }
         }
@@ -1054,8 +1157,6 @@ public class MainActivity extends AppCompatActivity{
         bat_line_chart.getXAxis().setSpaceMax(1.5f); //额外给 X 轴右侧虚设 1.5 个单位的空白缓冲区
         bat_line_chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
         bat_line_chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
-        bat_line_chart.getAxisRight().setAxisMinimum(20f);//右侧Y轴最小值
-        bat_line_chart.getAxisRight().setAxisMaximum(30f);//右侧Y轴最大值
         bat_line_chart.setData(bat_data);//调置数据
         bat_line_chart.setScaleEnabled(false); // 彻底禁用缩放（最强力开关）
         bat_line_chart.setDoubleTapToZoomEnabled(false); // 禁用双击缩放（很多时候是这个在起作用）
@@ -1425,17 +1526,9 @@ class NoValueFormatter implements IValueFormatter {
 }
 @SuppressLint("ViewConstructor")
 class CustomMarkerView extends MarkerView {
-
-    private final TextView m_year;
-    private final TextView m_time;
-    private final TextView m_value;
-
-    private final TextView pv_voltage;
-    private final TextView pv_current;
-    private final TextView pv_power;
-
-
-    public CustomMarkerView (Context context, int layoutResource) {
+    private final Chart chart;
+    private final TextView m_year,m_time,m_value,pv_voltage,pv_current,pv_power;
+    public CustomMarkerView (Context context, int layoutResource, Chart chart) {
         super(context, layoutResource);
         m_year = findViewById(R.id.m_year);
         m_time = findViewById(R.id.m_time);
@@ -1443,6 +1536,8 @@ class CustomMarkerView extends MarkerView {
         pv_voltage = findViewById(R.id.pv_voltage);
         pv_current = findViewById(R.id.pv_current);
         pv_power = findViewById(R.id.pv_power);
+        this.chart = chart;
+        setChartView(chart);
     }
     @SuppressLint("SetTextI18n")
     @Override
@@ -1466,31 +1561,25 @@ class CustomMarkerView extends MarkerView {
 
         super.refreshContent(e, highlight);
     }
-    /**
-     * 核心：动态调整位置
-     * posX, posY 是当前点击位置在屏幕上的绝对像素坐标
-     */
     @Override
     public MPPointF getOffsetForDrawingAtPoint(float posX, float posY) {
         MPPointF offset = new MPPointF();
-
-        // 1. 水平方向：默认居中
         offset.x = -(getWidth() / 2f);
+        offset.y = -getHeight() - 20;
 
-        // 2. 垂直方向：默认在准星上方，并留出 40 像素的空隙（不挡住准星中心）
-        offset.y = -getHeight() - 40;
-
-        // 3. 动态避让逻辑
-        // 如果上方空间不够（posY 小于气泡高度），则把气泡显示在准星下方
-        if (posY + offset.y < 0) {
-            offset.y = 40; // 显示在下方，40 是距离准星中心的距离
+        // 防止超出左边界
+        if (posX + offset.x < 0) {
+            offset.x = -posX + 8; // 8dp 的边距
         }
 
-        // 4. 防止左右溢出屏幕
-        if (posX + offset.x < 0) {
-            offset.x = -posX; // 贴着左边
-        } else if (getChartView() != null && posX + getWidth() + offset.x > getChartView().getWidth()) {
-            offset.x = getChartView().getWidth() - posX - getWidth(); // 贴着右边
+        // 防止超出右边界
+        if (chart != null && posX + offset.x + getWidth() > chart.getWidth()) {
+            offset.x = chart.getWidth() - posX - getWidth() - 8;
+        }
+
+        // 右上角碰到圆环，翻到下方
+        if (chart != null && posX > chart.getWidth() * 0.6f && posY < chart.getHeight() * 0.4f) {
+            offset.y = 20;
         }
 
         return offset;
