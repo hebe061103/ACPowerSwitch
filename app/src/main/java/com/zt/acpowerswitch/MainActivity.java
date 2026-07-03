@@ -1565,21 +1565,36 @@ class CustomMarkerView extends MarkerView {
     public MPPointF getOffsetForDrawingAtPoint(float posX, float posY) {
         MPPointF offset = new MPPointF();
         offset.x = -(getWidth() / 2f);
-        offset.y = -getHeight() - 20;
+        offset.y = -getHeight() - 20; // 默认：Marker 在数据点正上方
 
         // 防止超出左边界
         if (posX + offset.x < 0) {
-            offset.x = -posX + 8; // 8dp 的边距
+            offset.x = -posX + 8; // 左边留 8px 边距
         }
 
         // 防止超出右边界
         if (chart != null && posX + offset.x + getWidth() > chart.getWidth()) {
-            offset.x = chart.getWidth() - posX - getWidth() - 8;
+            offset.x = chart.getWidth() - posX - getWidth() - 8; // 右边留 8px 边距
         }
 
-        // 右上角碰到圆环，翻到下方
+        // 防止超出上边界（新增）
+        if (posY + offset.y < 0) {
+            offset.y = -posY + 8; // 顶部留 8px 边距
+        }
+
+        // 防止超出下边界（新增）
+        if (chart != null && posY + offset.y + getHeight() > chart.getHeight()) {
+            offset.y = chart.getHeight() - posY - getHeight() - 8; // 底部留 8px 边距
+        }
+
+        // 右上角碰到圆环 → 翻到下方（保留你之前的业务逻辑）
         if (chart != null && posX > chart.getWidth() * 0.6f && posY < chart.getHeight() * 0.4f) {
-            offset.y = 20;
+            offset.y = 20; // 翻到下方
+        }
+
+        // 左上角碰到圆环 → 翻到下方（新增，对称处理）
+        if (chart != null && posX < chart.getWidth() * 0.4f && posY < chart.getHeight() * 0.4f) {
+            offset.y = 20; // 翻到下方
         }
 
         return offset;
