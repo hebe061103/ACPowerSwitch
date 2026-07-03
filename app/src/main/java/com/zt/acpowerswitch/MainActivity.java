@@ -927,7 +927,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0]), Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "今日目前共计用电量:("+ total_power_str + " kWh(度))",begin_time  + over_time,"小时");
+            pro_date_power_data(_barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "今日目前共计用电量:("+ total_power_str + " kWh)",begin_time  + over_time,"小时");
         }
         if (label.equals("日期柱状图表")) {
             String begin_time = "";
@@ -953,7 +953,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "当月目前共计用电量:("+ total_power_str + " kWh(度))",begin_time + over_time,"日期");
+            pro_date_power_data(_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "当月目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"日期");
         }
         if (label.equals("月份柱状图表")) {
             String begin_time = "";
@@ -979,7 +979,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))  |  " + "本年度目前共计用电量:("+ total_power_str + " kWh(度))",begin_time + over_time,"月份");
+            pro_date_power_data(_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本年度目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"月份");
         }
         if (label.equals("年份柱状图表")) {
             String begin_time = "";
@@ -1002,7 +1002,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
-            pro_date_power_data(_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh(度))",begin_time + over_time,"年份");
+            pro_date_power_data(_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh)",begin_time + over_time,"年份");
         }
     }
 
@@ -1046,8 +1046,8 @@ public class MainActivity extends AppCompatActivity{
         mem_lineDataSet.setDrawCircles(false);
         mem_lineDataSet.setLineWidth(1.5f);
         mem_lineDataSet.setDrawFilled(true);
-        mem_lineDataSet.setFillColor(Color.parseColor("#1A4CAF50")); // 浅绿色填充
-        mem_lineDataSet.setColor(Color.parseColor("#4CAF50")); // 绿色线条
+        mem_lineDataSet.setFillColor(Color.parseColor("#98EBFC")); // 浅绿色填充
+        mem_lineDataSet.setColor(Color.parseColor("#98EBFC")); // 绿色线条
 
         // 配置图表属性（只配置一次）
         mem_use_chart.getDescription().setText(" ");
@@ -1296,7 +1296,11 @@ public class MainActivity extends AppCompatActivity{
     private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
         BarDataSet dataSet = new BarDataSet(barChart, label);
         dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.2f", value));// 自定义值格式
-        dataSet.setColor(Color.GREEN); // 设置柱子的颜色
+        dataSet.setColors(Color.parseColor("#C5FD87"),
+                Color.parseColor("#F8F989"),
+                Color.parseColor("#F7D48C"),
+                Color.parseColor("#98EBFC"),
+                Color.parseColor("#F6879D")); // 设置柱子的颜色
         dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
         dataSet.setValueTextSize(6f);
         return new BarData(dataSet);
