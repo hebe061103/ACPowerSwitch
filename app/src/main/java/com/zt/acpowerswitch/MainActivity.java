@@ -440,7 +440,7 @@ public class MainActivity extends AppCompatActivity{
 
         return result[0]; // 返回结果
     }
-    private void updateChart(float percent) {
+    private void updateChart(float percent ,float total_energy) {
         // 防止超过100%
         if (percent > 100) percent = 100;
         if (percent < 0) percent = 0;
@@ -454,10 +454,11 @@ public class MainActivity extends AppCompatActivity{
 
         PieDataSet dataSet = new PieDataSet(entries, "");
 
+        int ringColor = getHealthColor(percent);
         // 颜色设置：天蓝色 (#4FC3F7) + 浅灰色 (#E0E0E0)
         dataSet.setColors(
-                Color.parseColor("#98EBFC"),  // 天蓝色
-                Color.parseColor("#E0E0E0")   // 灰色
+                ringColor, //动态颜色
+                Color.parseColor("#E0E0E0")   // 衰竭为灰色
         );
 
         // 不显示扇区上的默认数值，我们自己画中间的
@@ -477,7 +478,7 @@ public class MainActivity extends AppCompatActivity{
         pieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF")); // 半透明白，模拟图中的光晕感
 
         // --- 中间文字 ---
-        pieChart.setCenterText(generateCenterText(percent));
+        pieChart.setCenterText(generateCenterText(percent,total_energy));
         pieChart.setCenterTextSize(8f);
         pieChart.setCenterTextColor(Color.parseColor("#333333")); // 深灰色文字
         pieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
@@ -493,7 +494,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     // 生成中间的文字
-    private SpannableString generateCenterText(float percent) {
+    private SpannableString generateCenterText(float percent,float total_energy) {
         // 你的标称参数（和 MicroPython 端一致）
         float NOMINAL_VOLTAGE = 25.6f;
         float NOMINAL_CAPACITY = 200f;
@@ -501,10 +502,11 @@ public class MainActivity extends AppCompatActivity{
         float effective = NOMINAL_ENERGY * 0.8f; // 4.096 kWh（可用容量）
 
         // 当前实际容量 kWh
-        float currentKwh = effective * percent / 100f;
-
+        float currentKwh = effective * total_energy / 100f;
+        // 当前可用电量 kwh
+        float available_energy = percent/100 * currentKwh;
         String text = String.format(Locale.getDefault(),
-                "剩余容量\n%.1f%%\n%.2f kWh", percent, currentKwh);
+                "可用电量\n%.1f%%\n%.2f kWh", percent, available_energy);
 
         SpannableString s = new SpannableString(text);
 
@@ -526,6 +528,38 @@ public class MainActivity extends AppCompatActivity{
 
         return s;
     }
+    //圆环动态颜色
+    private int getHealthColor(float socPercent) {
+        if (socPercent >= 80f) {
+            return Color.parseColor("#4CAF50"); // 绿色：充裕
+        } else if (socPercent >= 20f) {
+            return Color.parseColor("#FF9800"); // 橙色：提醒
+        } else {
+            return Color.parseColor("#F44336"); // 红色：告急
+        }
+    }
+    private float voltage_to_soc(float voltage) {
+        // ---------- 显示满电区 ----------
+        if (voltage >= 27.50f) return 100.0f;
+
+            // ---------- 平台区（慢掉电） ----------
+        else if (voltage >= 27.20f) return 95.0f;
+        else if (voltage >= 27.00f) return 90.0f;
+        else if (voltage >= 26.80f) return 85.0f;
+        else if (voltage >= 26.60f) return 80.0f;
+        else if (voltage >= 26.40f) return 70.0f;
+        else if (voltage >= 26.20f) return 60.0f;
+        else if (voltage >= 26.00f) return 50.0f;
+        else if (voltage >= 25.70f) return 40.0f;
+        else if (voltage >= 25.40f) return 30.0f;
+
+            // ---------- 低压区（快掉电） ----------
+        else if (voltage >= 25.00f) return 20.0f;
+        else if (voltage >= 24.60f) return 15.0f;
+        else if (voltage >= 24.20f) return 10.0f;
+        else if (voltage >= 23.80f) return 5.0f;
+        else return 0.0f;
+    }
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
@@ -538,7 +572,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length >= 45) {
+                        if (info.length >= 43) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -660,7 +694,6 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("电池放电度数计量", info[39]);
                             uiData.put("电池盈余度数计量", info[41]);
                             uiData.put("电池健康度计量", info[43]);
-                            uiData.put("电池可用容量计量", info[45]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -754,12 +787,12 @@ public class MainActivity extends AppCompatActivity{
                 tv_charged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 tv_discharged.setText(String.format("📆 昨日电池结余: %.3f kWh", rollover));
                 if (available_battery_percentage > 0) {
-                    tv_available.setText(String.format("🔋 今日可用电量: %.3f kWh", available_battery_percentage));
+                    tv_available.setText(String.format("🔋 今日巳充可用电量: %.3f kWh", available_battery_percentage));
                 }else{
                     tv_available.setText(String.format("🪫 今日透支电量: %.3f kWh", available_battery_percentage));
                 }
                 float bat_cap_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
-                if (bat_cap_value > 0 && bat_cap_value < 999){
+                if (bat_cap_value > 0){
                     if (bat_cap_value >= 90){
                         bat_health_cap.setText(String.format("优秀: %.1f %%", bat_cap_value));
                     }else if (bat_cap_value >= 85){
@@ -769,17 +802,18 @@ public class MainActivity extends AppCompatActivity{
                     }else{
                         bat_health_cap.setText(String.format("严重衰减: %.1f %%", bat_cap_value));
                     }
-                }else if (bat_cap_value >= 999){
+                }else if (bat_cap_value < 0){
                     bat_health_cap.setText("校准中...");
-                }else{
+                }else {
                     bat_health_cap.setText("暂未校准");
                 }
                 // 在你的数据更新回调里
-                float capValue = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
+                float capValue = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
+                float batValue = Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage")));
 
-                if (capValue != lastCapValue) {
-                    lastCapValue = capValue;
-                    updateChart(lastCapValue);
+                if (batValue != lastCapValue) {
+                    lastCapValue = batValue;
+                    updateChart(voltage_to_soc(lastCapValue),capValue);
                 }
             }
         }
