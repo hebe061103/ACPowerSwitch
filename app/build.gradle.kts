@@ -58,4 +58,6 @@ dependencies {
     implementation  ("io.github.scwang90:refresh-footer-ball:2.1.0")    //球脉冲加载
     //noinspection UseTomlInstead
     implementation  ("io.github.scwang90:refresh-header-material:2.1.0") //谷歌刷新头
+    //noinspection UseTomlInstead
+    implementation  ("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
 }

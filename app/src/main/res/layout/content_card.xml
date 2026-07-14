@@ -1,0 +1,974 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#020202"
+    android:fillViewport="true"
+    android:padding="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="4dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <TextView
+                android:id="@+id/app_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="逆变器输出监测系统"
+                android:textColor="#FB8C00"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_gravity="center"
+                tools:ignore="HardcodedText" />
+            <ImageView
+                android:id="@+id/menu_img"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="菜单"
+                app:srcCompat="@android:drawable/ic_menu_preferences"
+                android:layout_gravity="end"
+                tools:ignore="HardcodedText">
+            </ImageView>
+
+        </androidx.cardview.widget.CardView>
+        <!-- ✅ 交流输出信息卡片  -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- 标题 -->
+                <TextView
+                    android:id="@+id/tv_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="交流输出信息:"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <!-- 交流电压 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="交流电压"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/out_Voltage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#85E91B"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 交流电流 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="交流电流"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/out_Current"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 有功功率 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="有功功率"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/power_kw"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#FDD835"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 视在功率 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="视在功率"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/sj_power_kw"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 功率因数 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_5"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="功率因数"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/PF"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 交流频率 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_6"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="交流频率"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/out_frequency"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 输出模式 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_7"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="输出模式"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/out_mode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#4EBDF2"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 负载使用率 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_8"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="负载使用率"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/load_rate_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                </GridLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- 光伏输入信息 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- 光伏输入信息 -->
+                <TextView
+                    android:id="@+id/pv_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="光伏输入信息:"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <!-- 光伏电压 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/pv_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="光伏电压"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/sun_voltage_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#00ACC1"
+                            android:text="暂无"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 光伏电流 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/pv_2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="光伏电流"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/le_current"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 光伏功率 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/pv_3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="光伏功率"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/pv_power_result"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 电池池信息 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- 电池组信息 -->
+                <TextView
+                    android:id="@+id/bat_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="电池组信息:"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <!-- 电池电压 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/bat_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="电池电压"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/bat_Voltage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#00ACC1"
+                            android:text="暂无"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 电池电流 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/current_direction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="电池电流"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/bat_out_current"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 健康度 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/bat_3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="健康度"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/bat_health_cap"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#00ACC1"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 系统温度信息 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- 系统温度信息 -->
+                <TextView
+                    android:id="@+id/temp_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="系统温度信息:"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <!-- MPPT温度 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/temp_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MPPT温度"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/temp0_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#60EB66"
+                            android:text="暂无"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- MOS温度 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/temp_2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MOS温度"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/temp1_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#60EB66"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 风扇转速 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/temp_3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="风扇转速"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/fan_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暂无"
+                            android:textColor="#60EB66"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 电池充放电图表 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="4dp">
+
+                <!-- 电池充放电图表 -->
+                <TextView
+                    android:id="@+id/chart_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="电池充放电图表:"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <FrameLayout
+                        android:id="@+id/chart_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        tools:ignore="UselessParent">
+
+                        <com.github.mikephil.charting.charts.LineChart
+                            android:id="@+id/line_chart"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/chart_shape" />
+
+                        <com.github.mikephil.charting.charts.PieChart
+                            android:id="@+id/pieChart"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="2dp"/>
+
+                        <LinearLayout
+                            android:id="@+id/overlay_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|start"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_transparent"
+                            android:layout_marginStart="23dp"
+                            android:layout_marginBottom="32dp"
+                            tools:ignore="TooManyViews">
+
+                            <TextView
+                                android:id="@+id/pv_charged"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:hint="暂无"
+                                android:textSize="10sp"
+                                android:textColor="#000000"
+                                tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                            <TextView
+                                android:id="@+id/tv_rollover"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:hint="暂无"
+                                android:textSize="10sp"
+                                android:textColor="#000000"
+                                tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                            <TextView
+                                android:id="@+id/tv_charged"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:hint="暂无"
+                                android:textSize="10sp"
+                                android:textColor="#000000"
+                                tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                            <TextView
+                                android:id="@+id/tv_discharged"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:hint="暂无"
+                                android:textSize="10sp"
+                                android:textColor="#000000"
+                                tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                            <TextView
+                                android:id="@+id/tv_available"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:hint="暂无"
+                                android:textSize="10sp"
+                                android:textColor="#000000"
+                                tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        </LinearLayout>
+                    </FrameLayout>
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 电量使用图表( 时 / 日 / 月 / 年 ) -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="4dp">
+
+                <!-- 电池充放电图表 -->
+                <TextView
+                    android:id="@+id/chart_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="电量使用图表( 时 / 日 / 月 / 年 ):"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText,TooManyViews" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
+                    <TextView
+                        android:id="@+id/hour_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="#98EBFC"
+                        android:textSize="12sp"
+                        android:text="       时       "
+                        android:textColor="#FDFDFD"
+                        tools:ignore="HardcodedText,TextContrastCheck">
+                    </TextView>
+                    <TextView
+                        android:id="@+id/day_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:background="#F7D48C"
+                        android:textSize="12sp"
+                        android:text="       日       "
+                        android:textColor="#FDFDFD"
+                        tools:ignore="HardcodedText,TextContrastCheck">
+                    </TextView>
+                    <TextView
+                        android:id="@+id/month_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:background="#F6879D"
+                        android:textSize="12sp"
+                        android:text="       月       "
+                        android:textColor="#FDFDFD"
+                        tools:ignore="HardcodedText,TextContrastCheck">
+                    </TextView>
+                    <TextView
+                        android:id="@+id/year_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:background="#906BDB"
+                        android:textSize="12sp"
+                        android:text="       年       "
+                        android:textColor="#FDFDFD"
+                        tools:ignore="HardcodedText,TextContrastCheck">
+                    </TextView>
+                </LinearLayout>
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/power_chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/chart_shape" />
+
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 设备内存使用率︎ -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+                    <!-- 设备内存使用率︎ -->
+                    <TextView
+                        android:id="@+id/mem_0"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="设备内存使用率︎:"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+                    <TextView
+                        android:id="@+id/mm_use"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="暂无"
+                        android:textColor="#CDDC39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText">
+                    </TextView>
+                </LinearLayout>
+                <!-- ✅ GridLayout：2 行 × 4 列 -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:columnCount="4"
+                    android:rowCount="2"
+                    android:alignmentMode="alignBounds"
+                    android:useDefaultMargins="true">
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/mem_use_chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/chart_shape" />
+
+                </GridLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 设备硬件信息 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <TextView
+                android:id="@+id/dev_ip_port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ESP32"
+                android:textSize="16sp"
+                android:layout_gravity="center"
+                tools:ignore="HardcodedText" />
+
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+</ScrollView>
