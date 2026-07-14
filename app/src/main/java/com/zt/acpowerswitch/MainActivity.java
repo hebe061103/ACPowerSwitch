@@ -1087,7 +1087,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = "今日: " + _e[0]+ ":00:00";
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0]), Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart, _barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "今日目前共计用电量:("+ total_power_str + " kWh)",begin_time  + over_time,"小时");
@@ -1113,7 +1113,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = _e[0];
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart,_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "当月目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"日期");
@@ -1139,7 +1139,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"月";
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart,_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本年度目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"月份");
@@ -1163,7 +1163,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(i,  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
             pro_date_power_data(Chart,_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh)",begin_time + over_time,"年份");
         }
