@@ -4,6 +4,7 @@ import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.TCPClient.socket;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ComponentName;
@@ -163,6 +164,7 @@ public class MainActivity extends AppCompatActivity{
 
     // ===== MarkerView =====
     private CustomMarkerView originMarker, cardMarker;
+    private ObjectAnimator originBreathAnim,cardBreathAnim;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -553,6 +555,12 @@ public class MainActivity extends AppCompatActivity{
         originPieChart.animateY(1000);
         cardPieChart.animateY(1000);
 
+        if (percent <= 0) {
+            startBreathAnimation();
+        } else {
+            stopBreathAnimation();
+        }
+
         originPieChart.invalidate();
         cardPieChart.invalidate();
     }
@@ -561,7 +569,7 @@ public class MainActivity extends AppCompatActivity{
     private SpannableString generateCenterText(float percent) {
         String text;
         if (percent <= 0) {
-            text = "需校准";
+            text = "⚠️ \n待校准";
         } else {
             text = String.format(Locale.getDefault(), "可用电量\n%.1f%%", percent);
         }
@@ -574,18 +582,47 @@ public class MainActivity extends AppCompatActivity{
         // ---- 第一行 ----
         int line1End = hasSecondLine ? firstLineEnd : text.length();
         s.setSpan(new StyleSpan(Typeface.BOLD), 0, line1End, 0);
-        s.setSpan(new RelativeSizeSpan(1.5f), 0, line1End, 0);
+        s.setSpan(new RelativeSizeSpan(1.3f), 0, line1End, 0);
 
         // ---- 第二行（仅当有换行时） ----
         if (hasSecondLine) {
             int secondLineStart = firstLineEnd + 1;
             int secondLineEnd = text.length();
 
-            s.setSpan(new RelativeSizeSpan(1.5f), secondLineStart, secondLineEnd, 0);
+            s.setSpan(new RelativeSizeSpan(1.3f), secondLineStart, secondLineEnd, 0);
             s.setSpan(new StyleSpan(Typeface.BOLD), secondLineStart, secondLineEnd, 0);
         }
 
         return s;
+    }
+    // 启动呼吸动画
+    private void startBreathAnimation() {
+        // 原始布局
+        originPieChart.setAlpha(1.0f);
+        originBreathAnim = ObjectAnimator.ofFloat(originPieChart, "alpha", 0.2f, 1.0f);
+        originBreathAnim.setDuration(1200);
+        originBreathAnim.setRepeatCount(ObjectAnimator.INFINITE);
+        originBreathAnim.setRepeatMode(ObjectAnimator.REVERSE);
+        originBreathAnim.start();
+
+        // 卡片布局
+        cardPieChart.setAlpha(1.0f);
+        cardBreathAnim = ObjectAnimator.ofFloat(cardPieChart, "alpha", 0.2f, 1.0f);
+        cardBreathAnim.setDuration(1200);
+        cardBreathAnim.setRepeatCount(ObjectAnimator.INFINITE);
+        cardBreathAnim.setRepeatMode(ObjectAnimator.REVERSE);
+        cardBreathAnim.start();
+    }
+    // 停止呼吸动画
+    private void stopBreathAnimation() {
+        if (originBreathAnim != null) {
+            originBreathAnim.cancel();
+            originBreathAnim = null;
+        }
+        if (cardBreathAnim != null) {
+            cardBreathAnim.cancel();
+            cardBreathAnim = null;
+        }
     }
     //圆环动态颜色
     private int getHealthColor(float socPercent) {
@@ -850,15 +887,15 @@ public class MainActivity extends AppCompatActivity{
                 originTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 cardTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 if (total_cap==0){
-                    originTvDischarged.setText("📋 电池总容量: 需校准");
-                    cardTvDischarged.setText("📋 电池总容量: 需校准");
+                    originTvDischarged.setText("📋 电池总容量: 待校准");
+                    cardTvDischarged.setText("📋 电池总容量: 待校准");
                 }else {
                     originTvDischarged.setText(String.format("📋 电池总容量: %.3f kWh", total_cap));
                     cardTvDischarged.setText(String.format("📋 电池总容量: %.3f kWh", total_cap));
                 }
                 if (total_cap==0){
-                    originTvAvailable.setText("🔋 电池可用电量: 需校准");
-                    cardTvAvailable.setText("🔋 电池可用电量: 需校准");
+                    originTvAvailable.setText("🔋 电池可用电量: 待校准");
+                    cardTvAvailable.setText("🔋 电池可用电量: 待校准");
                 }else {
                     originTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
                     cardTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
@@ -1027,8 +1064,8 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     }
-        @SuppressLint("DefaultLocale")
-        public void pro_day_chart_data(List<String> _sd, String label, BarChart Chart){
+    @SuppressLint("DefaultLocale")
+    public void pro_day_chart_data(List<String> _sd, String label, BarChart Chart){
         if (label.equals("小时柱状图表")) {
             String begin_time = "";
             String over_time = "";
@@ -1050,7 +1087,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = "今日: " + _e[0]+ ":00:00";
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0]), Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f", Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart, _barChart_list,"前一小时用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "今日目前共计用电量:("+ total_power_str + " kWh)",begin_time  + over_time,"小时");
@@ -1076,7 +1113,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = _e[0];
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart,_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "当月目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"日期");
@@ -1102,7 +1139,7 @@ public class MainActivity extends AppCompatActivity{
                     begin_time = _e[0].split("-")[0] + "-" + _e[0].split("-")[1]+"月";
                     over_time = "";
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
+                _barChart_list.add(new BarEntry(i, Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
             pro_date_power_data(Chart,_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本年度目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"月份");
@@ -1126,7 +1163,7 @@ public class MainActivity extends AppCompatActivity{
                     over_time = "";
                     last_power = _e[1];
                 }
-                _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[0]),  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
+                _barChart_list.add(new BarEntry(i,  Float.parseFloat(String.format("%.2f",Float.parseFloat(_e[1])))));
             }
             pro_date_power_data(Chart,_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh)",begin_time + over_time,"年份");
         }

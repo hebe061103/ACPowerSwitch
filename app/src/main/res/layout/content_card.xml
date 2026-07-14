@@ -272,7 +272,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="暂无"
-                            android:textColor="#4EBDF2"
+                            android:textColor="#CA7EEF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -733,7 +733,7 @@
                             android:layout_width="80dp"
                             android:layout_height="80dp"
                             android:layout_gravity="top|end"
-                            android:layout_margin="2dp"/>
+                            android:layout_margin="1dp"/>
 
                         <LinearLayout
                             android:id="@+id/overlay_summary"
