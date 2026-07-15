@@ -103,7 +103,6 @@
                             android:id="@+id/out_Voltage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
                             android:textColor="#85E91B"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
@@ -131,8 +130,7 @@
                             android:id="@+id/out_Current"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -159,7 +157,6 @@
                             android:id="@+id/power_kw"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
                             android:textColor="#FDD835"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
@@ -187,8 +184,7 @@
                             android:id="@+id/sj_power_kw"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -215,8 +211,7 @@
                             android:id="@+id/PF"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -243,8 +238,7 @@
                             android:id="@+id/out_frequency"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -271,8 +265,7 @@
                             android:id="@+id/out_mode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00C853"
+                            android:textColor="#60EB66"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -299,8 +292,7 @@
                             android:id="@+id/load_rate_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -369,8 +361,7 @@
                             android:id="@+id/sun_voltage_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#00ACC1"
-                            android:text="暂无"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -397,8 +388,7 @@
                             android:id="@+id/le_current"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -425,8 +415,7 @@
                             android:id="@+id/pv_power_result"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#60EB66"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -492,8 +481,7 @@
                             android:id="@+id/bat_Voltage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#00ACC1"
-                            android:text="暂无"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -520,8 +508,7 @@
                             android:id="@+id/bat_out_current"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -548,8 +535,7 @@
                             android:id="@+id/bat_health_cap"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
-                            android:textColor="#00ACC1"
+                            android:textColor="#24D9EF"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -616,7 +602,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
-                            android:text="暂无"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
@@ -643,7 +628,6 @@
                             android:id="@+id/temp1_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
                             android:textColor="#60EB66"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
@@ -671,7 +655,6 @@
                             android:id="@+id/fan_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="暂无"
                             android:textColor="#60EB66"
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
@@ -750,7 +733,6 @@
                                 android:id="@+id/pv_charged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:hint="暂无"
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -759,7 +741,6 @@
                                 android:id="@+id/tv_rollover"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:hint="暂无"
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -768,7 +749,7 @@
                                 android:id="@+id/tv_charged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:hint="暂无"
+                                
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -777,7 +758,7 @@
                                 android:id="@+id/tv_discharged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:hint="暂无"
+                                
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -786,7 +767,7 @@
                                 android:id="@+id/tv_available"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:hint="暂无"
+                                
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -925,7 +906,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="暂无"
+                        
                         android:textColor="#CDDC39"
                         android:textSize="16sp"
                         android:textStyle="bold"
