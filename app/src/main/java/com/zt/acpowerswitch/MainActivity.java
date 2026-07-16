@@ -864,8 +864,10 @@ public class MainActivity extends AppCompatActivity{
                     cardCurrentDirection.setText("无逆变充电电流");
                 }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 无逆变放电电流(A):")){
                     cardCurrentDirection.setText("无逆变放电电流");
-                }else{
-                    cardCurrentDirection.setText(uiData.get("当前输出模式"));
+                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 充电电流(A):")){
+                    cardCurrentDirection.setText("充电电流");
+                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 放电电流(A):")){
+                    cardCurrentDirection.setText("放电电流");
                 }
                 //为逆变模式时计算电池的充放电电流
                 originBatOutCurrent.setText(uiData.get("修改电池充放电电流值"));
@@ -1130,7 +1132,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[2]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(Chart,_barChart_list,"前一日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "当月目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"日期");
+            pro_date_power_data(Chart,_barChart_list,"昨日用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本月目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"日期");
         }
         if (label.equals("月份柱状图表")) {
             String begin_time = "";
@@ -1156,7 +1158,7 @@ public class MainActivity extends AppCompatActivity{
                 _barChart_list.add(new BarEntry(Integer.parseInt(_e[0].split("-")[1]), Float.parseFloat(String.format("%.2f",Float.parseFloat(last_power)))));
             }
             String total_power_str = String.format("%.2f", total_power);
-            pro_date_power_data(Chart,_barChart_list,"上一月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本年度目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"月份");
+            pro_date_power_data(Chart,_barChart_list,"上月用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh) | " + "本年度目前共计用电量:("+ total_power_str + " kWh)",begin_time + over_time,"月份");
         }
         if (label.equals("年份柱状图表")) {
             String begin_time = "";
@@ -1455,8 +1457,7 @@ public class MainActivity extends AppCompatActivity{
         dataSet.setColors(Color.parseColor("#C5FD87"),
                 Color.parseColor("#F8F989"),
                 Color.parseColor("#F7D48C"),
-                Color.parseColor("#98EBFC"),
-                Color.parseColor("#F6879D")); // 设置柱子的颜色
+                Color.parseColor("#98EBFC")); // 设置柱子的颜色
         dataSet.setDrawValues(true); //是否绘制柱状图顶部的数值
         dataSet.setValueTextSize(6f);
         return new BarData(dataSet);
