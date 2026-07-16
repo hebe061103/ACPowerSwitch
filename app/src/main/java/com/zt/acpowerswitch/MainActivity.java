@@ -675,7 +675,7 @@ public class MainActivity extends AppCompatActivity{
                                 String power_use = df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
                                 uiData.put("power_use", power_use);
                             } else {
-                                uiData.put("power_use", "市电无限制");
+                                uiData.put("power_use", "无限制");
                             }
                             //储能电池电压
                             uiData.put("bat_voltage", info[9]);
@@ -698,53 +698,61 @@ public class MainActivity extends AppCompatActivity{
                             if (unicodeToString(info[17]).equals("逆变供电")) {
                                 //逆变供电模式下,逆变器为开启状态的充放电电流计算
                                 if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("市电供电")) {
                                 //市电供电模式下,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
                             } else if (unicodeToString(info[17]).equals("电池电压过低")) {
                                 //电池电压过低,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
                             } else if (unicodeToString(info[17]).equals("固定逆变模式")) {
                                 //固定逆变模式下,逆变器为开启状态的充放电电流计算
                                 if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("固定市电模式")) {
                                 //固定市电模式下,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池充电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
                                 } else {
-                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变电池放电电流(A):");
+                                    uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
                             }
                             //为MPTT散热片温度
                             uiData.put("mptt温度", info[15] + "°C");
                             //当前输出模式
-                            uiData.put("当前输出模式", unicodeToString(info[17]));
+                            if (unicodeToString(info[17]).equals("电池电压过低")){
+                                uiData.put("当前输出模式", "电池低压");
+                            }else if (unicodeToString(info[17]).equals("固定市电模式")){
+                                uiData.put("当前输出模式", "固定市电");
+                            }else if (unicodeToString(info[17]).equals("固定逆变模式")){
+                                uiData.put("当前输出模式", "固定逆变");
+                            }else{
+                                uiData.put("当前输出模式", unicodeToString(info[17]));
+                            }
                             //内存使用信息
                             uiData.put("内存使用信息", info[19]);
                             //市电切换阈值
@@ -852,7 +860,13 @@ public class MainActivity extends AppCompatActivity{
                 cardPvPowerResult.setText(uiData.get("光伏实时输出功率"));
                 //为逆变模式时修改计算电池的充放电电流文本
                 originCurrentDirection.setText(uiData.get("修改电池充放电电流text"));
-                cardCurrentDirection.setText(uiData.get("修改电池充放电电流text"));
+                if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 无逆变充电电流(A):")){
+                    cardCurrentDirection.setText("无逆变充电电流");
+                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 无逆变放电电流(A):")){
+                    cardCurrentDirection.setText("无逆变放电电流");
+                }else{
+                    cardCurrentDirection.setText(uiData.get("当前输出模式"));
+                }
                 //为逆变模式时计算电池的充放电电流
                 originBatOutCurrent.setText(uiData.get("修改电池充放电电流值"));
                 cardBatOutCurrent.setText(uiData.get("修改电池充放电电流值"));
