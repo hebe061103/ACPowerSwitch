@@ -133,6 +133,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView originBatVoltage, cardBatVoltage;
     private TextView originBatOutCurrent, cardBatOutCurrent;
     private TextView originBatHealthCap, cardBatHealthCap;
+    private TextView originBat_use_time, cardBat_use_time;
 
     // ===== 温度 & 风扇 =====
     private TextView originTemp0Value, cardTemp0Value;
@@ -198,6 +199,7 @@ public class MainActivity extends AppCompatActivity{
         originBatVoltage = originalView.findViewById(R.id.bat_Voltage);
         originBatOutCurrent = originalView.findViewById(R.id.bat_out_current);
         originBatHealthCap = originalView.findViewById(R.id.bat_health_cap);
+        originBat_use_time = originalView.findViewById(R.id.bat_use_time);
 
         // 温度 & 风扇
         originTemp0Value = originalView.findViewById(R.id.temp0_value);
@@ -255,6 +257,7 @@ public class MainActivity extends AppCompatActivity{
         cardBatVoltage = cardView.findViewById(R.id.bat_Voltage);
         cardBatOutCurrent = cardView.findViewById(R.id.bat_out_current);
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
+        cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
 
         // 温度 & 风扇
         cardTemp0Value = cardView.findViewById(R.id.temp0_value);
@@ -834,6 +837,7 @@ public class MainActivity extends AppCompatActivity{
                 //交流有功功率
                 originPowerKw.setText(uiData.get("ac_power"));
                 cardPowerKw.setText(uiData.get("ac_power"));
+                float p_power = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
                 //交流视在功率
                 originSjPowerKw.setText(uiData.get("sj_power"));
                 cardSjPowerKw.setText(uiData.get("sj_power"));
@@ -916,6 +920,16 @@ public class MainActivity extends AppCompatActivity{
                     originTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
                     cardTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
                 }
+                //计算电池可用时长
+                double hours = (available_cap * 1000 /p_power);
+                // 转成总分钟数，四舍五入
+                long totalMinutes = Math.round(hours * 60);
+                long h = totalMinutes / 60;
+                long m = totalMinutes % 60;
+                String useTimeStr = h + "时" + m + "分";
+                originBat_use_time.setText(useTimeStr);
+                cardBat_use_time.setText(useTimeStr);
+                //计算电池健康度
                 float bat_healthy_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
                 if (bat_healthy_value > 0){
                     if (bat_healthy_value >= 90){

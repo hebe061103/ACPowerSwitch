@@ -539,6 +539,33 @@
                             android:textSize="16sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
+
+                    <!-- 电池可用时长 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/textView20"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="可用时长"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/bat_use_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#24D9EF"
+                            android:textSize="16sp"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
                 </GridLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -702,7 +729,7 @@
                         android:id="@+id/chart_container"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        tools:ignore="UselessParent">
+                        tools:ignore="TooManyViews,UselessParent">
 
                         <com.github.mikephil.charting.charts.LineChart
                             android:id="@+id/line_chart"

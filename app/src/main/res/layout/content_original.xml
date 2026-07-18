@@ -532,6 +532,18 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/current_direction"
                 tools:ignore="HardcodedText,VisualLintOverlap" />
+
+            <TextView
+                android:id="@+id/textView20"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:text="🕡️ 可用时长(h):"
+                android:textColor="#40E951"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/bat_cap"
+                tools:ignore="HardcodedText,VisualLintOverlap" />
             <TextView
                 android:id="@+id/bat_out_current"
                 android:layout_width="wrap_content"
@@ -559,6 +571,19 @@
                 tools:ignore="HardcodedText,VisualLintOverlap,TextContrastCheck" />
 
             <TextView
+                android:id="@+id/bat_use_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:layout_marginEnd="12dp"
+                android:hint="暂无"
+                android:textColorHint="#37373F"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/bat_health_cap"
+                tools:ignore="HardcodedText,VisualLintOverlap,TextContrastCheck" />
+
+            <TextView
                 android:id="@+id/bat_chart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -568,7 +593,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/bat_cap"
+                app:layout_constraintTop_toBottomOf="@+id/textView20"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
             <FrameLayout
