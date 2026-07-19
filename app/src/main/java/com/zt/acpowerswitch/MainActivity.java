@@ -660,7 +660,7 @@ public class MainActivity extends AppCompatActivity{
                             String formattedValue_iv_Value = df.format(jl_dl);
                             uiData.put("ac_current", formattedValue_iv_Value);
                             String iv = info[3];
-                            //交流功率
+                            //交流有功功率
                             uiData.put("ac_power", info[5]);
                             //交流视在功率
                             if (ac != null) {
@@ -696,16 +696,16 @@ public class MainActivity extends AppCompatActivity{
                             String pv_power = df.format(pv_result);
                             uiData.put("光伏实时输出功率", pv_power);
                             //逆变器不同模式下电池的充放电电流计算
-                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
+                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算,0.9为逆变器的转换效率
                             float pw = Float.parseFloat(pv_power);//太阳能板的发电功率
                             if (unicodeToString(info[17]).equals("逆变供电")) {
                                 //逆变供电模式下,逆变器为开启状态的充放电电流计算
-                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                if (pw - ((Float.parseFloat(info[5])/0.9 + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5])/0.9 + 30)) / Float.parseFloat(info[9])));
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5])/0.9 + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("市电供电")) {
                                 //市电供电模式下,逆变器为关闭状态的充放电电流计算
@@ -727,12 +727,12 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             } else if (unicodeToString(info[17]).equals("固定逆变模式")) {
                                 //固定逆变模式下,逆变器为开启状态的充放电电流计算
-                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
+                                if (pw - ((Float.parseFloat(info[5])/0.9 + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5])/0.9 + 30)) / Float.parseFloat(info[9])));
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5])/0.9 + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("固定市电模式")) {
                                 //固定市电模式下,逆变器为关闭状态的充放电电流计算
@@ -837,7 +837,6 @@ public class MainActivity extends AppCompatActivity{
                 //交流有功功率
                 originPowerKw.setText(uiData.get("ac_power"));
                 cardPowerKw.setText(uiData.get("ac_power"));
-                float p_power = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
                 //交流视在功率
                 originSjPowerKw.setText(uiData.get("sj_power"));
                 cardSjPowerKw.setText(uiData.get("sj_power"));
@@ -921,12 +920,36 @@ public class MainActivity extends AppCompatActivity{
                     cardTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
                 }
                 //计算电池可用时长
-                double hours = (available_cap * 1000 /p_power);
-                // 转成总分钟数，四舍五入
-                long totalMinutes = Math.round(hours * 60);
-                long h = totalMinutes / 60;
-                long m = totalMinutes % 60;
-                String useTimeStr = h + "时" + m + "分";
+                // 光伏实时输出功率（W）
+                float pvPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("光伏实时输出功率")));
+                // 负载交流有功功率（W）
+                float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
+                // 逆变器参数
+                float invEff = 0.9f;
+                float invSelfConsumption = 30f;
+                // 电池可用电量（Wh）
+                float availableCapWh = available_cap * 1000;
+                // 系统总交流消耗（用于判断是否充电）
+                float totalAcLoad = loadPowerAc + invSelfConsumption;
+                String useTimeStr;
+                if (pvPowerAc >= totalAcLoad) {
+                    // 光伏够用，电池不放电
+                    useTimeStr = "充电中";
+                } else {
+                    // 光伏不足，电池需要放电
+                    // 交流缺口折算到直流侧
+                    float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff;
+
+                    if (dcDischargePower <= 0) {
+                        useTimeStr = "无需放电";
+                    } else {
+                        double hours = availableCapWh / dcDischargePower;
+                        long totalMinutes = Math.round(hours * 60);
+                        long h = totalMinutes / 60;
+                        long m = totalMinutes % 60;
+                        useTimeStr = String.format("%d时%02d分", h, m);
+                    }
+                }
                 originBat_use_time.setText(useTimeStr);
                 cardBat_use_time.setText(useTimeStr);
                 //计算电池健康度
