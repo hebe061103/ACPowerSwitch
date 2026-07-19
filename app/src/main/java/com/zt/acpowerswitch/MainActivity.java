@@ -696,16 +696,16 @@ public class MainActivity extends AppCompatActivity{
                             String pv_power = df.format(pv_result);
                             uiData.put("光伏实时输出功率", pv_power);
                             //逆变器不同模式下电池的充放电电流计算
-                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算,0.9为逆变器的转换效率
+                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
                             float pw = Float.parseFloat(pv_power);//太阳能板的发电功率
                             if (unicodeToString(info[17]).equals("逆变供电")) {
                                 //逆变供电模式下,逆变器为开启状态的充放电电流计算
-                                if (pw - ((Float.parseFloat(info[5])/0.9 + 30)) > 0) {
+                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5])/0.9 + 30)) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5])+ 30)) / Float.parseFloat(info[9])));
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5])/0.9 + 30) - pw) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("市电供电")) {
                                 //市电供电模式下,逆变器为关闭状态的充放电电流计算
@@ -727,12 +727,12 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             } else if (unicodeToString(info[17]).equals("固定逆变模式")) {
                                 //固定逆变模式下,逆变器为开启状态的充放电电流计算
-                                if (pw - ((Float.parseFloat(info[5])/0.9 + 30)) > 0) {
+                                if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5])/0.9 + 30)) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(info[5]) + 30)) / Float.parseFloat(info[9])));
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5])/0.9 + 30) - pw) / Float.parseFloat(info[9])));
+                                    uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
                             } else if (unicodeToString(info[17]).equals("固定市电模式")) {
                                 //固定市电模式下,逆变器为关闭状态的充放电电流计算
