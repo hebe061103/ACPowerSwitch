@@ -1614,16 +1614,11 @@ public class MainActivity extends AppCompatActivity{
     }
     protected void onPause() {
         super.onPause();
-        isPaused=true;
-        tcpClient.close();
     }
     protected void onDestroy() {
         super.onDestroy();
         if (wifilist != null) {
             wifilist.clear();
-        }
-        if (socket!=null) {
-            tcpClient.close();
         }
     }
     public static void goAnim(Context context, int millisecond) {
