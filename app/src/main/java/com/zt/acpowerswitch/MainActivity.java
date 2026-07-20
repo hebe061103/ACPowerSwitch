@@ -864,9 +864,9 @@ public class MainActivity extends AppCompatActivity{
                 //为逆变模式时修改计算电池的充放电电流文本
                 originCurrentDirection.setText(uiData.get("修改电池充放电电流text"));
                 if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 无逆变充电电流(A):")){
-                    cardCurrentDirection.setText("无逆变充电电流");
+                    cardCurrentDirection.setText("无逆变充电流");
                 }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 无逆变放电电流(A):")){
-                    cardCurrentDirection.setText("无逆变放电电流");
+                    cardCurrentDirection.setText("无逆变放电流");
                 }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 充电电流(A):")){
                     cardCurrentDirection.setText("充电电流");
                 }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 放电电流(A):")){
@@ -906,18 +906,18 @@ public class MainActivity extends AppCompatActivity{
                 originTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 cardTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 if (total_cap==0){
-                    originTvDischarged.setText("📋 电池总容量: 待校准");
-                    cardTvDischarged.setText("📋 电池总容量: 待校准");
+                    originTvDischarged.setText("📋 当前窗口总容量: 待校准");
+                    cardTvDischarged.setText("📋 当前窗口总容量: 待校准");
                 }else {
-                    originTvDischarged.setText(String.format("📋 电池总容量: %.3f kWh", total_cap));
-                    cardTvDischarged.setText(String.format("📋 电池总容量: %.3f kWh", total_cap));
+                    originTvDischarged.setText(String.format("📋 当前窗口总容量: %.3f kWh", total_cap));
+                    cardTvDischarged.setText(String.format("📋 当前窗口总容量: %.3f kWh", total_cap));
                 }
                 if (total_cap==0){
-                    originTvAvailable.setText("🔋 电池可用电量: 待校准");
-                    cardTvAvailable.setText("🔋 电池可用电量: 待校准");
+                    originTvAvailable.setText("🔋 当前窗口可用电量: 待校准");
+                    cardTvAvailable.setText("🔋 当前窗口可用电量: 待校准");
                 }else {
-                    originTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
-                    cardTvAvailable.setText(String.format("🔋 电池可用电量: %.3f kWh", available_cap));
+                    originTvAvailable.setText(String.format("🔋 当前窗口可用电量: %.3f kWh", available_cap));
+                    cardTvAvailable.setText(String.format("🔋 当前窗口可用电量: %.3f kWh", available_cap));
                 }
                 //计算电池可用时长
                 // 光伏实时输出功率（W）
