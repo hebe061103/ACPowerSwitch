@@ -649,7 +649,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length >= 46) {
+                        if (info.length >= 47) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -685,20 +685,16 @@ public class MainActivity extends AppCompatActivity{
                             //光伏板电压
                             uiData.put("pv_voltage", info[11]);
                             //光伏板电流
-                            if (Float.parseFloat(info[13]) < 0.6) { //防止夜晚功率计算错误
+                            if (Float.parseFloat(info[13]) < 0.5) { //防止夜晚功率计算错误
                                 info[13] = String.valueOf(0);
                             }
-                            Float PV_I = Float.parseFloat(info[13]) * Float.parseFloat(info[9]) / Float.parseFloat(info[11]);
-                            String pv_current = df.format(PV_I);
-                            uiData.put("pv_current", pv_current);
+                            uiData.put("pv_current", info[13]);
                             //光伏实时输出功率
-                            Float pv_result = Float.parseFloat(info[11]) * PV_I;
-                            String pv_power = df.format(pv_result);
-                            uiData.put("光伏实时输出功率", pv_power);
+                            uiData.put("光伏实时输出功率", info[15]);
                             //逆变器不同模式下电池的充放电电流计算
                             //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
-                            float pw = Float.parseFloat(pv_power);//太阳能板的发电功率
-                            if (unicodeToString(info[17]).equals("逆变供电")) {
+                            float pw = Float.parseFloat(info[15]);//太阳能板的发电功率
+                            if (unicodeToString(info[19]).equals("逆变供电")) {
                                 //逆变供电模式下,逆变器为开启状态的充放电电流计算
                                 if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
@@ -707,7 +703,7 @@ public class MainActivity extends AppCompatActivity{
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
-                            } else if (unicodeToString(info[17]).equals("市电供电")) {
+                            } else if (unicodeToString(info[19]).equals("市电供电")) {
                                 //市电供电模式下,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
@@ -716,7 +712,7 @@ public class MainActivity extends AppCompatActivity{
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
-                            } else if (unicodeToString(info[17]).equals("电池电压过低")) {
+                            } else if (unicodeToString(info[19]).equals("电池电压过低")) {
                                 //电池电压过低,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
@@ -725,7 +721,7 @@ public class MainActivity extends AppCompatActivity{
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
                                 }
-                            } else if (unicodeToString(info[17]).equals("固定逆变模式")) {
+                            } else if (unicodeToString(info[19]).equals("固定逆变模式")) {
                                 //固定逆变模式下,逆变器为开启状态的充放电电流计算
                                 if (pw - ((Float.parseFloat(info[5]) + 30)) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
@@ -734,7 +730,7 @@ public class MainActivity extends AppCompatActivity{
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
                                     uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(info[5]) + 30) - pw) / Float.parseFloat(info[9])));
                                 }
-                            } else if (unicodeToString(info[17]).equals("固定市电模式")) {
+                            } else if (unicodeToString(info[19]).equals("固定市电模式")) {
                                 //固定市电模式下,逆变器为关闭状态的充放电电流计算
                                 if ((pw - 3.6) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
@@ -745,41 +741,41 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             }
                             //为MPTT散热片温度
-                            uiData.put("mptt温度", info[15] + "°C");
+                            uiData.put("mptt温度", info[17] + "°C");
                             //当前输出模式
-                            if (unicodeToString(info[17]).equals("电池电压过低")){
+                            if (unicodeToString(info[19]).equals("电池电压过低")){
                                 uiData.put("当前输出模式", "电池低压");
-                            }else if (unicodeToString(info[17]).equals("固定市电模式")){
+                            }else if (unicodeToString(info[19]).equals("固定市电模式")){
                                 uiData.put("当前输出模式", "固定市电");
-                            }else if (unicodeToString(info[17]).equals("固定逆变模式")){
+                            }else if (unicodeToString(info[19]).equals("固定逆变模式")){
                                 uiData.put("当前输出模式", "固定逆变");
                             }else{
-                                uiData.put("当前输出模式", unicodeToString(info[17]));
+                                uiData.put("当前输出模式", unicodeToString(info[19]));
                             }
                             //内存使用信息
-                            uiData.put("内存使用信息", info[19]);
+                            uiData.put("内存使用信息", info[21]);
                             //市电切换阈值
-                            safeSaveFlash(info, 21, "power");
+                            safeSaveFlash(info, 23, "power");
                             //电池低于此值则市电常开
-                            safeSaveFlash(info, 23, "low_voltage");
+                            safeSaveFlash(info, 25, "low_voltage");
                             //输出模式
-                            safeSaveFlash(info, 25, "out_mode");
+                            safeSaveFlash(info, 27, "out_mode");
                             //主功率板散执片风扇开启温度
-                            safeSaveFlash(info, 27, "mos_temp");
+                            safeSaveFlash(info, 29, "mos_temp");
                             //主功率板散热片实时温度
-                            String raw = info[29];
+                            String raw = info[31];
                             String readable = raw.replace("\\xb0", "°");
                             uiData.put("散热片实时温度", readable);
                             //主功率板散热风扇转速值
-                            uiData.put("散热风扇转速值", info[31]);
+                            uiData.put("散热风扇转速值", info[33]);
                             //开启逆变的电压阈值
-                            safeSaveFlash(info, 33, "open_pv_value");
-                            uiData.put("光伏发电度数计量", info[35]);
-                            uiData.put("电池充电度数计量", info[37]);
-                            uiData.put("电池放电度数计量", info[39]);
-                            uiData.put("电池健康度计量", info[41]);
-                            uiData.put("电池总容量计量", info[43]);
-                            uiData.put("电池可用容量计量", info[45]);
+                            safeSaveFlash(info, 35, "open_pv_value");
+                            uiData.put("光伏发电度数计量", info[37]);
+                            uiData.put("电池充电度数计量", info[39]);
+                            uiData.put("电池放电度数计量", info[41]);
+                            uiData.put("电池健康度计量", info[43]);
+                            uiData.put("电池总容量计量", info[45]);
+                            uiData.put("电池可用容量计量", info[47]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -791,7 +787,7 @@ public class MainActivity extends AppCompatActivity{
                     }
                     if (checkScreenStatus() && udp_response != null && udp_response.startsWith("live>") && udp_response.contains("mark3")){
                         about.log(TAG, "收到实时分时数据,更新分时图表");
-                        //live>16:30 26.8,39.9,1.5#h>15 0.03,mark3
+                        //live>16:30 26.8,39.9,1.5,50.0#h>15 0.03,mark3
                         String[] str = udp_response.split("#");
                         String[] min = str[0].split(">");
                         String[] _f = min[1].split(" ");
@@ -1096,8 +1092,7 @@ public class MainActivity extends AppCompatActivity{
                 String[] _u = _e[1].split(",");
                 _value_list.add(new Entry(i, Float.parseFloat(_u[0])));
                 //寻找光伏最大功率
-                float pv = Float.parseFloat(_u[2]) * Float.parseFloat(_u[0]) / Float.parseFloat(_u[1]);
-                float max_pv_power = pv * Float.parseFloat(_u[1]);
+                float max_pv_power = Float.parseFloat(_u[3]);
                 if (max_pv_power > maxValue) {
                     maxValue = max_pv_power;
                     maxEntry = new Entry(i, Float.parseFloat(_u[0]));
@@ -1750,22 +1745,14 @@ class CustomMarkerView extends MarkerView {
     @SuppressLint("SetTextI18n")
     @Override
     public void refreshContent(Entry e, Highlight highlight) {
-        DecimalFormat df = new DecimalFormat("#.##");
         String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
         m_year.setText(" " + MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
         m_time.setText(" " + _tmp[0]+":00");
         String [] all_data = _tmp[1].split(",");
         m_value.setText(" 电池电压:" + all_data[0]);
         pv_voltage.setText(" 光伏电压:" + all_data[1]);
-        if (Float.parseFloat(all_data[2]) < 0.6){
-            all_data[2] = String.valueOf(0);
-        }
-        Float _pv_i = Float.parseFloat(all_data[2]) * Float.parseFloat(all_data[0])/Float.parseFloat(all_data[1]);
-        String _pv_i_value = df.format(_pv_i);
-        pv_current.setText(" 光伏电流:" + _pv_i_value);
-        Float _pv_power = Float.parseFloat(all_data[1])* _pv_i;
-        String pv_power_result = df.format(_pv_power);
-        pv_power.setText(" 光伏功率:"+ pv_power_result);
+        pv_current.setText(" 光伏电流:" + all_data[2]);
+        pv_power.setText(" 光伏功率:"+ all_data[3]);
 
         super.refreshContent(e, highlight);
     }
