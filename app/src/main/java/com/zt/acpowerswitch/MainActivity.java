@@ -675,7 +675,7 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("ac_freq", info[7] + " hz");
                             //负载使用率
                             if (unicodeToString(info[19]).equals("逆变供电")) {
-                                String power_use = df.format((sj_power / Float.parseFloat(info[21]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
+                                String power_use = df.format((sj_power / Float.parseFloat(info[23]) * 100)) + " %"; //这里使用功率切换阈值作为最大功率
                                 uiData.put("power_use", power_use);
                             } else {
                                 uiData.put("power_use", "无限制");
