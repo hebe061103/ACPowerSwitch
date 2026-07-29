@@ -941,9 +941,10 @@ public class MainActivity extends AppCompatActivity{
                     } else {
                         double hours = availableCapWh / dcDischargePower;
                         long totalMinutes = Math.round(hours * 60);
-                        long h = totalMinutes / 60;
+                        long d = totalMinutes / (24 * 60);
+                        long h = (totalMinutes % (24 * 60)) / 60;
                         long m = totalMinutes % 60;
-                        useTimeStr = String.format("%d时%02d分", h, m);
+                        useTimeStr = String.format("%d天%02d时%02d分", d, h, m);
                     }
                 }
                 originBat_use_time.setText(useTimeStr);
