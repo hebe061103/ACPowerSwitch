@@ -944,7 +944,7 @@ public class MainActivity extends AppCompatActivity{
                         long d = totalMinutes / (24 * 60);
                         long h = (totalMinutes % (24 * 60)) / 60;
                         long m = totalMinutes % 60;
-                        useTimeStr = String.format("%d天%02d时%02d分", d, h, m);
+                        useTimeStr = String.format("%dD%02dH%02dM", d, h, m);
                     }
                 }
                 originBat_use_time.setText(useTimeStr);
