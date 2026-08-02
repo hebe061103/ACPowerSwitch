@@ -362,7 +362,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -389,7 +389,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -416,7 +416,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>
@@ -482,7 +482,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -509,7 +509,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -536,7 +536,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -563,7 +563,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="16sp"
+                            android:textSize="13sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>
@@ -629,7 +629,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -656,7 +656,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -683,7 +683,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
-                            android:textSize="16sp"
+                            android:textSize="14sp"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>
