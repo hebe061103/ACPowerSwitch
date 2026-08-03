@@ -34,8 +34,8 @@
                 tools:ignore="HardcodedText" />
             <ImageView
                 android:id="@+id/menu_img"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_marginTop="0dp"
                 android:layout_marginEnd="12dp"
                 android:contentDescription="菜单"
@@ -105,6 +105,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#85E91B"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -132,6 +133,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -159,6 +161,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#FDD835"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -186,6 +189,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -213,6 +217,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -240,6 +245,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -267,6 +273,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
                             android:textSize="16sp"
+                            android:hint="none"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -294,6 +301,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="16sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -363,6 +371,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -390,6 +399,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -415,8 +425,9 @@
                             android:id="@+id/pv_power_result"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#60EB66"
+                            android:textColor="#FDD835"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>
@@ -483,6 +494,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -510,6 +522,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -537,6 +550,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -553,7 +567,7 @@
                             android:id="@+id/textView20"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="可用时长"
+                            android:text="预计可用时长"
                             android:textColor="#78909C"
                             android:textSize="12sp"
                             tools:ignore="HardcodedText" />
@@ -563,7 +577,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>
@@ -630,6 +645,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -657,6 +673,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
 
@@ -684,6 +701,7 @@
                             android:layout_height="wrap_content"
                             android:textColor="#60EB66"
                             android:textSize="14sp"
+                            android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </GridLayout>

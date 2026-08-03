@@ -1,14 +1,18 @@
 package com.zt.acpowerswitch;
 
-import static com.zt.acpowerswitch.MainActivity.sleep;
 import static com.zt.acpowerswitch.MainActivity.tcpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
+
+import android.annotation.SuppressLint;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 public class TCPClient {
@@ -17,27 +21,51 @@ public class TCPClient {
     private InputStream inputStream;
     private OutputStream outputStream;
 
+    @SuppressLint("DefaultLocale")
     public boolean tcpConnect() {
-        try {
-            // 关闭旧连接
-            close();
+        final int MAX_RETRY = 3;
 
-            socket = new Socket();
-            // 设置连接超时时间为 3000ms
-            socket.connect(new InetSocketAddress(tcpServerAddress, tcpServerPort), 3000);
-            // 设置读取超时时间为 1000ms
-            socket.setSoTimeout(1000);
+        for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+            try {
+                // ✅ 关键：手动解析 DNS（每次都会重新解析）
+                InetAddress address = InetAddress.getByName(tcpServerAddress.trim());
 
-            inputStream = socket.getInputStream();
-            outputStream = socket.getOutputStream();
+                socket = new Socket();
+                socket.connect(new InetSocketAddress(address, tcpServerPort), 3000);
+                socket.setSoTimeout(1000);
 
-            about.log(TAG, "创建连接成功");
-            return true;
-        } catch (IOException e) {
-            about.log(TAG, "创建连接失败,2秒后重试: " + e.getMessage());
-            sleep(2000);
-            return false;
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+
+                about.log(TAG, String.format(
+                        "创建连接成功 | 域名=%s IP=%s 第%d次尝试",
+                        tcpServerAddress, address.getHostAddress(), attempt
+                ));
+                return true;
+
+            } catch (UnknownHostException e) {
+                about.log(TAG, String.format(
+                        "DNS解析失败 | 域名=%s 第%d/%d次 异常=%s",
+                        tcpServerAddress, attempt, MAX_RETRY, e.getClass().getSimpleName()
+                ));
+            } catch (IOException e) {
+                about.log(TAG, String.format(
+                        "创建连接异常 | 域名=%s 第%d/%d次 异常=%s 原因=%s",
+                        tcpServerAddress, attempt, MAX_RETRY,
+                        e.getClass().getSimpleName(), e.getMessage()
+                ));
+            }
+
+            // ✅ 指数退避
+            if (attempt < MAX_RETRY) {
+                try {
+                    Thread.sleep(500 * attempt);
+                } catch (InterruptedException ignored) {}
+            }
         }
+
+        about.log(TAG, "创建连接最终失败 | 域名=" + tcpServerAddress);
+        return false;
     }
 
     public void sendMessage(String message) {

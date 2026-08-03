@@ -392,8 +392,8 @@ public class MainActivity extends AppCompatActivity{
                     break;
                 }
             }
+            about.log(TAG, "线程调用完成");
         }).start();
-        about.log(TAG, "线程调用完成");
         if (originBatLineChart.isEmpty() || originPowerChart.isEmpty() || cardBatLineChart.isEmpty() || cardPowerChart.isEmpty()) {
             new Thread(() -> {
                 while (socket == null || originOutVoltage.getText().toString().isEmpty() || cardOutVoltage.getText().toString().isEmpty()) {
@@ -934,15 +934,15 @@ public class MainActivity extends AppCompatActivity{
                 } else {
                     // 光伏不足，电池需要放电
                     // 交流缺口折算到直流侧
-                    float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff;
-
-                    if (dcDischargePower <= 0) {
+                    float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
+                    // 防止极小放电功率导致“天文数字”
+                    if (dcDischargePower < 10f) {
                         useTimeStr = "无需放电";
                     } else {
                         double hours = availableCapWh / dcDischargePower;
-                        long totalMinutes = Math.round(hours * 60);
-                        long d = totalMinutes / (24 * 60);
-                        long h = (totalMinutes % (24 * 60)) / 60;
+                        long totalMinutes = (long)(hours * 60); // 偏保守
+                        long d = totalMinutes / 1440;
+                        long h = (totalMinutes % 1440) / 60;
                         long m = totalMinutes % 60;
                         useTimeStr = String.format("%d天%d时%02d分", d, h, m);
                     }
