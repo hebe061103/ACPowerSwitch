@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView originPvPowerResult, cardPvPowerResult;
 
     // ===== 电池系统 =====
-    private TextView originBatVoltage, cardBatVoltage;
+    private TextView originBatVoltage, cardBatVoltage ,cardone_bat_Voltage;
     private TextView originBatOutCurrent, cardBatOutCurrent;
     private TextView originBatHealthCap, cardBatHealthCap;
     private TextView originBat_use_time, cardBat_use_time;
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView originTemp1Value, cardTemp1Value;
     private TextView originFanValue, cardFanValue;
 
-    // ===== 电池统计 =====
+    // ===== 电量统计 =====
     private TextView originPvCharged, cardPvCharged;
     private TextView originTvRollover, cardTvRollover;
     private TextView originTvCharged, cardTvCharged;
@@ -255,6 +255,7 @@ public class MainActivity extends AppCompatActivity{
 
         // 电池系统
         cardBatVoltage = cardView.findViewById(R.id.bat_Voltage);
+        cardone_bat_Voltage = cardView.findViewById(R.id.one_bat_Voltage);
         cardBatOutCurrent = cardView.findViewById(R.id.bat_out_current);
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
         cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
@@ -682,6 +683,9 @@ public class MainActivity extends AppCompatActivity{
                             }
                             //储能电池电压
                             uiData.put("bat_voltage", info[9]);
+                            //单电池电压
+                            String alone_bat_voltage = df.format(Float.parseFloat(Objects.requireNonNull(info[9]))/8);
+                            uiData.put("alone_bat_voltage",alone_bat_voltage);
                             //光伏板电压
                             uiData.put("pv_voltage", info[11]);
                             //光伏板电流
@@ -848,6 +852,7 @@ public class MainActivity extends AppCompatActivity{
                 //电池电压
                 originBatVoltage.setText(uiData.get("bat_voltage"));
                 cardBatVoltage.setText(uiData.get("bat_voltage"));
+                cardone_bat_Voltage.setText(uiData.get("alone_bat_voltage"));
                 //光伏电压
                 originSunVoltageValue.setText(uiData.get("pv_voltage"));
                 cardSunVoltageValue.setText(uiData.get("pv_voltage"));

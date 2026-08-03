@@ -464,8 +464,8 @@
                 <GridLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:columnCount="4"
+                    android:layout_marginTop="8dp"
+                    android:columnCount="3"
                     android:rowCount="2"
                     android:alignmentMode="alignBounds"
                     android:useDefaultMargins="true">
@@ -483,13 +483,41 @@
                             android:id="@+id/bat_1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="电池电压"
+                            android:text="电池组串电压"
                             android:textColor="#78909C"
                             android:textSize="12sp"
                             tools:ignore="HardcodedText" />
 
                         <TextView
                             android:id="@+id/bat_Voltage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#24D9EF"
+                            android:textSize="14sp"
+                            android:hint="0.0"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
+
+                    <!-- 单颗电池电压 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/one_bat_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="单颗电压"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/one_bat_Voltage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="#24D9EF"
@@ -720,7 +748,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:ignore="TooManyViews">
 
                 <!-- 电池充放电图表 -->
                 <TextView
@@ -793,7 +822,7 @@
                                 android:id="@+id/tv_charged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                
+
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -802,7 +831,7 @@
                                 android:id="@+id/tv_discharged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                
+
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -811,7 +840,7 @@
                                 android:id="@+id/tv_available"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                
+
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
