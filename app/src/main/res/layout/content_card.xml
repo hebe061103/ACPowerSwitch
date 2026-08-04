@@ -511,7 +511,7 @@
                             android:id="@+id/one_bat_1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="单颗电压"
+                            android:text="单节电压"
                             android:textColor="#78909C"
                             android:textSize="12sp"
                             tools:ignore="HardcodedText" />
