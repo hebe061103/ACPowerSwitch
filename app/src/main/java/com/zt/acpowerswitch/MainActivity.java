@@ -58,13 +58,11 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.DefaultValueFormatter;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
-import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.MPPointF;
-import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.scwang.smart.refresh.header.MaterialHeader;
 import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 
@@ -944,12 +942,16 @@ public class MainActivity extends AppCompatActivity{
                     if (dcDischargePower < 10f) {
                         useTimeStr = "无需放电";
                     } else {
-                        double hours = availableCapWh / dcDischargePower;
-                        long totalMinutes = (long)(hours * 60); // 偏保守
-                        long d = totalMinutes / 1440;
-                        long h = (totalMinutes % 1440) / 60;
-                        long m = totalMinutes % 60;
-                        useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                        if (Objects.requireNonNull(uiData.get("当前输出模式")).contains("逆变")) {
+                            double hours = availableCapWh / dcDischargePower;
+                            long totalMinutes = (long) (hours * 60); // 偏保守
+                            long d = totalMinutes / 1440;
+                            long h = (totalMinutes % 1440) / 60;
+                            long m = totalMinutes % 60;
+                            useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                        }else{
+                            useTimeStr = "任意时长";
+                        }
                     }
                 }
                 originBat_use_time.setText(useTimeStr);
@@ -1431,8 +1433,12 @@ public class MainActivity extends AppCompatActivity{
         XAxis xAxis = carChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         YAxis leftAxis = carChart.getAxisLeft();//左侧Y轴保留两位小数
-        leftAxis.setValueFormatter((value, axis) -> {
-            return String.format("%.2f", value); // value 就是坐标轴上的数值
+        leftAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getAxisLabel(float value, AxisBase axis) {
+                // 💡 确保这里使用的是逗号 ,
+                return String.format("%.2f", value);
+            }
         });
         carChart.getAxisRight().setEnabled(false);
         // X 轴网格
@@ -1491,7 +1497,13 @@ public class MainActivity extends AppCompatActivity{
     @NonNull
     private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
         BarDataSet dataSet = new BarDataSet(barChart, label);
-        dataSet.setValueFormatter((value, entry, dataSetIndex, viewPortHandler) -> String.format(Locale.getDefault(), "%.2f", value));// 自定义值格式
+        dataSet.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getBarLabel(BarEntry barEntry) {
+                // 💡 这里的 barEntry.getY() 才是具体的柱状图数值
+                return String.format(Locale.getDefault(), "%.2f", barEntry.getY());
+            }
+        });
         dataSet.setColors(Color.parseColor("#C5FD87"),
                 Color.parseColor("#F8F989"),
                 Color.parseColor("#F7D48C"),
@@ -1711,26 +1723,39 @@ public class MainActivity extends AppCompatActivity{
     }
 }
 
-class ExamModelOneXValueFormatter implements IAxisValueFormatter {
+// 💡 关键修改点 1：将 implements IAxisValueFormatter 改为 extends ValueFormatter
+class ExamModelOneXValueFormatter extends ValueFormatter {
     private final ArrayList<String> list;
 
     public ExamModelOneXValueFormatter(ArrayList<String> list) {
         this.list = list;
     }
+
+    // 💡 关键修改点 2：将 @Override 的方法名改为 getAxisLabel
     @Override
-    public String getFormattedValue(float value, AxisBase axis) {
+    public String getAxisLabel(float value, AxisBase axis) {
         int values = (int) value;
-        if (values <= 0 || values >= list.size()) {
+        // 建议增加一个 values < 0 的越界保护（原代码是 <= 0，如果是第0个元素可能会显示为空，根据你的需求决定是否保留 = 号）
+        if (values < 0 || values >= list.size()) {
             return "";
         }
         return list.get(values);
     }
 }
+
 /*数据值格式化器*/
-class NoValueFormatter implements IValueFormatter {
+class NoValueFormatter extends ValueFormatter {
+
+    // 💡 新版版本统一使用这个重载方法
     @Override
-    public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+    public String getPointLabel(Entry entry) {
         return ""; // 返回空字符串，不显示任何值
+    }
+
+    // 如果上面那个不生效，也可以同时重写这个旧版对应的方法
+    @Override
+    public String getFormattedValue(float value) {
+        return "";
     }
 }
 @SuppressLint("ViewConstructor")
