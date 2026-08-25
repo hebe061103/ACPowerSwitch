@@ -390,10 +390,12 @@ public class MainActivity extends AppCompatActivity{
                     mData_pro_thread();
                     break;
                 }
+                if (Thread_Run) {
+                    about.log(TAG, "线程调用完成");
+                }
             }
-            about.log(TAG, "线程调用完成");
         }).start();
-        if (originBatLineChart.isEmpty() || originPowerChart.isEmpty() || cardBatLineChart.isEmpty() || cardPowerChart.isEmpty()) {
+        if (_min_bat_list == null || _min_bat_list.isEmpty()) {
             new Thread(() -> {
                 while (socket == null || originOutVoltage.getText().toString().isEmpty() || cardOutVoltage.getText().toString().isEmpty()) {
                     try {
@@ -1776,14 +1778,14 @@ class CustomMarkerView extends MarkerView {
     @SuppressLint("SetTextI18n")
     @Override
     public void refreshContent(Entry e, Highlight highlight) {
-        String [] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        m_year.setText(" " + MainActivity.year +"-"+ MainActivity.month+ "-" +MainActivity.day);
-        m_time.setText(" " + _tmp[0]+":00");
-        String [] all_data = _tmp[1].split(",");
+        String[] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
+        m_year.setText(" " + MainActivity.year + "-" + MainActivity.month + "-" + MainActivity.day);
+        m_time.setText(" " + _tmp[0] + ":00");
+        String[] all_data = _tmp[1].split(",");
         m_value.setText(" 电池电压:" + all_data[0]);
         pv_voltage.setText(" 光伏电压:" + all_data[1]);
         pv_current.setText(" 光伏电流:" + all_data[2]);
-        pv_power.setText(" 光伏功率:"+ all_data[3]);
+        pv_power.setText(" 光伏功率:" + all_data[3]);
 
         super.refreshContent(e, highlight);
     }
