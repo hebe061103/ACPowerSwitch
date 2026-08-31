@@ -111,6 +111,8 @@ public class MainActivity extends AppCompatActivity{
     private float startX = 0f;
     private float startY = 0f;
     private ViewSwitcher viewSwitcher;
+    private static final int MAX_RETRY = 3;
+    private static int retryCount = 0;
     // ===== 交流输出 =====
     private TextView originOutVoltage, cardOutVoltage;
     private TextView originOutCurrent, cardOutCurrent;
@@ -1077,11 +1079,13 @@ public class MainActivity extends AppCompatActivity{
                 data_rec_finish = true;
             }
         }
-        if (!data_rec_finish){
+        if (!data_rec_finish && retryCount < MAX_RETRY ){
+            retryCount++;
             about.log(TAG, "数据不完整,再次请求!");
-            sleep(2000);
+            sleep(3000);
             pro_data_request();
         }
+        retryCount = 0;
         stop_send = false;
         request_homepage_run = false;
         smartRefreshLayout.finishRefresh();
