@@ -1,9 +1,6 @@
 package com.zt.acpowerswitch;
 
-import static com.zt.acpowerswitch.BleClientActivity.chara;
-import static com.zt.acpowerswitch.BleClientActivity.write_data_ble;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
-import static com.zt.acpowerswitch.MainActivity.saveData;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -40,35 +37,22 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
     public static List<String> wifilist = new ArrayList<>();
     public static AlertDialog.Builder builder;
     public  wifiListAdapter mRecycler;
-    public String wifi_ap_name,IP_address;
+    public String wifi_ap_name;
     public ProgressDialog pd;
     private TextView tvStatus;
     public WifiManager wifiManager;
     public WiFiConnectionHelper wifiHelper;
-    public String tmp;
 
     @SuppressLint("SetTextI18n")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate called, taskId: " + getTaskId() +
-                ", intent: " + getIntent() +
-                ", hashCode: " + hashCode());
         setContentView(R.layout.wifi_list_activity);
         tvStatus = findViewById(R.id.tvStatus);
         pd = new ProgressDialog(WifiListActivity.this);
-        Intent intent = getIntent();
-        if (intent != null) {
-            tmp = intent.getStringExtra("value");
-        }
-        if (tmp!=null && tmp.equals("wf")) {
-            get_wifi_info();
-            wifiHelper = new WiFiConnectionHelper(this, this);
-            tvStatus.setText("正在检查WiFi连接...");
-            wifiHelper.startChecking();
-        }
-        if (tmp!=null && tmp.equals("bl")) {
-            get_wifi_info();
-        }
+        get_wifi_info();
+        wifiHelper = new WiFiConnectionHelper(this, this);
+        tvStatus.setText("正在检查WiFi连接...");
+        wifiHelper.startChecking();
         display_wifiList();
     }
     public void get_wifi_info(){
@@ -101,35 +85,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
         mRecycler = new wifiListAdapter(wifilist, WifiListActivity.this);
         mRecyclerViewList.setAdapter(mRecycler);
     }
-    private void bl_send_data(String data) {
-        pd.setMessage("正在设置WIFI,请稍等......");
-        pd.show();
-        pd.setCancelable(false);
-        Thread thread = new Thread(() -> {
-            int readLength = 10; // 设置每次读取的字符数量
-            int stringLength = data.length(); // 获取字符串的总长度
-            about.log(TAG, "发送字符的总长度:" + stringLength);
-            write_data_ble("len:"+ stringLength);
-            sleep(2000);
-            for (int i = 0; i < stringLength; i += readLength) {
-                // 计算还剩多少字符可以读取
-                int remaining = stringLength - i;
-                // 如果剩余字符数少于readLength，则本次读取应该少于或等于剩余的字符数
-                if (remaining < readLength) {
-                    readLength = remaining;
-                }
-                // 使用substring方法读取字符串
-                String readString = data.substring(i, i + readLength);
-                write_data_ble(readString);
-                sleep(1000);
-            }
-            write_data_ble("&");
-            about.log(TAG, "分包发送完成");
-            sleep(1000);
-            wait_callback(); //刷新连接状态
-        });
-        thread.start();
-    }
 
     private void wifi_send_data(String data) {
         @SuppressLint("DefaultLocale") Thread thread = new Thread(() -> {
@@ -156,7 +111,7 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
                 byte[] byte_data = data.getBytes(StandardCharsets.UTF_8);
                 DatagramPacket packet = new DatagramPacket(byte_data, byte_data.length, InetAddress.getByName(ip), 5000);
                 udpSocket.send(packet);
-                about.log(TAG, "UDP数据发送成功");
+                about.log(TAG, "数据发送成功");
 
                 // 3. 开始接收返回信息
                 byte[] receiveData = new byte[1024];
@@ -175,7 +130,7 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
                     // 4. 业务逻辑判断（移入成功的逻辑块内，避免超时崩溃）
                     if (str.equals(data)) {
                         Message message = new Message();
-                        message.what = 6;
+                        message.what = 2;
                         myHandler.sendMessage(message);
                     }
                 } else {
@@ -198,121 +153,32 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
         thread.start();
     }
 
-    public void wait_callback(){
-        Thread thread = new Thread(() -> {
-            while(true) {
-                if (chara != null && chara.contains("rec_ok")) {
-                    about.log(TAG, "发送成功");
-                    Message message = new Message();
-                    message.what = 2;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("rec_error")) {
-                    about.log(TAG, "发送失败");
-                    Message message = new Message();
-                    message.what = 3;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("pass_err")) {
-                    about.log(TAG, "密码错误");
-                    Message message = new Message();
-                    message.what = 4;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                }else if (chara != null && chara.contains("IP:")) {
-                    about.log(TAG, "接收IP成功");
-                    IP_address = chara;
-                    Message message = new Message();
-                    message.what = 5;
-                    myHandler.sendMessage(message);
-                    chara = "";
-                    break;
-                }
-            }
-        });
-        thread.start();
-    }
-
     @SuppressLint("HandlerLeak")
     Handler myHandler = new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
                 mRecycler.setRecyclerItemClickListener(position -> {
-                    if (tmp.equals("bl")){
-                        goAnim(WifiListActivity.this,50);
-                        EditText editText = new EditText(WifiListActivity.this);
-                        new AlertDialog.Builder(WifiListActivity.this)
-                                .setTitle("请输入密码")
-                                .setMessage(wifilist.get(position))
-                                .setView(editText)
-                                .setPositiveButton("取消", null)
-                                .setNegativeButton("确定", (dialog, which) -> {
-                                    goAnim(WifiListActivity.this, 50);
-                                    if (!editText.getText().toString().isEmpty()) {
-                                        String inputText = editText.getText().toString();
-                                        String ble_data = "{" + "\"" + "ssid" + "\"" + ":" + "\"" + wifilist.get(position) + "\"" + "," + "\"" + "password" + "\"" + ":" + "\"" + inputText + "\"" + "}";
-                                        about.log(TAG, "发送数据:" + ble_data);
-                                        wifi_ap_name=wifilist.get(position);
-                                        bl_send_data(ble_data);
-                                    }
-                                })
-                                .show();
-                    } else if (tmp.equals("wf")){
-                        goAnim(WifiListActivity.this,50);
-                        EditText editText = new EditText(WifiListActivity.this);
-                        new AlertDialog.Builder(WifiListActivity.this)
-                                .setTitle("请输入密码")
-                                .setMessage(wifilist.get(position))
-                                .setView(editText)
-                                .setPositiveButton("取消", null)
-                                .setNegativeButton("确定", (dialog, which) -> {
-                                    goAnim(WifiListActivity.this, 50);
-                                    if (!editText.getText().toString().isEmpty()) {
-                                        String inputText = editText.getText().toString();
-                                        String wf_data = "apinfo:" + wifilist.get(position) +":"+ inputText;
-                                        about.log(TAG, "发送数据:" + wf_data);
-                                        wifi_ap_name=wifilist.get(position);
-                                        wifi_send_data(wf_data);
-                                    }
-                                })
-                                .show();
-                    }
-
+                    goAnim(WifiListActivity.this,50);
+                    EditText editText = new EditText(WifiListActivity.this);
+                    new AlertDialog.Builder(WifiListActivity.this)
+                        .setTitle("请输入密码")
+                        .setMessage(wifilist.get(position))
+                        .setView(editText)
+                        .setPositiveButton("取消", null)
+                        .setNegativeButton("确定", (dialog, which) -> {
+                            goAnim(WifiListActivity.this, 50);
+                            if (!editText.getText().toString().isEmpty()) {
+                                String inputText = editText.getText().toString();
+                                String wf_data = "apinfo:" + wifilist.get(position) +":"+ inputText;
+                                about.log(TAG, "发送数据:" + wf_data);
+                                wifi_ap_name=wifilist.get(position);
+                                wifi_send_data(wf_data);
+                            }
+                        })
+                        .show();
                 });
             }
-            if (msg.what == 2) {
-                pd.dismiss();
-                pd.setMessage("设置成功，正在重启模块，请稍后......");
-                pd.show();
-                pd.setCancelable(false);
-            }
-            if (msg.what == 3) {
-                pd.dismiss();
-                builder.setTitle("提醒"); // 设置弹窗的标题
-                builder.setMessage("设置失败，请重新设置"); // 设置弹窗的消息内容
-                builder.show();
-
-            }
-            if (msg.what == 4) {
-                pd.dismiss();
-                builder.setTitle("提醒"); // 设置弹窗的标题
-                builder.setMessage("密码错误，请重新设置"); // 设置弹窗的消息内容
-                builder.show();
-            }
-            if (msg.what == 5) {
-                pd.dismiss();
-                builder.setTitle("提醒"); // 设置弹窗的标题
-                builder.setMessage("OK,成功连接到热点:"+ wifi_ap_name); // 设置弹窗的消息内容
-                builder.show();
-                if (IP_address != null && IP_address.contains("IP:")) {
-                    about.log(TAG, "蓝牙返回的IP:" + IP_address);
-                    String[] parts = IP_address.split(":");
-                    saveData("wifi_ip",parts[1].trim());
-                    about.log(TAG, "IP保存成功");
-                    IP_address="";
-                }
-            }
-            if (msg.what == 6){
+            if (msg.what == 2){
                 new AlertDialog.Builder(WifiListActivity.this)
                 .setTitle("提示")
                 .setMessage("WIFI配置成功,是否返回主界面?")
@@ -326,21 +192,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
             }
         }
     };
-    public void sleep(int s){
-        try {
-            Thread.sleep(s);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    protected void onDestroy(){
-        super.onDestroy();
-    }
 
     @Override
     public void onBackPressed() {
@@ -348,7 +199,6 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
         if (wifilist != null) {
             wifilist.clear();
         }
-        tmp = null;
         super.onBackPressed();
     }
 

@@ -46,49 +46,26 @@
         tools:ignore="HardcodedText,TextFields,TextContrastCheck,DuplicateSpeakableTextCheck" />
 
     <TextView
-        android:id="@+id/textView14"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="方式一:使用蓝牙配置逆变器网络"
-        android:textColor="#30BF09"
-        android:textSize="15sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView24"
-        tools:ignore="HardcodedText,TextContrastCheck" />
-
-    <TextView
         android:id="@+id/textView15"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
-        android:text="方式二:使用WIFI配置逆变器网络"
+        android:text="使用逆变器热点配置逆变器网络"
         android:textColor="#30BF09"
         android:textSize="15sp"
+        android:layout_marginTop="20dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView14"
-        tools:ignore="HardcodedText,TextContrastCheck" />
-
-    <Button
-        android:id="@+id/bl_ip_get"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="4dp"
-        android:text="配置网络"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView24"
-        tools:ignore="HardcodedText,DuplicateSpeakableTextCheck" />
+        tools:ignore="HardcodedText,TextContrastCheck" />
 
     <Button
         android:id="@+id/wf_ip_get"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
         android:layout_marginEnd="4dp"
         android:text="配置网络"
+        android:layout_marginTop="10dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView14"
+        app:layout_constraintTop_toBottomOf="@+id/textView24"
         tools:ignore="HardcodedText" />
 
     <Button
@@ -118,7 +95,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
-        android:text="配置手机APP网络:"
+        android:text="配置当前APP访问网络:"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView15"

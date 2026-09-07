@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -20,7 +19,7 @@ import java.util.regex.Pattern;
 
 public class set_tcp_page extends AppCompatActivity {
     //private static final String TAG = "set_tcp_page:";
-    public Button bl_ip_get,wf_ip_get,manual_set;
+    public Button wf_ip_get,manual_set;
     private long lastBack = 0;
     public EditText ip_input;
 
@@ -28,7 +27,6 @@ public class set_tcp_page extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.set_tcp_activity);
-        bl_ip_get = findViewById(R.id.bl_ip_get);
         manual_set = findViewById(R.id.manual_set);
         ip_input = findViewById(R.id.ip_input);
         wf_ip_get = findViewById(R.id.wf_ip_get);
@@ -38,11 +36,6 @@ public class set_tcp_page extends AppCompatActivity {
         if (!TextUtils.isEmpty(wifiIp) && !TextUtils.isEmpty(tcpPort)) {
             ip_input.setText(wifiIp + ":" + tcpPort);
         }
-        bl_ip_get.setOnClickListener((View view) -> {
-            goAnim(set_tcp_page.this,50);
-            Intent intent = new Intent(set_tcp_page.this, BleClientActivity.class);
-            startActivities(new Intent[]{intent});
-        });
 
         wf_ip_get.setOnClickListener(view -> {
             goAnim(set_tcp_page.this,50);
