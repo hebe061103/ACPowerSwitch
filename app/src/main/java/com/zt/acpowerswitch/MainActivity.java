@@ -909,18 +909,18 @@ public class MainActivity extends AppCompatActivity{
                 originTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 cardTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 if (total_cap==0){
-                    originTvDischarged.setText("📋 当前窗口总容量: 待校准");
-                    cardTvDischarged.setText("📋 当前窗口总容量: 待校准");
+                    originTvDischarged.setText("📋 当前电池总容量: 待校准");
+                    cardTvDischarged.setText("📋 当前电池总容量: 待校准");
                 }else {
-                    originTvDischarged.setText(String.format("📋 当前窗口总容量: %.3f kWh", total_cap));
-                    cardTvDischarged.setText(String.format("📋 当前窗口总容量: %.3f kWh", total_cap));
+                    originTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
+                    cardTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
                 }
-                if (total_cap==0){
-                    originTvAvailable.setText("🔋 当前窗口可用电量: 待校准");
-                    cardTvAvailable.setText("🔋 当前窗口可用电量: 待校准");
+                if (available_cap==0){
+                    originTvAvailable.setText("🔋 当前电池可用电量: 待校准");
+                    cardTvAvailable.setText("🔋 当前电池可用电量: 待校准");
                 }else {
-                    originTvAvailable.setText(String.format("🔋 当前窗口可用电量: %.3f kWh", available_cap));
-                    cardTvAvailable.setText(String.format("🔋 当前窗口可用电量: %.3f kWh", available_cap));
+                    originTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
+                    cardTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
                 }
                 //计算电池可用时长
                 // 光伏实时输出功率（W）
@@ -1237,7 +1237,7 @@ public class MainActivity extends AppCompatActivity{
 
         // 1. 更新内存使用百分比（这部分很快，可以保留在主线程）
         DecimalFormat decimalFormat = new DecimalFormat("#.0");
-        String formattedValue = decimalFormat.format(_mem/150 * 100);
+        String formattedValue = decimalFormat.format(_mem/126 * 100);
         MmUse.setText(formattedValue + "%");
 
         // 2. 优化后的图表更新逻辑
@@ -1293,9 +1293,9 @@ public class MainActivity extends AppCompatActivity{
         chart.getXAxis().setAxisMinimum(0f);
         chart.getXAxis().setAxisMaximum(100f);
         chart.getAxisLeft().setAxisMinimum(0f);
-        chart.getAxisLeft().setAxisMaximum(160f);
+        chart.getAxisLeft().setAxisMaximum(126f);
         chart.getAxisRight().setAxisMinimum(0f);
-        chart.getAxisRight().setAxisMaximum(160f);
+        chart.getAxisRight().setAxisMaximum(126f);
         // 设置动画
         chart.animateY(1000);
         LineData data = new LineData(mem_lineDataSet);
@@ -1315,7 +1315,7 @@ public class MainActivity extends AppCompatActivity{
             set.addEntry(new Entry(newIndex, memValue));
 
             // 动态更新图表标签
-            @SuppressLint("DefaultLocale") String label = String.format("设备内存使用情况(已使用:%.1f kb  空闲:%.1f kb)", memValue, 150 - memValue);
+            @SuppressLint("DefaultLocale") String label = String.format("设备内存使用情况(已使用:%.1f kb  空闲:%.1f kb)", memValue, 126 - memValue);
             set.setLabel(label);
 
             // 限制数据点数量（保持最近100个点）
