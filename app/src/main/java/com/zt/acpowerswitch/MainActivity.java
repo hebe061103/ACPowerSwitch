@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView originBatOutCurrent, cardBatOutCurrent;
     private TextView originBatHealthCap, cardBatHealthCap;
     private TextView originBat_use_time, cardBat_use_time;
+    private TextView cardswitch_point;
 
     // ===== 温度 & 风扇 =====
     private TextView originTemp0Value, cardTemp0Value;
@@ -259,6 +260,7 @@ public class MainActivity extends AppCompatActivity{
         cardBatOutCurrent = cardView.findViewById(R.id.bat_out_current);
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
         cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
+        cardswitch_point = cardView.findViewById(R.id.switch_point);
 
         // 温度 & 风扇
         cardTemp0Value = cardView.findViewById(R.id.temp0_value);
@@ -302,20 +304,6 @@ public class MainActivity extends AppCompatActivity{
         //设置 Header 为 贝塞尔雷达 样式
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
-            if (originBatLineChart.getData() != null || cardBatLineChart.getData() != null) {
-                originBatLineChart.clear();//清除15分钟图表
-                cardBatLineChart.clear();//清除15分钟卡片图表
-
-                originBatLineChart.invalidate(); // 使改变生效
-                cardBatLineChart.invalidate(); // 使改变生效
-            }
-            if (originPowerChart.getData() != null || cardPowerChart.getData() != null){
-                originPowerChart.clear();//清除小时图表
-                cardPowerChart.clear();//清除小时card图表
-
-                originPowerChart.invalidate(); // 使改变生效
-                cardPowerChart.invalidate(); // 使改变生效
-            }
             about.log(TAG, "下拉刷新");
             if (socket!=null) {
                 request_homepage_date();
@@ -652,7 +640,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length >= 47) {
+                        if (info.length >= 49) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -782,6 +770,7 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("电池健康度计量", info[43]);
                             uiData.put("电池总容量计量", info[45]);
                             uiData.put("电池可用容量计量", info[47]);
+                            uiData.put("电池低压切换点电压", info[49]);
 
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
@@ -960,6 +949,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 originBat_use_time.setText(useTimeStr);
                 cardBat_use_time.setText(useTimeStr);
+                cardswitch_point.setText(uiData.get("电池低压切换点电压"));
                 //计算电池健康度
                 float bat_healthy_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
                 if (bat_healthy_value > 0){

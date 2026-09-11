@@ -609,6 +609,33 @@
                             android:hint="0.0"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
+                    <!-- 电池低压切换点电压 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:id="@+id/textView21"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="电池低压切换点"
+                            android:textColor="#78909C"
+                            android:textSize="12sp"
+                            tools:ignore="HardcodedText" />
+
+                        <TextView
+                            android:id="@+id/switch_point"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#24D9EF"
+                            android:textSize="14sp"
+                            android:hint="0.0"
+                            tools:ignore="HardcodedText" />
+                    </LinearLayout>
                 </GridLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
