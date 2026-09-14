@@ -640,7 +640,7 @@ public class MainActivity extends AppCompatActivity{
                         String modifiedString = udp_response.substring(1, udp_response.length() - 1);
                         modifiedString = modifiedString.replace("'", "").replace(",", ":").replace(" ", "");
                         info = modifiedString.split(":");
-                        if (info.length >= 49) {
+                        if (info.length >= 53) {
                             DecimalFormat df = new DecimalFormat("#.##");
                             Float sj_power = 0.0F;
                             //交流电压
@@ -771,7 +771,11 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("电池总容量计量", info[45]);
                             uiData.put("电池可用容量计量", info[47]);
                             uiData.put("电池低压切换点电压", info[49]);
-
+                            // 光耦和电阻的物理硬件延迟误差
+                            safeSaveFlash(info, 51, "hardware_offset_us");
+                            // 极致锁相峰值微秒差
+                            safeSaveFlash(info, 53, "lock_us_diff");
+                            // 通知数据刷新
                             Message message = messageProHandler.obtainMessage();
                             message.what = 1;
                             message.obj = uiData;  // 将计算结果放入Message

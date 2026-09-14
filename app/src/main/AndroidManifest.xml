@@ -49,9 +49,6 @@
         <activity android:name="com.zt.acpowerswitch.about"
             android:configChanges="orientation|screenSize|keyboardHidden"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
-        <activity android:name="com.zt.acpowerswitch.BleClientActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity android:name="com.zt.acpowerswitch.WifiListActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:launchMode="singleInstance"

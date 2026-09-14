@@ -16,8 +16,11 @@ import static com.zt.acpowerswitch.set_tcp_page.isValidIPv4;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,8 +30,13 @@ import androidx.appcompat.app.AppCompatActivity;
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     public String _tmp;
+    public SeekBar seekBar;
+    public TextView tvValue;
     private volatile boolean mShouldCheckMode = true;
-    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable saveRunnable;
+
+    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode,lock_us_diff;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,8 +44,9 @@ public class otherOption extends AppCompatActivity {
         str_pro();
         new Thread(() -> {
             while (mShouldCheckMode) {
-                if (readDate(otherOption.this,"out_mode")!=null && !readDate(otherOption.this, "out_mode").equals(_tmp)) {
-                    _tmp = readDate(otherOption.this, "out_mode");
+                String saved_out_mode = readDate(otherOption.this, "out_mode");
+                if (saved_out_mode != null) {
+                    _tmp = saved_out_mode;
                     runOnUiThread(this::out_mode_display);
                 }
                 try {
@@ -51,48 +60,123 @@ public class otherOption extends AppCompatActivity {
 
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     public void str_pro() {
+        //校准光耦和电阻的物理硬件延迟误差,硬件补偿值
+        seekBar = findViewById(R.id.mySeekBar);
+        tvValue = findViewById(R.id.tvSliderValue);
+        String saved_hardware_offset_us = readDate(otherOption.this, "hardware_offset_us");
+        if (saved_hardware_offset_us != null) {
+            int value = (int) Float.parseFloat(saved_hardware_offset_us);
+            tvValue.setText("当前微调数值: " + value);
+            seekBar.setProgress(2000 + value);
+        }
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int value = progress - 2000;  // ✅ 映射为 -2000 ~ 2000
+                tvValue.setText("当前微调数值: " + value);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                Log.i(TAG,"先暂停发送数据");
+                MainActivity.stop_send = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                String hardware_offset_us = String.valueOf(seekBar.getProgress() - 2000);
+                if (send_command_to_server("lock_us:"+ hardware_offset_us)){
+                    MainActivity.saveData("hardware_offset_us", hardware_offset_us);
+                }
+            }
+        });
+        TextView btnMinus = findViewById(R.id.btnMinus); //点击"-"
+        btnMinus.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            int m = seekBar.getProgress() - 2000;
+            if (m > -2000) {  // 防止越界
+                m--;
+            }
+            tvValue.setText("当前微调数值: " + m); // 更新文字
+            seekBar.setProgress(m + 2000); // 同步更新滑块位置
+            // 先取消上一次未执行的任务
+            if (saveRunnable != null) {
+                handler.removeCallbacks(saveRunnable);
+            }
+            // 重新定义任务
+            int finalM = m;
+            saveRunnable = () -> {
+                if (send_command_to_server("lock_us:" + finalM)) {
+                    MainActivity.saveData("hardware_offset_us", String.valueOf(finalM));
+                }
+            };
+            // 延时3秒没有再次点击则执行
+            handler.postDelayed(saveRunnable, 3000);
+        });
+
+        TextView btnPlus = findViewById(R.id.btnPlus); // 点击"+"
+        btnPlus.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            int m = seekBar.getProgress() - 2000;
+            if (m < 2000) {  // 防止越界
+                m++;
+            }
+            tvValue.setText("当前微调数值: " + m); // 更新文字
+            seekBar.setProgress(m + 2000); // 同步更新滑块位置
+            // 先取消上一次未执行的任务
+            if (saveRunnable != null) {
+                handler.removeCallbacks(saveRunnable);
+            }
+            // 重新定义任务
+            int finalM = m;
+            saveRunnable = () -> {
+                if (send_command_to_server("lock_us:" + finalM)) {
+                    MainActivity.saveData("hardware_offset_us", String.valueOf(finalM));
+                }
+            };
+            // 延时3秒没有再次点击则执行
+            handler.postDelayed(saveRunnable, 3000);
+        });
         //逆变器IP设置
         target_ip = findViewById(R.id.target_ip);
-        if (readDate(otherOption.this, "wifi_ip") != null) {
-            target_ip.setText(readDate(otherOption.this, "wifi_ip"));
-        }
+        String saved_wifi_ip = readDate(otherOption.this, "wifi_ip");
+        target_ip.setText(saved_wifi_ip != null ? saved_wifi_ip : "");
         target_ip.setOnClickListener(view -> send_arg_server("逆变器IP设置"));
         //逆变器端口设置
         target_port = findViewById(R.id.target_port);
-        if (readDate(otherOption.this, "tcpServerPort") != null) {
-            target_port.setText(readDate(otherOption.this, "tcpServerPort"));
-        }
+        String saved_tcpServerPort = readDate(otherOption.this, "tcpServerPort");
+        target_port.setText(saved_tcpServerPort != null ? saved_tcpServerPort : "");
         target_port.setOnClickListener(view -> send_arg_server("逆变器端口设置"));
         //功率设置
         w_edit = findViewById(R.id.w_edit);
-        if (readDate(otherOption.this, "power") != null) {
-            w_edit.setText(readDate(otherOption.this, "power"));
-        }
+        String saved_power = readDate(otherOption.this, "power");
+        w_edit.setText(saved_power != null ? saved_power : "");
         w_edit.setOnClickListener(view -> send_arg_server("功率参数设置"));
         //开启逆变阈值
         open_pv_value = findViewById(R.id.open_pv_value);
-        if (readDate(otherOption.this, "open_pv_value") != null) {
-            open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
-        }
+        String saved_open_pv_value = readDate(otherOption.this, "open_pv_value");
+        open_pv_value.setText(saved_open_pv_value != null ? saved_open_pv_value : "");
         open_pv_value.setOnClickListener(view -> send_arg_server("开启逆变阈值"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
-        if (readDate(otherOption.this, "low_voltage") != null) {
-            low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
-        }
+        String saved_low_voltage = readDate(otherOption.this, "low_voltage");
+        low_voltage_set.setText(saved_low_voltage != null ? saved_low_voltage : "");
         low_voltage_set.setOnClickListener(view -> send_arg_server("最低电压值"));
         //MOS风扇温度触发值设置
         mos_trigger_value = findViewById(R.id.mos_trigger_value);
-        if (readDate(otherOption.this, "mos_temp") != null) {
-            mos_trigger_value.setText(readDate(otherOption.this, "mos_temp"));
-        }
+        String saved_mos_temp = readDate(otherOption.this, "mos_temp");
+        mos_trigger_value.setText(saved_mos_temp != null ? saved_mos_temp : "");
         mos_trigger_value.setOnClickListener(view -> send_arg_server("MOS温度触发值"));
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
-        if (readDate(otherOption.this, "refresh_time") != null) {
-            refresh_time_set.setText(readDate(otherOption.this, "refresh_time"));
-        }
+        String saved_refresh_time = readDate(otherOption.this, "refresh_time");
+        refresh_time_set.setText(saved_refresh_time != null ? saved_refresh_time : "");
         refresh_time_set.setOnClickListener(view -> send_arg_server("页面刷新时间设置"));
+        //极致锁相峰值误差范围
+        lock_us_diff = findViewById(R.id.lock_us_diff);
+        String saved_lock_us_diff = readDate(otherOption.this, "lock_us_diff");
+        lock_us_diff.setText(saved_lock_us_diff != null ? saved_lock_us_diff : "");
+        lock_us_diff.setOnClickListener(view -> send_arg_server("极致锁相峰值误差范围"));
         //输出模式
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
@@ -152,17 +236,18 @@ public class otherOption extends AppCompatActivity {
     }
 
     public void out_mode_display() {
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("自动模式")) {
+        String saved_out_mode = readDate(otherOption.this, "out_mode");
+        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("自动模式")) {
             auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             power_grid_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("市电模式")) {
+        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("市电模式")) {
             power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (readDate(otherOption.this, "out_mode") != null && unicodeToString(readDate(otherOption.this, "out_mode")).equals("逆变模式")) {
+        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("逆变模式")) {
             pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             power_grid_mode.setBackground(null);
@@ -202,6 +287,12 @@ public class otherOption extends AppCompatActivity {
                         if (!editText.getText().toString().isEmpty()) {
                             refresh_time_set.setText(editText.getText());
                             refresh_time_set();
+                        }
+                        break;
+                    case "极致锁相峰值误差范围":
+                        if (!editText.getText().toString().isEmpty()) {
+                            lock_us_diff.setText(editText.getText());
+                            lock_us_diff_set();
                         }
                         break;
                     case "MOS温度触发值":
@@ -337,6 +428,38 @@ public class otherOption extends AppCompatActivity {
                 Looper.loop();
             }
         }
+    }
+    public void lock_us_diff_set() {
+        new Thread(() -> {
+            if (!lock_us_diff.getText().toString().isEmpty() && !lock_us_diff.getText().toString().equals(readDate(otherOption.this, "lock_us_diff"))) {
+                about.log(TAG, "最低极致锁相峰值微秒值改变,发送参数到服务端");
+                if (isInteger(lock_us_diff.getText().toString()) && Integer.parseInt(lock_us_diff.getText().toString()) > 0) {
+                    runOnUiThread(() -> {
+                        if (send_command_to_server("lock_us_diff:" + lock_us_diff.getText().toString())){
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置成功!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        saveData("lock_us_diff", lock_us_diff.getText().toString());
+                                    }).show();
+                        }else{
+                            new AlertDialog.Builder(otherOption.this)
+                                    .setTitle("提 示:")
+                                    .setMessage("设置失败,请重试!")
+                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
+                                        goAnim(otherOption.this, 50);
+                                        lock_us_diff.setText(readDate(otherOption.this, "lock_us_diff"));
+                                    }).show();
+                        }
+                    });
+                } else {
+                    about.log(TAG, "极致锁相峰值微秒值差请输入整数类型");
+                    Toast.makeText(otherOption.this, "极致锁相峰值微秒值差请输入整数类型", LENGTH_SHORT).show();
+                    lock_us_diff.setText(readDate(otherOption.this, "lock_us_diff"));
+                }
+            }
+        }).start();
     }
     public void mos_trigger_value_set(){
         new Thread(() -> {
