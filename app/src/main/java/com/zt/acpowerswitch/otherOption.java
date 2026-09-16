@@ -141,42 +141,42 @@ public class otherOption extends AppCompatActivity {
         target_ip = findViewById(R.id.target_ip);
         String saved_wifi_ip = readDate(otherOption.this, "wifi_ip");
         target_ip.setText(saved_wifi_ip != null ? saved_wifi_ip : "");
-        target_ip.setOnClickListener(view -> send_arg_server("逆变器IP设置"));
+        target_ip.setOnClickListener(view -> send_arg_server("请输入远程逆变器域名或IP址址"));
         //逆变器端口设置
         target_port = findViewById(R.id.target_port);
         String saved_tcpServerPort = readDate(otherOption.this, "tcpServerPort");
         target_port.setText(saved_tcpServerPort != null ? saved_tcpServerPort : "");
-        target_port.setOnClickListener(view -> send_arg_server("逆变器端口设置"));
+        target_port.setOnClickListener(view -> send_arg_server("请输入远程逆变器端口(默认值:55555)"));
         //功率设置
         w_edit = findViewById(R.id.w_edit);
         String saved_power = readDate(otherOption.this, "power");
         w_edit.setText(saved_power != null ? saved_power : "");
-        w_edit.setOnClickListener(view -> send_arg_server("功率参数设置"));
+        w_edit.setOnClickListener(view -> send_arg_server("设置负载最大功率阈值(最大不超过5KW)"));
         //开启逆变阈值
         open_pv_value = findViewById(R.id.open_pv_value);
         String saved_open_pv_value = readDate(otherOption.this, "open_pv_value");
         open_pv_value.setText(saved_open_pv_value != null ? saved_open_pv_value : "");
-        open_pv_value.setOnClickListener(view -> send_arg_server("开启逆变阈值"));
+        open_pv_value.setOnClickListener(view -> send_arg_server("开启逆变阈值(高于此电压则开启逆变,默认值:27.2)"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
         String saved_low_voltage = readDate(otherOption.this, "low_voltage");
         low_voltage_set.setText(saved_low_voltage != null ? saved_low_voltage : "");
-        low_voltage_set.setOnClickListener(view -> send_arg_server("最低电压值"));
+        low_voltage_set.setOnClickListener(view -> send_arg_server("低于此电压则关闭逆变器(截止电压默认值:24)"));
         //MOS风扇温度触发值设置
         mos_trigger_value = findViewById(R.id.mos_trigger_value);
         String saved_mos_temp = readDate(otherOption.this, "mos_temp");
         mos_trigger_value.setText(saved_mos_temp != null ? saved_mos_temp : "");
-        mos_trigger_value.setOnClickListener(view -> send_arg_server("MOS温度触发值"));
+        mos_trigger_value.setOnClickListener(view -> send_arg_server("主功率板MOS温度风扇触发值(默认值:28度)"));
         //刷新时间设置
         refresh_time_set = findViewById(R.id.refresh_time_set);
         String saved_refresh_time = readDate(otherOption.this, "refresh_time");
         refresh_time_set.setText(saved_refresh_time != null ? saved_refresh_time : "");
-        refresh_time_set.setOnClickListener(view -> send_arg_server("页面刷新时间设置"));
+        refresh_time_set.setOnClickListener(view -> send_arg_server("获取远程数据的时间间隔(默认值:1000ms)"));
         //极致锁相峰值误差范围
         lock_us_diff = findViewById(R.id.lock_us_diff);
         String saved_lock_us_diff = readDate(otherOption.this, "lock_us_diff");
         lock_us_diff.setText(saved_lock_us_diff != null ? saved_lock_us_diff : "");
-        lock_us_diff.setOnClickListener(view -> send_arg_server("极致锁相峰值误差范围"));
+        lock_us_diff.setOnClickListener(view -> send_arg_server("设置极致锁相峰值误差范围(默认值:200us)"));
         //输出模式
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
@@ -258,56 +258,56 @@ public class otherOption extends AppCompatActivity {
         goAnim(otherOption.this, 50);
         EditText editText = new EditText(this);
         new AlertDialog.Builder(otherOption.this)
-            .setTitle("提 示")
+            .setTitle("提 示:")
             .setMessage(msg)
             .setView(editText)
             .setPositiveButton("取消", null)
             .setNegativeButton("确定", (dialog, which) -> {
                 goAnim(otherOption.this, 50);
                 switch (msg) {
-                    case "功率参数设置":
+                    case "设置负载最大功率阈值(最大不超过5KW)":
                         if (!editText.getText().toString().isEmpty()) {
                             w_edit.setText(editText.getText());
                             send_w_edit();
                         }
                         break;
-                    case "开启逆变阈值":
+                    case "开启逆变阈值(高于此电压则开启逆变,默认值:27.2)":
                         if (!editText.getText().toString().isEmpty()) {
                             open_pv_value.setText(editText.getText());
                             send_pv_value_edit();
                         }
                         break;
-                    case "最低电压值":
+                    case "低于此电压则关闭逆变器(截止电压默认值:24)":
                         if (!editText.getText().toString().isEmpty()) {
                             low_voltage_set.setText(editText.getText());
                             lo_voltage_set();
                         }
                         break;
-                    case "页面刷新时间设置":
+                    case "获取远程数据的时间间隔(默认值:1000ms)":
                         if (!editText.getText().toString().isEmpty()) {
                             refresh_time_set.setText(editText.getText());
                             refresh_time_set();
                         }
                         break;
-                    case "极致锁相峰值误差范围":
+                    case "设置极致锁相峰值误差范围(默认值:200us)":
                         if (!editText.getText().toString().isEmpty()) {
                             lock_us_diff.setText(editText.getText());
                             lock_us_diff_set();
                         }
                         break;
-                    case "MOS温度触发值":
+                    case "主功率板MOS温度风扇触发值(默认值:28度)":
                         if (!editText.getText().toString().isEmpty()) {
                             mos_trigger_value.setText(editText.getText());
                             mos_trigger_value_set();
                         }
                         break;
-                    case "逆变器IP设置":
+                    case "请输入远程逆变器域名或IP址址":
                         if (!editText.getText().toString().isEmpty()) {
                             target_ip.setText(editText.getText());
                             target_ip_set();
                         }
                         break;
-                    case "逆变器端口设置":
+                    case "请输入远程逆变器端口(默认值:55555)":
                         if (!editText.getText().toString().isEmpty()) {
                             target_port.setText(editText.getText());
                             target_port_set();

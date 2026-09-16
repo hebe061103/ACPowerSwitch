@@ -23,10 +23,11 @@ public class TCPClient {
 
     @SuppressLint("DefaultLocale")
     public boolean tcpConnect() {
-        final int MAX_RETRY = 3;
-
-        for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+        while (true) {
             try {
+                // 先关闭旧连接
+                close();
+
                 // ✅ 关键：手动解析 DNS（每次都会重新解析）
                 InetAddress address = InetAddress.getByName(tcpServerAddress.trim());
 
@@ -37,35 +38,23 @@ public class TCPClient {
                 inputStream = socket.getInputStream();
                 outputStream = socket.getOutputStream();
 
-                about.log(TAG, String.format(
-                        "创建连接成功 | 域名=%s IP=%s 第%d次尝试",
-                        tcpServerAddress, address.getHostAddress(), attempt
-                ));
+                about.log(TAG, "创建连接成功");
                 return true;
 
             } catch (UnknownHostException e) {
-                about.log(TAG, String.format(
-                        "DNS解析失败 | 域名=%s 第%d/%d次 异常=%s",
-                        tcpServerAddress, attempt, MAX_RETRY, e.getClass().getSimpleName()
-                ));
+                about.log(TAG, "DNS解析失败，3秒后重试...");
             } catch (IOException e) {
-                about.log(TAG, String.format(
-                        "创建连接异常 | 域名=%s 第%d/%d次 异常=%s 原因=%s",
-                        tcpServerAddress, attempt, MAX_RETRY,
-                        e.getClass().getSimpleName(), e.getMessage()
-                ));
+                about.log(TAG, "创建连接异常，3秒后重试...");
             }
-
-            // ✅ 指数退避
-            if (attempt < MAX_RETRY) {
-                try {
-                    Thread.sleep(500 * attempt);
-                } catch (InterruptedException ignored) {}
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                about.log(TAG, "重试线程被中断");
+                // 如果线程收到中断信号（比如系统要关闭服务），建议退出，否则无法停止线程
+                Thread.currentThread().interrupt();
+                return false;
             }
         }
-
-        about.log(TAG, "创建连接最终失败 | 域名=" + tcpServerAddress);
-        return false;
     }
 
     public void sendMessage(String message) {
@@ -133,15 +122,11 @@ public class TCPClient {
     }
 
     public void close() {
-        try {
-            if (inputStream != null) inputStream.close();
-            if (outputStream != null) outputStream.close();
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
-            about.log(TAG, "关闭网络连接");
-        } catch (IOException e) {
-            about.log(TAG, "关闭网络连接异常: " + e.getMessage());
-        }
+        try { if (inputStream != null) inputStream.close(); } catch (IOException ignored) {}
+        try { if (outputStream != null) outputStream.close(); } catch (IOException ignored) {}
+        try { if (socket != null) socket.close(); } catch (IOException ignored) {}
+        inputStream = null;
+        outputStream = null;
+        socket = null;
     }
 }
