@@ -29,10 +29,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
-    public String _tmp;
     public SeekBar seekBar;
     public TextView tvValue;
-    private volatile boolean mShouldCheckMode = true;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable saveRunnable;
 
@@ -42,20 +40,6 @@ public class otherOption extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
         str_pro();
-        new Thread(() -> {
-            while (mShouldCheckMode) {
-                String saved_out_mode = readDate(otherOption.this, "out_mode");
-                if (saved_out_mode != null) {
-                    _tmp = saved_out_mode;
-                    runOnUiThread(this::out_mode_display);
-                }
-                try {
-                    Thread.sleep(500); // 每次循环间隔 500ms
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
     }
 
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
@@ -181,16 +165,15 @@ public class otherOption extends AppCompatActivity {
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
         pv_mode = findViewById(R.id.pv_mode);
-        //输出模式显示,字体背景加颜色
-        out_mode_display();
         //输出模式按钮监听
         auto_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
+            send_command_to_server("power_out_mode:自动模式");
             if (send_command_to_server("power_out_mode:自动模式")){
                 auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
                 pv_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("out_mode", "自动模式");
+                saveData("work_mode", "自动模式");
             }
         });
         power_grid_mode.setOnClickListener(view -> {
@@ -199,7 +182,7 @@ public class otherOption extends AppCompatActivity {
                 power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 auto_mode.setBackgroundColor(Color.TRANSPARENT);
                 pv_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("out_mode", "市电模式");
+                saveData("work_mode", "市电模式");
             }
         });
         pv_mode.setOnClickListener(view -> {
@@ -208,9 +191,11 @@ public class otherOption extends AppCompatActivity {
                 pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 auto_mode.setBackgroundColor(Color.TRANSPARENT);
                 power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("out_mode", "逆变模式");
+                saveData("work_mode", "逆变模式");
             }
         });
+        out_mode_display(); //输出模式显示,字体背景加颜色
+        // 重置网络及参数处理
         TextView reset_network = findViewById(R.id.reset_network);
         reset_network.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
@@ -222,7 +207,7 @@ public class otherOption extends AppCompatActivity {
                     goAnim(otherOption.this, 50);
                     deleteData("power");
                     deleteData("low_voltage");
-                    deleteData("out_mode");
+                    deleteData("work_mode");
                     deleteData("mos_temp");
                     deleteData("open_pv_value");
                     deleteData("wifi_ip");
@@ -236,18 +221,18 @@ public class otherOption extends AppCompatActivity {
     }
 
     public void out_mode_display() {
-        String saved_out_mode = readDate(otherOption.this, "out_mode");
-        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("自动模式")) {
+        String saved_work_mode = readDate(otherOption.this, "work_mode");
+        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("自动模式")) {
             auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             power_grid_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("市电模式")) {
+        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("市电模式")) {
             power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (saved_out_mode != null && unicodeToString(saved_out_mode).equals("逆变模式")) {
+        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("逆变模式")) {
             pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             power_grid_mode.setBackground(null);
@@ -554,6 +539,5 @@ public class otherOption extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mShouldCheckMode = false; // 退出循环
     }
 }

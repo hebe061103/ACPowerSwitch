@@ -418,7 +418,7 @@ public class MainActivity extends AppCompatActivity{
                                         goAnim(MainActivity.this, 50);
                                         deleteData("power");
                                         deleteData("low_voltage");
-                                        deleteData("out_mode");
+                                        deleteData("work_mode");
                                         deleteData("mos_temp");
                                         deleteData("open_pv_value");
                                         deleteData("wifi_ip");
@@ -449,32 +449,28 @@ public class MainActivity extends AppCompatActivity{
         }
     }
     public static boolean send_command_to_server(String data) {
-        CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1
-        boolean[] result = {false}; // 使用数组来存储返回值
+        CountDownLatch latch = new CountDownLatch(1);
+        boolean[] result = {false};
+
         new Thread(() -> {
-            int num = 0;
             stop_send = true;
-            String udp_response;
-            while (num < 10) {
-                udp_response = tcpClient.sendAndReceive(data);
-                about.log(TAG, "返回数据:" + udp_response);
-                if (udp_response != null && udp_response.contains("ACK")) {
-                    result[0] = true; // 设置返回值
-                    break;
-                }
-                num++;
+            try {
+                String response = tcpClient.sendAndReceive(data);
+                about.log(TAG, "返回数据:" + response);
+                result[0] = response != null && response.contains("ACK");
+            } finally {
+                stop_send = false;
+                latch.countDown();
             }
-            stop_send = false;
-            latch.countDown(); // 计数器减一，表示任务完成
         }).start();
 
         try {
-            latch.await(); // 等待线程完成
+            latch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        return result[0]; // 返回结果
+        return result[0];
     }
     private void updateChart(float percent) {
         // 防止超过100%
@@ -753,7 +749,7 @@ public class MainActivity extends AppCompatActivity{
                             //电池低于此值则市电常开
                             safeSaveFlash(info, 25, "low_voltage");
                             //输出模式
-                            safeSaveFlash(info, 27, "out_mode");
+                            safeSaveFlash(info, 27, "work_mode");
                             //主功率板散执片风扇开启温度
                             safeSaveFlash(info, 29, "mos_temp");
                             //主功率板散热片实时温度
