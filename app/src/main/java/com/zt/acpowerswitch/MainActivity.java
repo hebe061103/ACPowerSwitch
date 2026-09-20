@@ -75,6 +75,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity{
     public static final String TAG = "MainActivity:";
@@ -465,7 +466,10 @@ public class MainActivity extends AppCompatActivity{
         }).start();
 
         try {
-            latch.await();
+            // 等待 3s，超时返回 false
+            if (!latch.await(3000, TimeUnit.MILLISECONDS)) {
+                return false;
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
