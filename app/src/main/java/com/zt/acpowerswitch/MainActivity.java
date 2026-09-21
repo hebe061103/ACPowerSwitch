@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity{
     // ===== 电池系统 =====
     private TextView originBatVoltage, cardBatVoltage ,cardone_bat_Voltage;
     private TextView originBatOutCurrent, cardBatOutCurrent;
-    private TextView originBatHealthCap, cardBatHealthCap;
+    private TextView originBatHealthCap, cardBatHealthCap, cardbat_3;
     private TextView originBat_use_time, cardBat_use_time;
     private TextView cardswitch_point;
 
@@ -262,6 +262,7 @@ public class MainActivity extends AppCompatActivity{
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
         cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
         cardswitch_point = cardView.findViewById(R.id.switch_point);
+        cardbat_3 = cardView.findViewById(R.id.bat_3);
 
         // 温度 & 风扇
         cardTemp0Value = cardView.findViewById(R.id.temp0_value);
@@ -456,7 +457,7 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             stop_send = true;
             try {
-                String response = tcpClient.sendAndReceive(data);
+                String response = tcpClient.sendAndReceive(data + "\n");
                 about.log(TAG, "返回数据:" + response);
                 result[0] = response != null && response.contains("ACK");
             } finally {
@@ -562,11 +563,7 @@ public class MainActivity extends AppCompatActivity{
     // 生成中间的文字
     private SpannableString generateCenterText(float percent) {
         String text;
-        if (percent <= 0) {
-            text = "⚠️ \n待校准";
-        } else {
-            text = String.format(Locale.getDefault(), "可用电量\n%.1f%%", percent);
-        }
+        text = String.format(Locale.getDefault(), "可用电量\n%.1f%%", percent);
 
         SpannableString s = new SpannableString(text);
 
@@ -686,7 +683,7 @@ public class MainActivity extends AppCompatActivity{
                             //光伏实时输出功率
                             uiData.put("光伏实时输出功率", info[15]);
                             //逆变器不同模式下电池的充放电电流计算
-                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.6为逆变器关闭时控制板功耗的估算
+                            //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.0为逆变器关闭时控制板功耗的估算
                             float pw = Float.parseFloat(info[15]);//太阳能板的发电功率
                             if (unicodeToString(info[19]).equals("逆变供电")) {
                                 //逆变供电模式下,逆变器为开启状态的充放电电流计算
@@ -699,21 +696,21 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             } else if (unicodeToString(info[19]).equals("市电供电")) {
                                 //市电供电模式下,逆变器为关闭状态的充放电电流计算
-                                if ((pw - 3.6) > 0) {
+                                if ((pw - 3.0) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(info[9]))); //3.0w为估算值,具体要测量才知道
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(info[9])));//3.0w为估算值,具体要测量才知道
                                 }
                             } else if (unicodeToString(info[19]).equals("电池电压过低")) {
                                 //电池电压过低,逆变器为关闭状态的充放电电流计算
-                                if ((pw - 3.6) > 0) {
+                                if ((pw - 3.0) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(info[9]))); //3.0w为估算值,具体要测量才知道
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(info[9])));//3.0w为估算值,具体要测量才知道
                                 }
                             } else if (unicodeToString(info[19]).equals("固定逆变模式")) {
                                 //固定逆变模式下,逆变器为开启状态的充放电电流计算
@@ -726,12 +723,12 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             } else if (unicodeToString(info[19]).equals("固定市电模式")) {
                                 //固定市电模式下,逆变器为关闭状态的充放电电流计算
-                                if ((pw - 3.6) > 0) {
+                                if ((pw - 3.0) > 0) {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变充电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.6) / Float.parseFloat(info[9]))); //3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(info[9]))); //3.0w为估算值,具体要测量才知道
                                 } else {
                                     uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 无逆变放电电流(A):");
-                                    uiData.put("修改电池充放电电流值", df.format(3.6 / Float.parseFloat(info[9])));//3.6w为估算值,具体要测量才知道
+                                    uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(info[9])));//3.0w为估算值,具体要测量才知道
                                 }
                             }
                             //为MPTT散热片温度
@@ -901,21 +898,13 @@ public class MainActivity extends AppCompatActivity{
 
                 originTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
                 cardTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
-                if (total_cap==0){
-                    originTvDischarged.setText("📋 当前电池总容量: 待校准");
-                    cardTvDischarged.setText("📋 当前电池总容量: 待校准");
-                }else {
-                    originTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
-                    cardTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
-                }
-                if (available_cap==0){
-                    originTvAvailable.setText("🔋 当前电池可用电量: 待校准");
-                    cardTvAvailable.setText("🔋 当前电池可用电量: 待校准");
-                }else {
-                    originTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
-                    cardTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
-                }
-                //计算电池可用时长
+
+                originTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
+                cardTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
+
+                originTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
+                cardTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
+
                 // 光伏实时输出功率（W）
                 float pvPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("光伏实时输出功率")));
                 // 负载交流有功功率（W）
@@ -959,15 +948,19 @@ public class MainActivity extends AppCompatActivity{
                 if (bat_healthy_value > 0){
                     if (bat_healthy_value >= 90){
                         originBatHealthCap.setText("优秀");
+                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
                         cardBatHealthCap.setText("优秀");
                     }else if (bat_healthy_value >= 85){
                         originBatHealthCap.setText("良好");
+                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
                         cardBatHealthCap.setText("良好");
                     }else if (bat_healthy_value >= 80){
                         originBatHealthCap.setText("预警");
+                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
                         cardBatHealthCap.setText("预警");
                     }else{
                         originBatHealthCap.setText("严重衰减");
+                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
                         cardBatHealthCap.setText("严重衰减");
                     }
                 }else if (bat_healthy_value < 0){
