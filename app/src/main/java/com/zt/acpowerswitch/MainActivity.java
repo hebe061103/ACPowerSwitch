@@ -936,7 +936,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 originBat_use_time.setText(useTimeStr);
                 cardBat_use_time.setText(useTimeStr);
-                if (Integer.parseInt(Objects.requireNonNull(uiData.get("电池低压切换点电压"))) < 0 ) {
+                if (Float.parseFloat(Objects.requireNonNull(uiData.get("电池低压切换点电压"))) < 0 ) {
                     cardswitch_point.setText("免切换");
                 }else{
                     cardswitch_point.setText(uiData.get("电池低压切换点电压"));
