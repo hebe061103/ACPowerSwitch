@@ -33,8 +33,19 @@ public class otherOption extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable saveRunnable;
 
-    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,
-            pv_mode,lock_us_diff,system_r;
+    private TextView target_ip;
+    private TextView target_port;
+    private TextView w_edit;
+    private TextView open_pv_value;
+    private TextView low_voltage_set;
+    private TextView mos_trigger_value;
+    private TextView refresh_time_set;
+    private TextView auto_mode;
+    private TextView power_grid_mode;
+    private TextView pv_mode;
+    private TextView lock_us_diff;
+    private TextView system_r;
+    private TextView request_calibration;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -166,6 +177,10 @@ public class otherOption extends AppCompatActivity {
         String saved_system_r = readDate(otherOption.this, "SYSTEM_R");
         system_r.setText(saved_system_r != null ? saved_system_r : "");
         system_r.setOnClickListener(view -> send_arg_server("设置逆变系统总内阻(默认值:0.0mΩ)"));
+        //请求电池校准
+        request_calibration = findViewById(R.id.request_calibration);
+        refresh_calibration_display();
+        request_calibration.setOnClickListener(view -> request_bat_calibration());
         //输出模式
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
@@ -211,18 +226,61 @@ public class otherOption extends AppCompatActivity {
                 .setNegativeButton("确定", (dialog, which) -> {
                     goAnim(otherOption.this, 50);
                     deleteData("power");
-                    deleteData("low_voltage");
+                    deleteData("lowvoltage");
                     deleteData("work_mode");
-                    deleteData("mos_temp");
-                    deleteData("open_pv_value");
-                    deleteData("wifi_ip");
-                    deleteData("refresh_time");
+                    deleteData("mos_temp_value");
+                    deleteData("on_inv_value");
+                    deleteData("hardware_offset_us");
+                    deleteData("peakToPeakDiff");
+                    deleteData("SYSTEM_R");
+                    deleteData("request_calibration");
                     if (!MainActivity.isPaused){MainActivity.isPaused=true;}
                     tcpClient.close();
                     finish();
                 })
                 .show();
         });
+    }
+    private void refresh_calibration_display() {
+        String saved_request_calibration = readDate(otherOption.this, "request_calibration");
+        if (saved_request_calibration != null){
+            if (Integer.parseInt(saved_request_calibration) == 1){
+                request_calibration.setText("正在校准");
+            }else if(Integer.parseInt(saved_request_calibration) == 0){
+                request_calibration.setText("执行");
+            }else if(Integer.parseInt(saved_request_calibration) == -1){
+                request_calibration.setText("等待启动校准");
+            }
+        }
+    }
+    private void request_bat_calibration() {
+        String text = request_calibration.getText().toString().trim();
+        if (text.isEmpty()) {
+            return;
+        }
+        if (text.equals("正在校准") || text.equals("等待启动校准")){
+            new AlertDialog.Builder(otherOption.this)
+                .setTitle("提 示:")
+                .setMessage("是否取消校准?")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (d, i) -> {
+                    goAnim(otherOption.this, 50);
+                    if (send_command_to_server("request_calibration:0")){
+                        waitForCalibrationValue("0");
+                    }
+                }).show();
+        }else if (text.equals("执行")){
+            new AlertDialog.Builder(otherOption.this)
+                .setTitle("提 示:")
+                .setMessage("是否重新校准电池?")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (d, i) -> {
+                    goAnim(otherOption.this, 50);
+                    if (send_command_to_server("request_calibration:1")){
+                        waitForCalibrationValue("1");
+                    }
+                }).show();
+        }
     }
 
     public void out_mode_display() {
@@ -243,7 +301,30 @@ public class otherOption extends AppCompatActivity {
             power_grid_mode.setBackground(null);
         }
     }
+    private void waitForCalibrationValue(String expectedValue) {
+        final int[] attempts = {0};
+        final int MAX_ATTEMPTS = 10;  // 最多等 10 次
+        final int INTERVAL_MS = 300;  // 每次间隔 300ms
 
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                attempts[0]++;
+                String currentValue =  readDate(otherOption.this, "request_calibration");  // 读本地存储
+
+                if (expectedValue.equals(currentValue)) {
+                    // 服务端已更新
+                    refresh_calibration_display();
+                } else if (attempts[0] >= MAX_ATTEMPTS) {
+                    // 超时，放弃等待
+                    refresh_calibration_display();
+                } else {
+                    // 继续等
+                    new Handler(Looper.getMainLooper()).postDelayed(this, INTERVAL_MS);
+                }
+            }
+        }, INTERVAL_MS);
+    }
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
         EditText editText = new EditText(this);

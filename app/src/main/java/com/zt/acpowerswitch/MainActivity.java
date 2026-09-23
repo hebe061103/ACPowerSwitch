@@ -417,12 +417,14 @@ public class MainActivity extends AppCompatActivity{
                                     .setNegativeButton("完成", (dialogInterface1, i1) -> {
                                         goAnim(MainActivity.this, 50);
                                         deleteData("power");
-                                        deleteData("low_voltage");
+                                        deleteData("lowvoltage");
                                         deleteData("work_mode");
-                                        deleteData("mos_temp");
-                                        deleteData("open_pv_value");
-                                        deleteData("wifi_ip");
-                                        deleteData("refresh_time");
+                                        deleteData("mos_temp_value");
+                                        deleteData("on_inv_value");
+                                        deleteData("hardware_offset_us");
+                                        deleteData("peakToPeakDiff");
+                                        deleteData("SYSTEM_R");
+                                        deleteData("request_calibration");
                                         tcpClient.close();
                                     }).show();
                         } else {
@@ -771,6 +773,8 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"peakToPeakDiff");
                         // 系统总内阻
                         safeSaveFlash(info,"SYSTEM_R");
+                        // 请求电池校准
+                        safeSaveFlash(info,"request_calibration");
                         // 通知数据刷新
                         Message message = messageProHandler.obtainMessage();
                         message.what = 1;

@@ -34,7 +34,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView25"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/target_ip"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="15dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -60,7 +60,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView21"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/target_port"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -86,7 +86,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView22"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/w_edit"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -112,7 +112,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView7"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/open_pv_value"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -138,7 +138,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView20"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/low_voltage_set"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -164,7 +164,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/refresh_time_set"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -190,7 +190,7 @@
             app:layout_constraintTop_toBottomOf="@id/textView23"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/mos_trigger_value"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -211,12 +211,12 @@
             android:id="@+id/textView32"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="极致锁相峰值误差范围(us):"
+            android:text="锁相峰值误差范围(us):"
             android:textSize="16sp"
             app:layout_constraintTop_toBottomOf="@id/textView30"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/mos_trigger_value"
-            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toStartOf="@id/lock_us_diff"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -241,8 +241,8 @@
             android:textSize="16sp"
             app:layout_constraintTop_toBottomOf="@id/textView32"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/mos_trigger_value"
-            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toStartOf="@id/system_r"
+            android:layout_marginTop="18dp"
             tools:ignore="HardcodedText" />
 
         <TextView
@@ -258,6 +258,33 @@
             app:layout_constraintTop_toTopOf="@id/textView33"
             tools:ignore="HardcodedText,TextContrastCheck" />
 
+        <!-- 请求电池校准 -->
+        <TextView
+            android:id="@+id/textView34"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="是否请求重新电池校准:"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@id/textView33"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/request_calibration"
+            android:layout_marginTop="18dp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/request_calibration"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:gravity="end"
+            android:text="执行"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/textView34"
+            app:layout_constraintTop_toTopOf="@id/textView34"
+            tools:ignore="HardcodedText,TextContrastCheck,TouchTargetSizeCheck" />
+
         <TextView
             android:id="@+id/textView31"
             android:layout_width="0dp"
@@ -266,7 +293,7 @@
             android:textSize="15sp"
             android:textColor="#40FBA1"
             android:layout_marginTop="20dp"
-            app:layout_constraintTop_toBottomOf="@+id/textView33"
+            app:layout_constraintTop_toBottomOf="@+id/textView34"
             tools:ignore="HardcodedText,MissingConstraints" />
 
         <TextView
