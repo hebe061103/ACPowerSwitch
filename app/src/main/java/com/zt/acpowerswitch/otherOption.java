@@ -9,7 +9,6 @@ import static com.zt.acpowerswitch.MainActivity.saveData;
 import static com.zt.acpowerswitch.MainActivity.send_command_to_server;
 import static com.zt.acpowerswitch.MainActivity.tcpClient;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
-import static com.zt.acpowerswitch.MainActivity.unicodeToString;
 import static com.zt.acpowerswitch.set_tcp_page.isValidDomain;
 import static com.zt.acpowerswitch.set_tcp_page.isValidIPv4;
 
@@ -34,7 +33,8 @@ public class otherOption extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable saveRunnable;
 
-    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,pv_mode,lock_us_diff;
+    private TextView target_ip,target_port,w_edit,open_pv_value,low_voltage_set,mos_trigger_value,refresh_time_set,auto_mode,power_grid_mode,
+            pv_mode,lock_us_diff,system_r;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -161,6 +161,11 @@ public class otherOption extends AppCompatActivity {
         String saved_lock_us_diff = readDate(otherOption.this, "lock_us_diff");
         lock_us_diff.setText(saved_lock_us_diff != null ? saved_lock_us_diff : "");
         lock_us_diff.setOnClickListener(view -> send_arg_server("设置极致锁相峰值误差范围(默认值:200us)"));
+        //系统总内阻
+        system_r = findViewById(R.id.system_r);
+        String saved_system_r = readDate(otherOption.this, "SYSTEM_R");
+        system_r.setText(saved_system_r != null ? saved_system_r : "");
+        system_r.setOnClickListener(view -> send_arg_server("设置逆变系统总内阻(默认值:0.0mΩ)"));
         //输出模式
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);
@@ -222,17 +227,17 @@ public class otherOption extends AppCompatActivity {
 
     public void out_mode_display() {
         String saved_work_mode = readDate(otherOption.this, "work_mode");
-        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("自动模式")) {
+        if (saved_work_mode != null && saved_work_mode.equals("自动模式")) {
             auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             power_grid_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("市电模式")) {
+        if (saved_work_mode != null && saved_work_mode.equals("市电模式")) {
             power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             pv_mode.setBackground(null);
         }
-        if (saved_work_mode != null && unicodeToString(saved_work_mode).equals("逆变模式")) {
+        if (saved_work_mode != null && saved_work_mode.equals("逆变模式")) {
             pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
             auto_mode.setBackground(null);
             power_grid_mode.setBackground(null);
@@ -253,37 +258,49 @@ public class otherOption extends AppCompatActivity {
                     case "设置负载最大功率阈值(最大不超过5KW)":
                         if (!editText.getText().toString().isEmpty()) {
                             w_edit.setText(editText.getText());
-                            send_w_edit();
+                            send_edit_arg(w_edit,"power","功率参数巳改变,发送参数到服务端",
+                                    "set_w:","功率设置项请输入整数或小数类型");
                         }
                         break;
                     case "开启逆变阈值(高于此电压则开启逆变,默认值:27.2)":
                         if (!editText.getText().toString().isEmpty()) {
                             open_pv_value.setText(editText.getText());
-                            send_pv_value_edit();
+                            send_edit_arg(open_pv_value,"open_pv_value","开启逆变阈值巳改变,发送参数到服务端",
+                                    "set_open_pv_value:","逆变阈值请输入整数或小数类型");
                         }
                         break;
                     case "低于此电压则关闭逆变器(截止电压默认值:24)":
                         if (!editText.getText().toString().isEmpty()) {
                             low_voltage_set.setText(editText.getText());
-                            lo_voltage_set();
+                            send_edit_arg(low_voltage_set,"low_voltage","最低电压值巳改变,发送参数到服务端",
+                                    "low_voltage:","最低电压值项请输入整数或小数类型");
+                        }
+                        break;
+                    case "设置极致锁相峰值误差范围(默认值:200us)":
+                        if (!editText.getText().toString().isEmpty()) {
+                            lock_us_diff.setText(editText.getText());
+                            send_edit_arg(lock_us_diff,"lock_us_diff","最低极致锁相峰值微秒值改变,发送参数到服务端",
+                                    "lock_us_diff:","极致锁相峰值微秒值差请输入整数类型");
+                        }
+                        break;
+                    case "设置逆变系统总内阻(默认值:0.0mΩ)":
+                        if (!editText.getText().toString().isEmpty()) {
+                            system_r.setText(editText.getText());
+                            send_edit_arg(system_r,"SYSTEM_R","系统内阻参数巳改变,发送参数到服务端",
+                                    "SYSTEM_R:","系统总内阻请输入整数或小数类型");
+                        }
+                        break;
+                    case "主功率板MOS温度风扇触发值(默认值:28度)":
+                        if (!editText.getText().toString().isEmpty()) {
+                            mos_trigger_value.setText(editText.getText());
+                            send_edit_arg(mos_trigger_value,"mos_temp","mos温度触发值巳改变,发送参数到服务端",
+                                    "mos_temp:","主功率板风扇温度触发值请输入整数或小数类型");
                         }
                         break;
                     case "获取远程数据的时间间隔(默认值:1000ms)":
                         if (!editText.getText().toString().isEmpty()) {
                             refresh_time_set.setText(editText.getText());
                             refresh_time_set();
-                        }
-                        break;
-                    case "设置极致锁相峰值误差范围(默认值:200us)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            lock_us_diff.setText(editText.getText());
-                            lock_us_diff_set();
-                        }
-                        break;
-                    case "主功率板MOS温度风扇触发值(默认值:28度)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            mos_trigger_value.setText(editText.getText());
-                            mos_trigger_value_set();
                         }
                         break;
                     case "请输入远程逆变器域名或IP址址":
@@ -302,53 +319,20 @@ public class otherOption extends AppCompatActivity {
             })
             .show();
     }
-    public void send_w_edit() {
+    public void send_edit_arg(TextView textview, String save, String msg, String cmd, String err_msg) {
         new Thread(() -> {
-            if (!w_edit.getText().toString().isEmpty() && !w_edit.getText().toString().equals(readDate(otherOption.this, "power"))) {
-                about.log(TAG, "功率参数巳改变,发送参数到服务端");
-                if (isInteger(w_edit.getText().toString()) || isDecimal(w_edit.getText().toString()) && Float.parseFloat(w_edit.getText().toString()) > 0) {
-                        // 切回主线程更新 UI
-                        runOnUiThread(() -> {
-                        if (send_command_to_server("set_w:" + w_edit.getText().toString())){
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置成功!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        saveData("power", w_edit.getText().toString());
-                                    }).show();
-                        }else{
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置失败,请重试!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        w_edit.setText(readDate(otherOption.this, "power"));
-                                    }).show();
-                        }
-                    });
-                } else {
-                    about.log(TAG, "功率设置项请输入整数类型");
-                    Toast.makeText(otherOption.this, "功率设置项请输入整数类型", LENGTH_SHORT).show();
-                    w_edit.setText(readDate(otherOption.this, "power"));
-                }
-            }
-        }).start();
-    }
-    public void send_pv_value_edit() {
-        new Thread(() -> {
-            if (!open_pv_value.getText().toString().isEmpty() && !open_pv_value.getText().toString().equals(readDate(otherOption.this, "open_pv_value"))) {
-                about.log(TAG, "开启逆变阈值巳改变,发送参数到服务端");
-                if (isInteger(open_pv_value.getText().toString()) || isDecimal(open_pv_value.getText().toString()) && Float.parseFloat(open_pv_value.getText().toString()) > 0) {
+            if (!textview.getText().toString().isEmpty() && !textview.getText().toString().equals(readDate(otherOption.this, save))) {
+                about.log(TAG, msg);
+                if (isInteger(textview.getText().toString()) || isDecimal(textview.getText().toString()) && Float.parseFloat(textview.getText().toString()) > 0) {
                     // 切回主线程更新 UI
                     runOnUiThread(() -> {
-                        if (send_command_to_server("set_open_pv_value:" + open_pv_value.getText().toString())){
+                        if (send_command_to_server(cmd + textview.getText().toString())){
                             new AlertDialog.Builder(otherOption.this)
                                     .setTitle("提 示:")
                                     .setMessage("设置成功!")
                                     .setNegativeButton("完成", (dialogInterface13, i13) -> {
                                         goAnim(otherOption.this, 50);
-                                        saveData("open_pv_value", open_pv_value.getText().toString());
+                                        saveData(save, textview.getText().toString());
                                     }).show();
                         }else{
                             new AlertDialog.Builder(otherOption.this)
@@ -356,125 +340,14 @@ public class otherOption extends AppCompatActivity {
                                     .setMessage("设置失败,请重试!")
                                     .setNegativeButton("完成", (dialogInterface13, i13) -> {
                                         goAnim(otherOption.this, 50);
-                                        open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
+                                        textview.setText(readDate(otherOption.this, save));
                                     }).show();
                         }
                     });
                 } else {
-                    about.log(TAG, "逆变阈值请输入整数类型");
-                    runOnUiThread(() -> Toast.makeText(otherOption.this, "逆变阈值请输入整数类型", Toast.LENGTH_SHORT).show());
-                    open_pv_value.setText(readDate(otherOption.this, "open_pv_value"));
-                }
-            }
-        }).start();
-    }
-    public void lo_voltage_set() {
-        new Thread(() -> {
-            if (!low_voltage_set.getText().toString().isEmpty() && !low_voltage_set.getText().toString().equals(readDate(otherOption.this, "low_voltage"))) {
-                about.log(TAG, "最低电压值巳改变,发送参数到服务端");
-                if (isInteger(low_voltage_set.getText().toString()) || isDecimal(low_voltage_set.getText().toString()) && Float.parseFloat(low_voltage_set.getText().toString()) > 0) {
-                    runOnUiThread(() -> {
-                        if (send_command_to_server("low_voltage:" + low_voltage_set.getText().toString())){
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置成功!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        saveData("low_voltage", low_voltage_set.getText().toString());
-                                    }).show();
-                        }else{
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置失败,请重试!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
-                                    }).show();
-                        }
-                    });
-                } else {
-                    about.log(TAG, "最低电压值项请输入整数或小数类型");
-                    Toast.makeText(otherOption.this, "最低电压值项请输入整数或小数类型", LENGTH_SHORT).show();
-                    low_voltage_set.setText(readDate(otherOption.this, "low_voltage"));
-                }
-            }
-        }).start();
-    }
-    public void refresh_time_set(){
-        if (!refresh_time_set.getText().toString().isEmpty() && !refresh_time_set.getText().toString().equals(readDate(otherOption.this,"refresh_time"))){
-            about.log(TAG,"页面刷新时间巳改变");
-            if(isInteger(refresh_time_set.getText().toString())) {
-                saveData("refresh_time", refresh_time_set.getText().toString());
-                page_refresh_time = Integer.parseInt(refresh_time_set.getText().toString());
-            }else {
-                about.log(TAG,"页面刷新项请输入整数类型");
-                Looper.prepare();
-                Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
-                Looper.loop();
-            }
-        }
-    }
-    public void lock_us_diff_set() {
-        new Thread(() -> {
-            if (!lock_us_diff.getText().toString().isEmpty() && !lock_us_diff.getText().toString().equals(readDate(otherOption.this, "lock_us_diff"))) {
-                about.log(TAG, "最低极致锁相峰值微秒值改变,发送参数到服务端");
-                if (isInteger(lock_us_diff.getText().toString()) && Integer.parseInt(lock_us_diff.getText().toString()) > 0) {
-                    runOnUiThread(() -> {
-                        if (send_command_to_server("lock_us_diff:" + lock_us_diff.getText().toString())){
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置成功!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        saveData("lock_us_diff", lock_us_diff.getText().toString());
-                                    }).show();
-                        }else{
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置失败,请重试!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        lock_us_diff.setText(readDate(otherOption.this, "lock_us_diff"));
-                                    }).show();
-                        }
-                    });
-                } else {
-                    about.log(TAG, "极致锁相峰值微秒值差请输入整数类型");
-                    Toast.makeText(otherOption.this, "极致锁相峰值微秒值差请输入整数类型", LENGTH_SHORT).show();
-                    lock_us_diff.setText(readDate(otherOption.this, "lock_us_diff"));
-                }
-            }
-        }).start();
-    }
-    public void mos_trigger_value_set(){
-        new Thread(() -> {
-            if (!mos_trigger_value.getText().toString().isEmpty() && !mos_trigger_value.getText().toString().equals(readDate(otherOption.this,"mos_temp"))){
-                about.log(TAG,"mos温度触发值巳改变");
-                if (isInteger(mos_trigger_value.getText().toString()) || isDecimal(mos_trigger_value.getText().toString()) && Float.parseFloat(mos_trigger_value.getText().toString()) > 0) {
-                    runOnUiThread(() -> {
-                        if (send_command_to_server("mos_temp:" + mos_trigger_value.getText().toString())){
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置成功!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        saveData("mos_temp", mos_trigger_value.getText().toString());
-                                    }).show();
-                        }else{
-                            new AlertDialog.Builder(otherOption.this)
-                                    .setTitle("提 示:")
-                                    .setMessage("设置失败,请重试!")
-                                    .setNegativeButton("完成", (dialogInterface13, i13) -> {
-                                        goAnim(otherOption.this, 50);
-                                        mos_trigger_value.setText(readDate(otherOption.this, "mos_temp"));
-                                    }).show();
-                        }
-                    });
-                } else {
-                    about.log(TAG,"主功率板风扇温度触发值请输入整数或小数类型");
-                    Looper.prepare();
-                    Toast.makeText(otherOption.this, "主功率板风扇温度触发值请输入整数或小数类型", LENGTH_SHORT).show();
-                    Looper.loop();
+                    about.log(TAG, err_msg);
+                    runOnUiThread(() -> Toast.makeText(otherOption.this, err_msg, Toast.LENGTH_SHORT).show());
+                    textview.setText(readDate(otherOption.this, save));
                 }
             }
         }).start();
@@ -517,6 +390,20 @@ public class otherOption extends AppCompatActivity {
             }
             saveData("tcpServerPort", target_port.getText().toString());
             tcpServerPort = Integer.parseInt(target_port.getText().toString());
+        }
+    }
+    public void refresh_time_set(){
+        if (!refresh_time_set.getText().toString().isEmpty() && !refresh_time_set.getText().toString().equals(readDate(otherOption.this,"refresh_time"))){
+            about.log(TAG,"页面刷新时间巳改变");
+            if(isInteger(refresh_time_set.getText().toString())) {
+                saveData("refresh_time", refresh_time_set.getText().toString());
+                page_refresh_time = Integer.parseInt(refresh_time_set.getText().toString());
+            }else {
+                about.log(TAG,"页面刷新项请输入整数类型");
+                Looper.prepare();
+                Toast.makeText(otherOption.this, "页面刷新项请输入整数类型", LENGTH_SHORT).show();
+                Looper.loop();
+            }
         }
     }
     public boolean isInteger(String str) {

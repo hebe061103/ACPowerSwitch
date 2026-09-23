@@ -693,7 +693,7 @@ public class MainActivity extends AppCompatActivity{
                                 uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
                                 uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30) - pw) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));
                             }
-                        } else if (unicodeToString(Objects.requireNonNull(info.get("out_mode"))).equals("市电供电")) {
+                        } else if (Objects.equals(info.get("out_mode"), "市电供电")) {
                             //市电供电模式下,逆变器为关闭状态的充放电电流计算
                             if ((pw - 3.0) > 0) {
                                 uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
@@ -769,6 +769,8 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"hardware_offset_us");
                         // 极致锁相峰值微秒差
                         safeSaveFlash(info,"peakToPeakDiff");
+                        // 系统总内阻
+                        safeSaveFlash(info,"SYSTEM_R");
                         // 通知数据刷新
                         Message message = messageProHandler.obtainMessage();
                         message.what = 1;
@@ -1534,16 +1536,6 @@ public class MainActivity extends AppCompatActivity{
         } else {
             return 1000;
         }
-    }
-
-    public static String unicodeToString(String unicode) {
-        StringBuilder sb = new StringBuilder();
-        String[] hex = unicode.split("\\\\u");
-        for (int i = 1; i < hex.length; i++) {
-            int value = Integer.parseInt(hex[i], 16);
-            sb.append((char) value);
-        }
-        return sb.toString();
     }
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
