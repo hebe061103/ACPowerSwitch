@@ -18,7 +18,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -328,10 +330,19 @@ public class otherOption extends AppCompatActivity {
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
         EditText editText = new EditText(this);
+        editText.setHint("请输入正确的参数......");
+        editText.setHintTextColor(0x80AAAAAA); // 半透明灰色
+        // 包一层 LinearLayout 限制宽度
+        LinearLayout layout = new LinearLayout(this);
+        layout.setPadding(70, 0, 70, 0); // 左右留边距，下划线就短了
+        layout.addView(editText, new LinearLayout.LayoutParams(
+                1200, // 宽度 px，下划线就这么多长
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
         new AlertDialog.Builder(otherOption.this)
             .setTitle("提 示:")
             .setMessage(msg)
-            .setView(editText)
+            .setView(layout)
             .setPositiveButton("取消", null)
             .setNegativeButton("确定", (dialog, which) -> {
                 goAnim(otherOption.this, 50);
