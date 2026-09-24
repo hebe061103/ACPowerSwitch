@@ -789,8 +789,6 @@
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
 
-
-                <!-- ✅ GridLayout：2 行 × 4 列 -->
                 <GridLayout
                     android:layout_width="match_parent"
                     android:layout_height="280dp"
@@ -803,8 +801,9 @@
                         android:id="@+id/chart_container"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        tools:ignore="TooManyViews,UselessParent">
+                        tools:ignore="UselessParent">
 
+                        <!-- 折线图背景 -->
                         <com.github.mikephil.charting.charts.LineChart
                             android:id="@+id/line_chart"
                             android:layout_width="match_parent"
@@ -813,11 +812,25 @@
 
                         <com.github.mikephil.charting.charts.PieChart
                             android:id="@+id/PieChart"
-                            android:layout_width="65dp"
-                            android:layout_height="65dp"
+                            android:layout_width="70dp"
+                            android:layout_height="70dp"
                             android:layout_gravity="top|start"
-                            android:layout_marginStart="18dp"
-                            android:layout_marginBottom="0dp" />
+                            android:layout_marginStart="23dp"
+                            android:layout_marginTop="2dp"/>
+
+                        <FrameLayout
+                            android:id="@+id/ring_container"
+                            android:layout_width="70dp"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="top|start"
+                            android:layout_marginStart="23dp"
+                            android:layout_marginTop="40dp">
+
+                            <com.zt.acpowerswitch.FluidBubbleView
+                                android:id="@+id/fluidView"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent" />
+                        </FrameLayout>
 
                         <LinearLayout
                             android:id="@+id/overlay_summary"

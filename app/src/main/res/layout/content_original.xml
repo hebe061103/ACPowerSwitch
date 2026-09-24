@@ -613,11 +613,25 @@
 
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/PieChart"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
                     android:layout_gravity="top|start"
-                    android:layout_marginStart="18dp"
-                    android:layout_marginBottom="0dp" />
+                    android:layout_marginStart="23dp"
+                    android:layout_marginTop="2dp"/>
+
+                <FrameLayout
+                    android:id="@+id/ring_container"
+                    android:layout_width="70dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="23dp"
+                    android:layout_marginTop="40dp">
+
+                    <com.zt.acpowerswitch.FluidBubbleView
+                        android:id="@+id/fluidView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/overlay_summary"

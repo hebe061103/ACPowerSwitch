@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity{
     public static SharedPreferences.Editor editor;
     public ImageView origin_menu_bt,card_menu_bt;
     public long lastBack = 0;
+    private boolean ringInitialized = false;
     public static final TCPClient tcpClient = new TCPClient();
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -102,7 +103,7 @@ public class MainActivity extends AppCompatActivity{
     public static int page_refresh_time;
     private boolean isMemChartInitialized = false;
     public SmartRefreshLayout smartRefreshLayout;
-    private boolean request_homepage_run;
+    private boolean request_homepage_run,charge_ing;
     public static int year,month,day;
     Map<String, String> uiData = new HashMap<>();
     private float lastCapValue = -1f;
@@ -165,12 +166,15 @@ public class MainActivity extends AppCompatActivity{
     // ===== MarkerView =====
     private CustomMarkerView originMarker, cardMarker;
     private ObjectAnimator originBreathAnim,cardBreathAnim;
+    private FluidBubbleView fluidBubbleView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // ===== ViewSwitcher =====
         viewSwitcher = findViewById(R.id.viewSwitcher);
+        // ===== 充电动画控件 =====
+        fluidBubbleView = findViewById(R.id.fluidView);
         // 恢复显示模式
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
         int mode = sp.getInt("mode", 0); // 0 = 经典，1 = 卡片
@@ -478,6 +482,8 @@ public class MainActivity extends AppCompatActivity{
     }
     // ========== 初始化单环（只调用一次）==========
     private void initSingleRing() {
+        if (ringInitialized) return; // 已经初始化过，直接跳过
+        ringInitialized = true;
         // 4段 Entry：红、橙、绿、灰底
         List<PieEntry> entries = new ArrayList<>();
         entries.add(new PieEntry(0f, "")); // 红 0-20
@@ -489,11 +495,11 @@ public class MainActivity extends AppCompatActivity{
         dataSet.setColors(
                 Color.parseColor("#F44336"),
                 Color.parseColor("#FF9800"),
-                Color.parseColor("#4CAF50"),
+                Color.parseColor("#39FF14"),
                 Color.parseColor("#E0E0E0")
         );
         dataSet.setDrawValues(false);
-        dataSet.setSliceSpace(1.5f);
+        //dataSet.setSliceSpace(1.5f);
 
         PieData data = new PieData(dataSet);
 
@@ -542,36 +548,31 @@ public class MainActivity extends AppCompatActivity{
         originPieChart.setCenterText(centerText);
         cardPieChart.setCenterText(centerText);
 
-        // ===== 2. 更新圆环各段数值（局部，不重绘）=====
+        // ===== 2. 更新圆环各段数值（三段累积，不重绘）=====
         PieData data = originPieChart.getData();
         if (data == null) return;
 
         PieDataSet dataSet = (PieDataSet) data.getDataSetByIndex(0);
         List<PieEntry> entries = dataSet.getEntriesForXValue(0f);
 
-        // 计算各段
-        float redVal = Math.min(percent, 20f);
+        // 三段累积：红(0-20) + 橙(20-60) + 绿(60-100)
+        float redVal    = Math.min(percent, 20f);
         float orangeVal = percent > 20f ? Math.min(percent - 20f, 40f) : 0f;
-        float greenVal = percent > 60f ? (percent - 60f) : 0f;
-        float grayVal = 100f - (redVal + orangeVal + greenVal);
+        float greenVal  = percent > 60f ? (percent - 60f) : 0f;
+        float grayVal   = 100f - (redVal + orangeVal + greenVal);
 
-        // 修改数值（不重建对象）
         entries.get(0).setY(redVal);
         entries.get(1).setY(orangeVal);
         entries.get(2).setY(greenVal);
         entries.get(3).setY(grayVal);
 
-        // ===== 3. 动态颜色（按当前电量段高亮对应颜色）=====
-        int redColor    = percent > 0   ? Color.parseColor("#F44336") : Color.parseColor("#E0E0E0");
-        int orangeColor = percent > 20  ? Color.parseColor("#FF9800") : Color.parseColor("#E0E0E0");
-        int greenColor  = percent > 60  ? Color.parseColor("#4CAF50") : Color.parseColor("#E0E0E0");
-
+        // ===== 3. 颜色：三段永远上色，不判断区间 =====
         List<Integer> colors = dataSet.getColors();
         colors.clear();
-        colors.add(redColor);
-        colors.add(orangeColor);
-        colors.add(greenColor);
-        colors.add(Color.parseColor("#E0E0E0"));
+        colors.add(Color.parseColor("#F44336")); // 红
+        colors.add(Color.parseColor("#FF9800")); // 橙
+        colors.add(Color.parseColor("#39FF14")); // 绿
+        colors.add(Color.parseColor("#E0E0E0")); // 灰底
 
         // ===== 4. 呼吸动画（0%时开）=====
         if (percent <= 0) {
@@ -588,6 +589,20 @@ public class MainActivity extends AppCompatActivity{
         cardPieChart.notifyDataSetChanged();
         originPieChart.invalidate();
         cardPieChart.invalidate();
+
+        // 获取最纯粹的电量百分比
+        float value = lastCapValue; // 假设你的电量变量是这个，例如 98.7f
+        // 根据电量动态决定颜色（直接调用 View 内部新增的 updateConfig 方法）
+        int fluidColor = Color.parseColor("#39FF14"); // 默认极具科技感的荧光绿
+        if (value <= 20) {
+            fluidColor = Color.parseColor("#F44336"); // 低电量红
+        } else if (value <= 60) {
+            fluidColor = Color.parseColor("#FF9800"); // 中电量橙
+        }
+        // 充电中，传入 true，水滴连续喷涌
+        // 断电后，传入 false。底部不再冒新气泡，已有的老气泡像气球一样晃晃悠悠飘到山顶自动缩小消融消失，只留下空旷、干净且颜色对应的微弱液面底座
+        // 无需 if-else 判断，直接把 charge_ing 变量当作参数传进去
+        fluidBubbleView.updateConfig(fluidColor, charge_ing);
     }
     // 生成中间的文字
     private SpannableString generateCenterText(float percent) {
@@ -940,7 +955,9 @@ public class MainActivity extends AppCompatActivity{
                 if (pvPowerAc >= totalAcLoad) {
                     // 光伏够用，电池不放电
                     useTimeStr = "充电中";
+                    charge_ing = true;
                 } else {
+                    charge_ing = false;
                     // 光伏不足，电池需要放电
                     // 交流缺口折算到直流侧
                     float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
@@ -1631,6 +1648,10 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         check_request_permissions();
+        // 如果已经有电量数据，直接刷新（不会闪，因为 init 只做一次）
+        if (ringInitialized && lastCapValue >= 0) {
+            updateSingleRing(lastCapValue);
+        }
     }
     protected void onPause() {
         super.onPause();
