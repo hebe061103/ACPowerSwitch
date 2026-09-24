@@ -43,7 +43,6 @@ public class FluidBubbleView extends View {
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setInterpolator(new LinearInterpolator());
         animator.addUpdateListener(animation -> {
-            // 【核心修改点】无论充不充电，全局动画都必须不断刷新，以驱动残留水滴的移动和液面的呼吸
             animationPhase = animation.getAnimatedFraction();
             generateAndUpdateBubbles();
             invalidate();
@@ -52,23 +51,18 @@ public class FluidBubbleView extends View {
     }
 
     /**
-     * 外部调用的核心方法：动态更新流体颜色、电量以及【充电状态】
+     * 外部调用的核心方法：动态更新流体颜色以及【充电状态】
      */
     public void updateConfig(int color, boolean isCharging) {
         boolean needInvalidate = false;
-
-        // 如果颜色变了，更新颜色并准备重绘
         if (this.fluidColor != color) {
             this.fluidColor = color;
             needInvalidate = true;
         }
-
-        // 如果充电状态变了，更新状态并准备重绘
         if (this.isCharging != isCharging) {
             this.isCharging = isCharging;
             needInvalidate = true;
         }
-
         if (needInvalidate) {
             invalidate();
         }
@@ -84,28 +78,35 @@ public class FluidBubbleView extends View {
         float cx = width / 2f;
         float targetY = 15f;
 
-        // 【核心修改点1】只有在 isCharging 为 true（充电中）时，才会往列表里泵入新水滴
-        if (isCharging) {
-            if (now - lastBubbleTime > 250 && bubbles.size() < 16) {
-                DropBubble b = new DropBubble();
-                b.x = cx + (random.nextFloat() * 30f - 15f);
-                b.y = height - 5f;
-                b.maxRadius = 5f + random.nextFloat() * 5f;
-                b.radius = 1f;
-                b.speed = 0.6f + random.nextFloat();
-                b.wobbleOffset = random.nextFloat() * 100f;
-                bubbles.add(b);
-                lastBubbleTime = now;
-            }
+        // 充电中，且屏幕内水滴不超过 12 颗（密度稍微降低，防止大水滴叠在一起显得杂乱）
+        if (isCharging && now - lastBubbleTime > 280 && bubbles.size() < 12) {
+            DropBubble b = new DropBubble();
+            // 扩散跨度稍微拉大一点点
+            b.x = cx + (random.nextFloat() * 34f - 17f);
+            b.y = height - 5f;
+
+            // 🔥【修改点 1】拉大半径差距：随机基础半径范围从原来的 5~10 放大到 3.5~12 像素
+            // 大水滴能达到小水滴的近 4 倍体量，肉眼看过去分辨极其容易
+            b.maxRadius = 3.5f + random.nextFloat() * 8.5f;
+            b.radius = 1f;
+
+            // 大水滴重，速度稍慢；小水滴轻，上升稍快
+            b.speed = 0.6f + (12f - b.maxRadius) * 0.08f + random.nextFloat() * 0.4f;
+            b.wobbleOffset = random.nextFloat() * 100f;
+
+            bubbles.add(b);
+            lastBubbleTime = now;
         }
 
-        // 【核心修改点2】无论充不充电，只要屏幕里还有旧水滴，就继续让它们向上漂流直至自然消融淡出
+        // 刷新每一颗水滴的状态
         Iterator<DropBubble> iterator = bubbles.iterator();
         while (iterator.hasNext()) {
             DropBubble b = iterator.next();
-            b.y -= b.speed; // 现存水滴保持丝滑升华移动
+            b.y -= b.speed;
 
-            b.x += (float) Math.sin(animationPhase * 2 * Math.PI + b.wobbleOffset) * 0.2f;
+            // 摇晃弧度也根据大小调整，小水滴晃得更活泼
+            float wobbleScale = b.maxRadius > 8f ? 0.15f : 0.3f;
+            b.x += (float) Math.sin(animationPhase * 2 * Math.PI + b.wobbleOffset) * wobbleScale;
 
             float totalDistance = (height - 5f) - targetY;
             float currentDistance = b.y - targetY;
@@ -115,7 +116,7 @@ public class FluidBubbleView extends View {
                 continue;
             }
 
-            // 平滑控制尺寸变化（两头小、中间大，快到顶部时无缝淡出缩小）
+            // 生命周期内的尺寸过渡
             if (currentDistance > totalDistance - 25f) {
                 float birthRatio = (totalDistance - currentDistance) / 25f;
                 b.radius = b.maxRadius * birthRatio;
@@ -141,7 +142,7 @@ public class FluidBubbleView extends View {
 
         float cx = width / 2f;
 
-        // ==================== 1. 绘制极低的底部液面（不充电时依然呼吸长存） ====================
+        // ==================== 1. 绘制极低的底部液面 ====================
         @SuppressLint("DrawAllocation") Path poolPath = new Path();
         float poolBaseY = height - 5f;
         float poolWave = (float) Math.cos(animationPhase * 2 * Math.PI) * 1.5f;
@@ -159,17 +160,22 @@ public class FluidBubbleView extends View {
         fluidPaint.setColor(fluidColor);
         canvas.drawPath(poolPath, fluidPaint);
 
-        // ==================== 2. 绘制水滴（断电后，现有的水滴会优雅地向上漂完并自然淡出消融） ====================
+        // ==================== 2. 绘制大小错落的精致水滴 ====================
         for (DropBubble b : bubbles) {
             if (b.radius <= 0.5f) continue;
 
-            @SuppressLint("DrawAllocation") RectF bubbleRect = new RectF(b.x - b.radius, b.y - b.radius * 1.2f,
-                    b.x + b.radius, b.y + b.radius * 1.2f);
+            // 🔥【修改点 2】动态拉伸比例：
+            // 大水滴（半径>8）如果拉伸太长会失真，所以给 1.15 倍，让它圆润饱满
+            // 小水滴（半径<=8）给 1.35 倍拉伸，看起来像尖尖的小流体，对比非常强烈明显
+            float stretchFactor = b.maxRadius > 8f ? 1.15f : 1.35f;
+
+            @SuppressLint("DrawAllocation") RectF bubbleRect = new RectF(b.x - b.radius, b.y - b.radius * stretchFactor,
+                    b.x + b.radius, b.y + b.radius * stretchFactor);
             canvas.drawOval(bubbleRect, fluidPaint);
 
-            // 内部发光核心
+            // 内部发光核心：大小也要自适应水滴本身的半径
             fluidPaint.setColor(Color.parseColor("#E0FFD0"));
-            canvas.drawCircle(b.x, b.y - b.radius * 0.25f, b.radius * 0.35f, fluidPaint);
+            canvas.drawCircle(b.x, b.y - b.radius * 0.25f, b.radius * 0.33f, fluidPaint);
             fluidPaint.setColor(fluidColor);
         }
     }

@@ -166,15 +166,14 @@ public class MainActivity extends AppCompatActivity{
     // ===== MarkerView =====
     private CustomMarkerView originMarker, cardMarker;
     private ObjectAnimator originBreathAnim,cardBreathAnim;
-    private FluidBubbleView fluidBubbleView;
+    private FluidBubbleView originFluidView;
+    private FluidBubbleView cardFluidView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // ===== ViewSwitcher =====
         viewSwitcher = findViewById(R.id.viewSwitcher);
-        // ===== 充电动画控件 =====
-        fluidBubbleView = findViewById(R.id.fluidView);
         // 恢复显示模式
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
         int mode = sp.getInt("mode", 0); // 0 = 经典，1 = 卡片
@@ -237,6 +236,9 @@ public class MainActivity extends AppCompatActivity{
         // image
         origin_menu_bt = originalView.findViewById(R.id.menu_img);
 
+        // ===== 充电动画控件 =====
+        originFluidView = originalView.findViewById(R.id.fluidView);
+
         // ===== 卡片布局（child 1）=====
         View cardView = viewSwitcher.getChildAt(1);
 
@@ -297,6 +299,9 @@ public class MainActivity extends AppCompatActivity{
 
         // image
         card_menu_bt = cardView.findViewById(R.id.menu_img);
+
+        // ===== 充电动画控件 =====
+        cardFluidView = cardView.findViewById(R.id.fluidView);
     }
     private void init_module(){
         Calendar calendar = Calendar.getInstance();
@@ -602,7 +607,12 @@ public class MainActivity extends AppCompatActivity{
         // 充电中，传入 true，水滴连续喷涌
         // 断电后，传入 false。底部不再冒新气泡，已有的老气泡像气球一样晃晃悠悠飘到山顶自动缩小消融消失，只留下空旷、干净且颜色对应的微弱液面底座
         // 无需 if-else 判断，直接把 charge_ing 变量当作参数传进去
-        fluidBubbleView.updateConfig(fluidColor, charge_ing);
+        if (originFluidView != null) {
+            originFluidView.updateConfig(fluidColor, charge_ing);
+        }
+        if (cardFluidView != null) {
+            cardFluidView.updateConfig(fluidColor, charge_ing);
+        }
     }
     // 生成中间的文字
     private SpannableString generateCenterText(float percent) {
