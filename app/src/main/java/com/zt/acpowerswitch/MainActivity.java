@@ -58,7 +58,6 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.DefaultValueFormatter;
-import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
@@ -149,7 +148,7 @@ public class MainActivity extends AppCompatActivity{
 
     // ===== 图表 =====
     private LineChart originBatLineChart, cardBatLineChart;
-    private PieChart originPieChart, cardPieChart;
+    private PieChart originPieChart,cardPieChart;
     private BarChart originPowerChart, cardPowerChart;
     private LineChart originMemUseChart, cardMemUseChart;
 
@@ -215,7 +214,7 @@ public class MainActivity extends AppCompatActivity{
 
         // 图表
         originBatLineChart = originalView.findViewById(R.id.line_chart);
-        originPieChart = originalView.findViewById(R.id.pieChart);
+        originPieChart = originalView.findViewById(R.id.PieChart);
         originPowerChart = originalView.findViewById(R.id.power_chart);
         originMemUseChart = originalView.findViewById(R.id.mem_use_chart);
         origin_hour_power = originalView.findViewById(R.id.hour_power);
@@ -276,7 +275,7 @@ public class MainActivity extends AppCompatActivity{
 
         // 图表
         cardBatLineChart = cardView.findViewById(R.id.line_chart);
-        cardPieChart = cardView.findViewById(R.id.pieChart);
+        cardPieChart = cardView.findViewById(R.id.PieChart);
         cardPowerChart = cardView.findViewById(R.id.power_chart);
         cardMemUseChart = cardView.findViewById(R.id.mem_use_chart);
         card_hour_power = cardView.findViewById(R.id.hour_power);
@@ -297,6 +296,7 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         Calendar calendar = Calendar.getInstance();
+        initSingleRing();
         year = calendar.get(Calendar.YEAR);       // 年
         month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
         day = calendar.get(Calendar.DAY_OF_MONTH); // 日
@@ -476,89 +476,119 @@ public class MainActivity extends AppCompatActivity{
 
         return result[0]; // 返回结果
     }
-    private void updateChart(float percent) {
-        // 防止超过100%
+    // ========== 初始化单环（只调用一次）==========
+    private void initSingleRing() {
+        // 4段 Entry：红、橙、绿、灰底
+        List<PieEntry> entries = new ArrayList<>();
+        entries.add(new PieEntry(0f, "")); // 红 0-20
+        entries.add(new PieEntry(0f, "")); // 橙 20-60
+        entries.add(new PieEntry(0f, "")); // 绿 60-100
+        entries.add(new PieEntry(100f, "")); // 灰底
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(
+                Color.parseColor("#F44336"),
+                Color.parseColor("#FF9800"),
+                Color.parseColor("#4CAF50"),
+                Color.parseColor("#E0E0E0")
+        );
+        dataSet.setDrawValues(false);
+        dataSet.setSliceSpace(1.5f);
+
+        PieData data = new PieData(dataSet);
+
+        // ===== 经典布局环 =====
+        originPieChart.setData(data);
+        originPieChart.setDrawHoleEnabled(true);
+        originPieChart.setHoleRadius(65f);
+        originPieChart.setTransparentCircleRadius(80f);
+        originPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF"));
+        originPieChart.setRotationAngle(-90f);
+        originPieChart.getDescription().setEnabled(false);
+        originPieChart.getLegend().setEnabled(false);
+        originPieChart.setTouchEnabled(false);
+        originPieChart.setAlpha(0.8f);
+        originPieChart.setCenterTextSize(8f);
+        originPieChart.setCenterTextColor(Color.parseColor("#333333"));
+        originPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+
+        // ===== 卡片布局环 =====
+        cardPieChart.setData(data);
+        cardPieChart.setDrawHoleEnabled(true);
+        cardPieChart.setHoleRadius(65f);
+        cardPieChart.setTransparentCircleRadius(80f);
+        cardPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF"));
+        cardPieChart.setRotationAngle(-90f);
+        cardPieChart.getDescription().setEnabled(false);
+        cardPieChart.getLegend().setEnabled(false);
+        cardPieChart.setTouchEnabled(false);
+        cardPieChart.setAlpha(0.8f);
+        cardPieChart.setCenterTextSize(8f);
+        cardPieChart.setCenterTextColor(Color.parseColor("#333333"));
+        cardPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+
+        originPieChart.setDrawRoundedSlices(true);
+        cardPieChart.setDrawRoundedSlices(true);
+        originPieChart.invalidate();
+        cardPieChart.invalidate();
+    }
+    // ========== 更新单环（每次电量变化调用，无闪烁）==========
+    private void updateSingleRing(float percent) {
         if (percent > 100) percent = 100;
         if (percent < 0) percent = 0;
 
-        float decayPercent = 100f - percent;
+        // ===== 1. 更新中间文字（实时）=====
+        SpannableString centerText = generateCenterText(percent);
+        originPieChart.setCenterText(centerText);
+        cardPieChart.setCenterText(centerText);
 
-        List<PieEntry> entries = new ArrayList<>();
-        // 第一个是剩余容量（天蓝色），第二个是衰减（灰色）
-        entries.add(new PieEntry(percent, ""));
-        entries.add(new PieEntry(decayPercent, ""));
+        // ===== 2. 更新圆环各段数值（局部，不重绘）=====
+        PieData data = originPieChart.getData();
+        if (data == null) return;
 
-        PieDataSet dataSet = new PieDataSet(entries, "");
+        PieDataSet dataSet = (PieDataSet) data.getDataSetByIndex(0);
+        List<PieEntry> entries = dataSet.getEntriesForXValue(0f);
 
-        int ringColor = getHealthColor(percent);
-        // 颜色设置：天蓝色 (#4FC3F7) + 浅灰色 (#E0E0E0)
-        dataSet.setColors(
-                ringColor, //动态颜色
-                Color.parseColor("#E0E0E0")   // 衰竭为灰色
-        );
+        // 计算各段
+        float redVal = Math.min(percent, 20f);
+        float orangeVal = percent > 20f ? Math.min(percent - 20f, 40f) : 0f;
+        float greenVal = percent > 60f ? (percent - 60f) : 0f;
+        float grayVal = 100f - (redVal + orangeVal + greenVal);
 
-        // 不显示扇区上的默认数值，我们自己画中间的
-        dataSet.setDrawValues(false); // 如果想在扇区上也显示百分比，设为 true
-        dataSet.setValueTextSize(8f);
-        dataSet.setValueTextColor(Color.WHITE);
-        dataSet.setValueFormatter(new PercentFormatter()); // 格式化显示为 %
+        // 修改数值（不重建对象）
+        entries.get(0).setY(redVal);
+        entries.get(1).setY(orangeVal);
+        entries.get(2).setY(greenVal);
+        entries.get(3).setY(grayVal);
 
-        PieData data = new PieData(dataSet);
-        originPieChart.setData(data);
-        cardPieChart.setData(data);
+        // ===== 3. 动态颜色（按当前电量段高亮对应颜色）=====
+        int redColor    = percent > 0   ? Color.parseColor("#F44336") : Color.parseColor("#E0E0E0");
+        int orangeColor = percent > 20  ? Color.parseColor("#FF9800") : Color.parseColor("#E0E0E0");
+        int greenColor  = percent > 60  ? Color.parseColor("#4CAF50") : Color.parseColor("#E0E0E0");
 
-        // --- 关键：设置成圆环效果 ---
-        originPieChart.setAlpha(0.7f); // 0.0~1.0，值越小越透明
-        cardPieChart.setAlpha(0.7f); // 0.0~1.0，值越小越透明
+        List<Integer> colors = dataSet.getColors();
+        colors.clear();
+        colors.add(redColor);
+        colors.add(orangeColor);
+        colors.add(greenColor);
+        colors.add(Color.parseColor("#E0E0E0"));
 
-        originPieChart.setDrawHoleEnabled(true);
-        cardPieChart.setDrawHoleEnabled(true);
-
-        originPieChart.setHoleRadius(70f); // 内圆大小（越小环越粗）
-        cardPieChart.setHoleRadius(70f); // 内圆大小（越小环越粗）
-
-        originPieChart.setTransparentCircleRadius(80f); // 外圈透明半径（制造图中那种浅色过渡环）
-        cardPieChart.setTransparentCircleRadius(80f); // 外圈透明半径（制造图中那种浅色过渡环)
-
-        originPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF")); // 半透明白，模拟图中的光晕感
-        cardPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF")); // 半透明白，模拟图中的光晕感
-
-        // --- 中间文字 ---
-        originPieChart.setCenterText(generateCenterText(percent));
-        cardPieChart.setCenterText(generateCenterText(percent));
-
-        originPieChart.setCenterTextSize(8f);
-        cardPieChart.setCenterTextSize(8f);
-
-        originPieChart.setCenterTextColor(Color.parseColor("#333333")); // 深灰色文字
-        cardPieChart.setCenterTextColor(Color.parseColor("#333333")); // 深灰色文字
-
-        originPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-        cardPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-
-        // 其他配置
-        originPieChart.getDescription().setEnabled(false);
-        cardPieChart.getDescription().setEnabled(false);
-
-        originPieChart.getLegend().setEnabled(false);
-        cardPieChart.getLegend().setEnabled(false);
-
-        originPieChart.setTouchEnabled(false); // 禁用触摸
-        cardPieChart.setTouchEnabled(false); // 禁用触摸
-        // 动画
-        originPieChart.animateY(1000);
-        cardPieChart.animateY(1000);
-
+        // ===== 4. 呼吸动画（0%时开）=====
         if (percent <= 0) {
             startBreathAnimation();
         } else {
             stopBreathAnimation();
+            originPieChart.setAlpha(0.8f);
+            cardPieChart.setAlpha(0.8f);
         }
 
+        // ===== 5. 局部刷新（无 setData、无 animateY、不闪）=====
+        data.notifyDataChanged();
+        originPieChart.notifyDataSetChanged();
+        cardPieChart.notifyDataSetChanged();
         originPieChart.invalidate();
         cardPieChart.invalidate();
     }
-
     // 生成中间的文字
     private SpannableString generateCenterText(float percent) {
         String text;
@@ -612,16 +642,6 @@ public class MainActivity extends AppCompatActivity{
         if (cardBreathAnim != null) {
             cardBreathAnim.cancel();
             cardBreathAnim = null;
-        }
-    }
-    //圆环动态颜色
-    private int getHealthColor(float socPercent) {
-        if (socPercent >= 80f) {
-            return Color.parseColor("#4CAF50"); // 绿色：充裕
-        } else if (socPercent >= 20f) {
-            return Color.parseColor("#FF9800"); // 橙色：提醒
-        } else {
-            return Color.parseColor("#F44336"); // 红色：告急
         }
     }
     private void mData_pro_thread() {
@@ -979,13 +999,13 @@ public class MainActivity extends AppCompatActivity{
                     float invalidate = -2;
                     if (invalidate != lastCapValue) {
                         lastCapValue = invalidate;
-                        updateChart(lastCapValue);
+                        updateSingleRing(lastCapValue);
                     }
                 }else {
                     float batValue = Float.parseFloat(String.format("%.1f", available_cap / total_cap * 100));
                     if (batValue != lastCapValue) {
                         lastCapValue = batValue;
-                        updateChart(lastCapValue);
+                        updateSingleRing(lastCapValue);
                     }
                 }
             }
