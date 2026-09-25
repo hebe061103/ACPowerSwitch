@@ -599,7 +599,7 @@
             <FrameLayout
                 android:id="@+id/chart_container"
                 android:layout_width="0dp"
-                android:layout_height="280dp"
+                android:layout_height="300dp"
                 android:layout_marginTop="10dp"
                 app:layout_constraintTop_toBottomOf="@+id/bat_chart"
                 app:layout_constraintStart_toStartOf="parent"
@@ -611,21 +611,32 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/chart_shape" />
 
-                <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/PieChart"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:layout_gravity="top|start"
-                    android:layout_marginStart="23dp"
-                    android:layout_marginTop="2dp"/>
+                <ImageView
+                    android:id="@+id/solar_icon"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="20dp"
+                    android:src="@drawable/solar"
+                    tools:ignore="ContentDescription,ImageContrastCheck" />
+
+                <ImageView
+                    android:id="@+id/house_icon"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="5dp"
+                    android:layout_marginBottom="40dp"
+                    android:src="@drawable/house"
+                    tools:ignore="ContentDescription,ImageContrastCheck" />
 
                 <FrameLayout
                     android:id="@+id/ring_container"
-                    android:layout_width="70dp"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_gravity="top|start"
-                    android:layout_marginStart="23dp"
-                    android:layout_marginTop="40dp">
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="2dp"
+                    android:layout_marginBottom="30dp"
+                    android:layout_marginTop="2dp">
 
                     <com.zt.acpowerswitch.FluidBubbleView
                         android:id="@+id/fluidView"
@@ -648,7 +659,7 @@
                         android:id="@+id/pv_charged"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="暂无"
+                        android:text="暂无"
                         android:textSize="10sp"
                         android:textColor="#000000"
                         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -657,7 +668,7 @@
                         android:id="@+id/tv_rollover"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="暂无"
+                        android:text="暂无"
                         android:textSize="10sp"
                         android:textColor="#000000"
                         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -666,7 +677,7 @@
                         android:id="@+id/tv_charged"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="暂无"
+                        android:text="暂无"
                         android:textSize="10sp"
                         android:textColor="#000000"
                         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -675,7 +686,7 @@
                         android:id="@+id/tv_discharged"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="暂无"
+                        android:text="暂无"
                         android:textSize="10sp"
                         android:textColor="#000000"
                         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -684,7 +695,7 @@
                         android:id="@+id/tv_available"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="暂无"
+                        android:text="暂无"
                         android:textSize="10sp"
                         android:textColor="#000000"
                         tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />

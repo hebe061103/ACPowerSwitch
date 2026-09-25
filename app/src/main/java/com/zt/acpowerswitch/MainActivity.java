@@ -4,7 +4,6 @@ import static android.widget.Toast.LENGTH_SHORT;
 import static com.zt.acpowerswitch.TCPClient.socket;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
-import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ComponentName;
@@ -21,9 +20,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Vibrator;
-import android.text.SpannableString;
-import android.text.style.RelativeSizeSpan;
-import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -43,7 +39,6 @@ import androidx.core.content.ContextCompat;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.components.XAxis;
@@ -54,9 +49,6 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.data.PieData;
-import com.github.mikephil.charting.data.PieDataSet;
-import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.DefaultValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
@@ -82,7 +74,6 @@ public class MainActivity extends AppCompatActivity{
     public static SharedPreferences.Editor editor;
     public ImageView origin_menu_bt,card_menu_bt;
     public long lastBack = 0;
-    private boolean ringInitialized = false;
     public static final TCPClient tcpClient = new TCPClient();
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -103,10 +94,9 @@ public class MainActivity extends AppCompatActivity{
     public static int page_refresh_time;
     private boolean isMemChartInitialized = false;
     public SmartRefreshLayout smartRefreshLayout;
-    private boolean request_homepage_run,charge_ing;
+    private boolean request_homepage_run;
     public static int year,month,day;
     Map<String, String> uiData = new HashMap<>();
-    private float lastCapValue = -1f;
     private float startX = 0f;
     private float startY = 0f;
     private ViewSwitcher viewSwitcher;
@@ -149,7 +139,6 @@ public class MainActivity extends AppCompatActivity{
 
     // ===== 图表 =====
     private LineChart originBatLineChart, cardBatLineChart;
-    private PieChart originPieChart,cardPieChart;
     private BarChart originPowerChart, cardPowerChart;
     private LineChart originMemUseChart, cardMemUseChart;
 
@@ -165,7 +154,6 @@ public class MainActivity extends AppCompatActivity{
 
     // ===== MarkerView =====
     private CustomMarkerView originMarker, cardMarker;
-    private ObjectAnimator originBreathAnim,cardBreathAnim;
     private FluidBubbleView originFluidView;
     private FluidBubbleView cardFluidView;
     @Override
@@ -217,7 +205,6 @@ public class MainActivity extends AppCompatActivity{
 
         // 图表
         originBatLineChart = originalView.findViewById(R.id.line_chart);
-        originPieChart = originalView.findViewById(R.id.PieChart);
         originPowerChart = originalView.findViewById(R.id.power_chart);
         originMemUseChart = originalView.findViewById(R.id.mem_use_chart);
         origin_hour_power = originalView.findViewById(R.id.hour_power);
@@ -281,7 +268,6 @@ public class MainActivity extends AppCompatActivity{
 
         // 图表
         cardBatLineChart = cardView.findViewById(R.id.line_chart);
-        cardPieChart = cardView.findViewById(R.id.PieChart);
         cardPowerChart = cardView.findViewById(R.id.power_chart);
         cardMemUseChart = cardView.findViewById(R.id.mem_use_chart);
         card_hour_power = cardView.findViewById(R.id.hour_power);
@@ -305,7 +291,6 @@ public class MainActivity extends AppCompatActivity{
     }
     private void init_module(){
         Calendar calendar = Calendar.getInstance();
-        initSingleRing();
         year = calendar.get(Calendar.YEAR);       // 年
         month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
         day = calendar.get(Calendar.DAY_OF_MONTH); // 日
@@ -484,190 +469,6 @@ public class MainActivity extends AppCompatActivity{
         }
 
         return result[0]; // 返回结果
-    }
-    // ========== 初始化单环（只调用一次）==========
-    private void initSingleRing() {
-        if (ringInitialized) return; // 已经初始化过，直接跳过
-        ringInitialized = true;
-        // 4段 Entry：红、橙、绿、灰底
-        List<PieEntry> entries = new ArrayList<>();
-        entries.add(new PieEntry(0f, "")); // 红 0-20
-        entries.add(new PieEntry(0f, "")); // 橙 20-60
-        entries.add(new PieEntry(0f, "")); // 绿 60-100
-        entries.add(new PieEntry(100f, "")); // 灰底
-
-        PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(
-                Color.parseColor("#F44336"),
-                Color.parseColor("#FF9800"),
-                Color.parseColor("#39FF14"),
-                Color.parseColor("#E0E0E0")
-        );
-        dataSet.setDrawValues(false);
-        //dataSet.setSliceSpace(1.5f);
-
-        PieData data = new PieData(dataSet);
-
-        // ===== 经典布局环 =====
-        originPieChart.setData(data);
-        originPieChart.setDrawHoleEnabled(true);
-        originPieChart.setHoleRadius(65f);
-        originPieChart.setTransparentCircleRadius(80f);
-        originPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF"));
-        originPieChart.setRotationAngle(-90f);
-        originPieChart.getDescription().setEnabled(false);
-        originPieChart.getLegend().setEnabled(false);
-        originPieChart.setTouchEnabled(false);
-        originPieChart.setAlpha(0.8f);
-        originPieChart.setCenterTextSize(8f);
-        originPieChart.setCenterTextColor(Color.parseColor("#333333"));
-        originPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-
-        // ===== 卡片布局环 =====
-        cardPieChart.setData(data);
-        cardPieChart.setDrawHoleEnabled(true);
-        cardPieChart.setHoleRadius(65f);
-        cardPieChart.setTransparentCircleRadius(80f);
-        cardPieChart.setTransparentCircleColor(Color.parseColor("#88FFFFFF"));
-        cardPieChart.setRotationAngle(-90f);
-        cardPieChart.getDescription().setEnabled(false);
-        cardPieChart.getLegend().setEnabled(false);
-        cardPieChart.setTouchEnabled(false);
-        cardPieChart.setAlpha(0.8f);
-        cardPieChart.setCenterTextSize(8f);
-        cardPieChart.setCenterTextColor(Color.parseColor("#333333"));
-        cardPieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-
-        originPieChart.setDrawRoundedSlices(true);
-        cardPieChart.setDrawRoundedSlices(true);
-        originPieChart.invalidate();
-        cardPieChart.invalidate();
-    }
-    // ========== 更新单环（每次电量变化调用，无闪烁）==========
-    private void updateSingleRing(float percent) {
-        if (percent > 100) percent = 100;
-        if (percent < 0) percent = 0;
-
-        // ===== 1. 更新中间文字（实时）=====
-        SpannableString centerText = generateCenterText(percent);
-        originPieChart.setCenterText(centerText);
-        cardPieChart.setCenterText(centerText);
-
-        // ===== 2. 更新圆环各段数值（三段累积，不重绘）=====
-        PieData data = originPieChart.getData();
-        if (data == null) return;
-
-        PieDataSet dataSet = (PieDataSet) data.getDataSetByIndex(0);
-        List<PieEntry> entries = dataSet.getEntriesForXValue(0f);
-
-        // 三段累积：红(0-20) + 橙(20-60) + 绿(60-100)
-        float redVal    = Math.min(percent, 20f);
-        float orangeVal = percent > 20f ? Math.min(percent - 20f, 40f) : 0f;
-        float greenVal  = percent > 60f ? (percent - 60f) : 0f;
-        float grayVal   = 100f - (redVal + orangeVal + greenVal);
-
-        entries.get(0).setY(redVal);
-        entries.get(1).setY(orangeVal);
-        entries.get(2).setY(greenVal);
-        entries.get(3).setY(grayVal);
-
-        // ===== 3. 颜色：三段永远上色，不判断区间 =====
-        List<Integer> colors = dataSet.getColors();
-        colors.clear();
-        colors.add(Color.parseColor("#F44336")); // 红
-        colors.add(Color.parseColor("#FF9800")); // 橙
-        colors.add(Color.parseColor("#39FF14")); // 绿
-        colors.add(Color.parseColor("#E0E0E0")); // 灰底
-
-        // ===== 4. 呼吸动画（0%时开）=====
-        if (percent <= 0) {
-            startBreathAnimation();
-        } else {
-            stopBreathAnimation();
-            originPieChart.setAlpha(0.8f);
-            cardPieChart.setAlpha(0.8f);
-        }
-
-        // ===== 5. 局部刷新（无 setData、无 animateY、不闪）=====
-        data.notifyDataChanged();
-        originPieChart.notifyDataSetChanged();
-        cardPieChart.notifyDataSetChanged();
-        originPieChart.invalidate();
-        cardPieChart.invalidate();
-
-        // 获取最纯粹的电量百分比
-        float value = lastCapValue; // 假设你的电量变量是这个，例如 98.7f
-        // 根据电量动态决定颜色（直接调用 View 内部新增的 updateConfig 方法）
-        int fluidColor = Color.parseColor("#39FF14"); // 默认极具科技感的荧光绿
-        if (value <= 20) {
-            fluidColor = Color.parseColor("#F44336"); // 低电量红
-        } else if (value <= 60) {
-            fluidColor = Color.parseColor("#FF9800"); // 中电量橙
-        }
-        // 充电中，传入 true，水滴连续喷涌
-        // 断电后，传入 false。底部不再冒新气泡，已有的老气泡像气球一样晃晃悠悠飘到山顶自动缩小消融消失，只留下空旷、干净且颜色对应的微弱液面底座
-        // 无需 if-else 判断，直接把 charge_ing 变量当作参数传进去
-        if (originFluidView != null) {
-            originFluidView.updateConfig(fluidColor, charge_ing);
-        }
-        if (cardFluidView != null) {
-            cardFluidView.updateConfig(fluidColor, charge_ing);
-        }
-    }
-    // 生成中间的文字
-    private SpannableString generateCenterText(float percent) {
-        String text;
-        text = String.format(Locale.getDefault(), "%.1f%%", percent);
-
-        SpannableString s = new SpannableString(text);
-
-        int firstLineEnd = text.indexOf('\n');
-        boolean hasSecondLine = firstLineEnd >= 0;
-
-        // ---- 第一行 ----
-        int line1End = hasSecondLine ? firstLineEnd : text.length();
-        s.setSpan(new StyleSpan(Typeface.BOLD), 0, line1End, 0);
-        s.setSpan(new RelativeSizeSpan(1.3f), 0, line1End, 0);
-
-        // ---- 第二行（仅当有换行时） ----
-        if (hasSecondLine) {
-            int secondLineStart = firstLineEnd + 1;
-            int secondLineEnd = text.length();
-
-            s.setSpan(new RelativeSizeSpan(1.3f), secondLineStart, secondLineEnd, 0);
-            s.setSpan(new StyleSpan(Typeface.BOLD), secondLineStart, secondLineEnd, 0);
-        }
-
-        return s;
-    }
-    // 启动呼吸动画
-    private void startBreathAnimation() {
-        // 原始布局
-        originPieChart.setAlpha(1.0f);
-        originBreathAnim = ObjectAnimator.ofFloat(originPieChart, "alpha", 0.2f, 1.0f);
-        originBreathAnim.setDuration(1200);
-        originBreathAnim.setRepeatCount(ObjectAnimator.INFINITE);
-        originBreathAnim.setRepeatMode(ObjectAnimator.REVERSE);
-        originBreathAnim.start();
-
-        // 卡片布局
-        cardPieChart.setAlpha(1.0f);
-        cardBreathAnim = ObjectAnimator.ofFloat(cardPieChart, "alpha", 0.2f, 1.0f);
-        cardBreathAnim.setDuration(1200);
-        cardBreathAnim.setRepeatCount(ObjectAnimator.INFINITE);
-        cardBreathAnim.setRepeatMode(ObjectAnimator.REVERSE);
-        cardBreathAnim.start();
-    }
-    // 停止呼吸动画
-    private void stopBreathAnimation() {
-        if (originBreathAnim != null) {
-            originBreathAnim.cancel();
-            originBreathAnim = null;
-        }
-        if (cardBreathAnim != null) {
-            cardBreathAnim.cancel();
-            cardBreathAnim = null;
-        }
     }
     private void mData_pro_thread() {
         new Thread(() -> {
@@ -962,6 +763,7 @@ public class MainActivity extends AppCompatActivity{
                 // 系统总交流消耗（用于判断是否充电）
                 float totalAcLoad = loadPowerAc + invSelfConsumption;
                 String useTimeStr;
+                boolean charge_ing;
                 if (pvPowerAc >= totalAcLoad) {
                     // 光伏够用，电池不放电
                     useTimeStr = "充电中";
@@ -1021,19 +823,43 @@ public class MainActivity extends AppCompatActivity{
                     originBatHealthCap.setText("暂未校准");
                     cardBatHealthCap.setText("暂未校准");
                 }
-                // 在数据更新回调里
-                if (total_cap==0){
-                    float invalidate = -2;
-                    if (invalidate != lastCapValue) {
-                        lastCapValue = invalidate;
-                        updateSingleRing(lastCapValue);
+                // 🧠【核心修改2】：抛弃上面复杂的数字锁判断，直接在数据包最外层计算最新状态
+                float lastCapValue;
+                if (total_cap == 0) {
+                    lastCapValue = -2;
+                } else {
+                    float rawValue = (available_cap / total_cap) * 100f;
+                    lastCapValue = Math.round(rawValue * 10f) / 10f;
+                }
+
+                // 🔌 解析出最即时的电流浮点数（供粒子数量与速度大小控制阀门使用）
+                float currentA = 0f;
+                try {
+                    String currentStr = uiData.get("修改电池充放电电流值");
+                    if (currentStr != null && !currentStr.isEmpty()) {
+                        currentA = Float.parseFloat(currentStr);
                     }
-                }else {
-                    float batValue = Float.parseFloat(String.format("%.1f", available_cap / total_cap * 100));
-                    if (batValue != lastCapValue) {
-                        lastCapValue = batValue;
-                        updateSingleRing(lastCapValue);
-                    }
+                } catch (Exception e) {
+                    currentA = 0f;
+                }
+                if (lastCapValue > 100) lastCapValue = 100;
+                if (lastCapValue < 0) lastCapValue = 0;
+
+                // 1. 根据电量，在外部精准计算出当前应该呈现的科技主题颜色
+                int fluidColor = Color.parseColor("#39FF14"); // 默认：高电量科技绿
+                if (lastCapValue <= 20) {
+                    fluidColor = Color.parseColor("#F44336"); // 低电量：红
+                } else if (lastCapValue <= 60) {
+                    fluidColor = Color.parseColor("#FF9800"); // 中电量：橙
+                }
+                boolean isNoDischarge = "无需放电".equals(useTimeStr);
+                // 🚀【终极同步】：跟随 Handler 数据的更新进行高频无条件推送
+                // 只要 charge_ing 开关一变，水滴在 0.01 秒内就会瞬间转弯（充电往上飞、放电往下滴），绝不再有任何延迟！
+                if (originFluidView != null) {
+                    originFluidView.updateConfig(lastCapValue, fluidColor, charge_ing, currentA, isNoDischarge);
+                }
+                if (cardFluidView != null) {
+                    cardFluidView.updateConfig(lastCapValue, fluidColor, charge_ing, currentA, isNoDischarge);
                 }
             }
         }
@@ -1418,7 +1244,7 @@ public class MainActivity extends AppCompatActivity{
         chart.getXAxis().setAxisMaximum(95f);
         chart.getXAxis().setSpaceMax(1.5f); //额外给 X 轴右侧虚设 1.5 个单位的空白缓冲区
         chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
-        chart.getAxisLeft().setAxisMaximum(30f);//左侧Y轴最大值
+        chart.getAxisLeft().setAxisMaximum(32f);//左侧Y轴最大值
         chart.setData(bat_data);//调置数据
         chart.setScaleEnabled(false); // 彻底禁用缩放（最强力开关）
         chart.setDoubleTapToZoomEnabled(false); // 禁用双击缩放（很多时候是这个在起作用）
@@ -1658,10 +1484,6 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         check_request_permissions();
-        // 如果已经有电量数据，直接刷新（不会闪，因为 init 只做一次）
-        if (ringInitialized && lastCapValue >= 0) {
-            updateSingleRing(lastCapValue);
-        }
     }
     protected void onPause() {
         super.onPause();
