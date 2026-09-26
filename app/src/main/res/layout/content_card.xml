@@ -824,7 +824,7 @@
                             android:layout_height="80dp"
                             android:layout_gravity="bottom|end"
                             android:layout_marginEnd="5dp"
-                            android:layout_marginBottom="40dp"
+                            android:layout_marginBottom="30dp"
                             android:src="@drawable/house"
                             tools:ignore="ContentDescription,ImageContrastCheck" />
 
@@ -834,13 +834,13 @@
                             android:layout_height="match_parent"
                             android:layout_gravity="top|end"
                             android:layout_marginEnd="2dp"
-                            android:layout_marginBottom="30dp"
-                            android:layout_marginTop="2dp">
+                            android:layout_marginBottom="30dp">
 
                             <com.zt.acpowerswitch.FluidBubbleView
                                 android:id="@+id/fluidView"
                                 android:layout_width="match_parent"
-                                android:layout_height="match_parent" />
+                                android:layout_height="match_parent"
+                                android:layout_marginTop="10dp"/>
                         </FrameLayout>
 
                         <LinearLayout

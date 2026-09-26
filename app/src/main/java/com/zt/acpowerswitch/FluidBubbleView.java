@@ -14,33 +14,39 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 
 public class FluidBubbleView extends View {
     private Paint ringPaint;
     private Paint fluidPaint;
     private Paint textPaint;
+    private Paint glowPaint;
 
     private float progress = 0f;
     private int fluidColor = Color.parseColor("#39FF14");
 
     private float animationPhase = 0f;
-    private final List<EnergyDrop> particles = new ArrayList<>();
+    private final List<ChargeParticle> chargeParticles = new ArrayList<>();
+    private final List<DischargeDrop> dischargeDrops = new ArrayList<>();
     private final Random random = new Random();
-    private long lastParticleTime = 0;
+    private long lastChargeSpawn = 0;
+    private long lastDischargeSpawn = 0;
 
-    private boolean isCharging = true;
+    private float chargeCurrent = 0f;
+    private float dischargeCurrent = 0f;
 
-    // 复用对象
-    private final RectF ringOval = new RectF();
+    private float smoothPhase1 = 0f;
+    private float smoothPhase2 = 0f;
+    private float smoothPhase3 = 0f;
+    private float smoothAmp = 1.0f;
+    private final Random noiseRandom = new Random();
+
     private final Path circleClipPath = new Path();
     private final Path lightWavePath = new Path();
     private final Path fluidRingPath = new Path();
     private final Path wavePath = new Path();
+    private final Path dropPath = new Path();
     private final RectF bubbleRect = new RectF();
-    private float chargingCurrent = 0f;
-    private boolean isNoDischarge = false;
 
     public FluidBubbleView(Context context) { super(context); init(); }
     public FluidBubbleView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
@@ -49,7 +55,6 @@ public class FluidBubbleView extends View {
     private float dp2px(float dp) {
         return dp * getContext().getResources().getDisplayMetrics().density;
     }
-
     private void init() {
         ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ringPaint.setStyle(Paint.Style.STROKE);
@@ -58,6 +63,9 @@ public class FluidBubbleView extends View {
 
         fluidPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         fluidPaint.setStyle(Paint.Style.FILL);
+
+        glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        glowPaint.setStyle(Paint.Style.FILL);
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -69,23 +77,32 @@ public class FluidBubbleView extends View {
         animator.setInterpolator(new LinearInterpolator());
         animator.addUpdateListener(animation -> {
             animationPhase = animation.getAnimatedFraction();
-            updateEnergyParticles();
+            updateParticles();
             invalidate();
         });
         animator.start();
     }
 
-    public void updateConfig(float progress, int color, boolean isCharging, float current, boolean isNoDischarge) {
+    public void updateConfig(float progress, int color,
+                             float chargeCurrent, float dischargeCurrent) {
         boolean needInvalidate = false;
         if (this.progress != progress) { this.progress = progress; needInvalidate = true; }
         if (this.fluidColor != color) { this.fluidColor = color; needInvalidate = true; }
-        if (this.isCharging != isCharging) { this.isCharging = isCharging; needInvalidate = true; }
-        if (this.chargingCurrent != current) { this.chargingCurrent = current; needInvalidate = true; }
-        if (this.isNoDischarge != isNoDischarge) { this.isNoDischarge = isNoDischarge; needInvalidate = true; }
-        if (needInvalidate) { invalidate(); }
+        if (this.chargeCurrent != chargeCurrent) { this.chargeCurrent = chargeCurrent; needInvalidate = true; }
+        if (this.dischargeCurrent != dischargeCurrent) { this.dischargeCurrent = dischargeCurrent; needInvalidate = true; }
+        if (needInvalidate) invalidate();
     }
 
-    private void updateEnergyParticles() {
+    // ==================== 核心参数 ====================
+    // 电流→比例，用 pow 让低电流也能看到效果
+    private float chargeRatio() {
+        return (float) Math.pow(Math.min(1.0f, chargeCurrent / 40f), 0.5f);
+    }
+    private float dischargeRatio() {
+        return (float) Math.pow(Math.min(1.0f, dischargeCurrent / 40f), 0.5f);
+    }
+
+    private void updateParticles() {
         long now = System.currentTimeMillis();
         int width = getWidth();
         int height = getHeight();
@@ -96,208 +113,200 @@ public class FluidBubbleView extends View {
         float ringRadius = (ringWidthPx - dp2px(12f)) / 2f;
         float cy = ringRadius + dp2px(6f);
 
-        float currentRatio = Math.min(1.0f, Math.max(0f, chargingCurrent / 40f));
+        float targetHouseX = width - dp2px(45f);
+        float targetHouseY = height - dp2px(55f);
 
-        if (isCharging) {
-            removeDownParticles();
+        // 噪声
+        smoothPhase1 += 0.017f + (noiseRandom.nextFloat() * 0.006f - 0.003f);
+        smoothPhase2 += 0.023f + (noiseRandom.nextFloat() * 0.006f - 0.003f);
+        smoothPhase3 += 0.009f + (noiseRandom.nextFloat() * 0.004f - 0.002f);
+        smoothAmp += (noiseRandom.nextFloat() * 0.02f - 0.01f);
+        smoothAmp = Math.max(0.92f, Math.min(1.08f, smoothAmp));
 
-            currentRatio = Math.min(1.0f, Math.max(0f, chargingCurrent / 40f));
-            long dynamicSpawnInterval = (long) (1000 - (900 * currentRatio));
-            int dynamicMaxParticles = (int) (2 + (22 * currentRatio));
+        // ===== 1. 充电粒子 =====
+        float cRatio = chargeRatio();
+        if (chargeCurrent > 0.1f) {
+            // 40A → 间隔 60ms, 同屏 30颗; 1A → 间隔 800ms, 同屏 3颗
+            long interval = (long) (800 - 740 * cRatio);
+            int maxCount = 3 + (int) (27 * cRatio);
 
-            if (now - lastParticleTime > dynamicSpawnInterval && particles.size() < dynamicMaxParticles) {
-                EnergyDrop p = new EnergyDrop();
-                p.x = cx;
-                p.y = cy + ringRadius;
-                p.maxRadius = dp2px(4.5f) + random.nextFloat() * dp2px(4.0f);
-                p.radius = p.maxRadius;
+            int count = 0;
+            for (ChargeParticle p : chargeParticles) { if (!p.dead) count++; }
 
-                float baseSpeed = dp2px(0.4f) + (currentRatio * dp2px(2.0f));
-                baseSpeed = Math.min(baseSpeed, dp2px(0.8f));
-                p.speedX = baseSpeed + random.nextFloat() * dp2px(0.2f);
-                p.speedY = (cy - p.y) / ((cx - p.x) / p.speedX);
+            if (now - lastChargeSpawn > interval && count < maxCount) {
+                ChargeParticle p = new ChargeParticle();
+                // 太阳能板中心坐标（外部设置，没设置就默认左上区域）`
+                float targetSolarX = dp2px(50f);
+                float targetSolarY = dp2px(50f);
+                // 从太阳能板中心附近随机散开出生
+                p.x = targetSolarX + (random.nextFloat() - 0.5f) * dp2px(20f);
+                p.y = targetSolarY + (random.nextFloat() - 0.5f) * dp2px(20f);
 
+                p.maxRadius = dp2px(6.5f) + cRatio * dp2px(8.0f);
+                p.radius = p.maxRadius * 0.2f;
+                p.growPhase = 0f;
+                p.absorbPhase = 0f;
+
+                // 充电粒子速度基数
+                // dp2px(0.4f) 最小底速（1A时）0.4 想更慢改小，想更快改大
+                // dp2px(2.5f)电流加成系数（40A时）2.5 想高速拉满改到 3.5~4.0
+                float baseSpeed = dp2px(0.1f) + cRatio * dp2px(2.5f);
+                baseSpeed = Math.min(baseSpeed, dp2px(3.0f));
+                p.speedX = baseSpeed + random.nextFloat() * dp2px(0.4f);
+                p.speedY = (cy - p.y) / ((cx - ringRadius * 0.6f - p.x) / p.speedX);
                 p.wobbleOffset = random.nextFloat() * 100f;
-                p.isFalling = false;
-                particles.add(p);
-                lastParticleTime = now;
-            }
-        } else {
-            // ==================== 🏡【放电模式：电池 ➔ 住宅】====================
-            removeUpParticles();
-
-            // 放电电流绝对值比例（用于调节水滴大小和数量）
-            float dischargeRatio = Math.min(1.0f, Math.max(0f, Math.abs(chargingCurrent) / 40f));
-
-            // ✅ 生成间隔：电流小→慢（1500ms），电流大→快（200ms）
-            // 关键：电流越小时，单颗水滴的生命周期越完整、越看得清
-            long dropInterval = (long) (1500 - (1300 * dischargeRatio));
-
-            // ✅ 同屏水滴数：电流小→1颗，电流大→最多5颗
-            int maxDrops = 1 + (int) (4 * dischargeRatio);
-
-            // ✅ 水滴半径：电流小→小（3dp），电流大→大（9dp）
-            float minRadius = dp2px(3.0f);
-            float maxRadius = dp2px(5.0f) + dischargeRatio * dp2px(5f);
-
-            // ✅ 凝聚速度：电流小→很慢，电流大→快
-            // 这是关键！电流小时凝聚过程拉长，肉眼能看清从小变大的过程
-            float condenseSpeed = 0.008f + dischargeRatio * 0.03f;
-
-            // ✅ 拉丝速度：电流小→慢慢被拽长，电流大→干脆利落
-            float stretchSpeed = dp2px(0.25f) + dischargeRatio * dp2px(0.8f);
-
-            // ✅ 缩颈速度：电流小→颈部收得很慢很细才断，电流大→快断
-            float neckShrink = 0.82f + dischargeRatio * 0.1f;
-
-            if (progress > 0f && !isNoDischarge && now - lastParticleTime > dropInterval && particles.size() < maxDrops) {
-                EnergyDrop p = new EnergyDrop();
-                // ✅ 出生点：圆环正下方外边缘，带微小随机偏移
-                p.x = cx + (random.nextFloat() * dp2px(4f) - dp2px(2f));
-                p.y = cy + ringRadius;
-
-                p.maxRadius = minRadius + random.nextFloat() * (maxRadius - minRadius);
-                p.radius = 0.1f;
-                p.speedX = 0f;
-                p.speedY = 0f;
-                p.wobbleOffset = random.nextFloat() * 100f;
-                p.isFalling = true;
-
-                p.condenseProgress = 0f;
-                p.hasDetached = false;
-
-                // 水滴物理参数
-                p.stretchY = 0f;
-                p.neckRadius = p.maxRadius * 0.55f;
-                p.dropPhase = 0;           // 0=凝聚, 1=悬挂拉伸, 2=缩颈断裂, 3=坠落
-                p.condenseSpeed = condenseSpeed;
-                p.stretchSpeed = stretchSpeed;
-                p.neckShrink = neckShrink;
-
-                particles.add(p);
-                lastParticleTime = now;
+                chargeParticles.add(p);
+                lastChargeSpawn = now;
             }
         }
 
-        // 统一拓扑运动刷新
-        Iterator<EnergyDrop> iterator = particles.iterator();
-        while (iterator.hasNext()) {
-            EnergyDrop p = iterator.next();
-            if (p.isFalling) {
-                // ✅ 四阶段真实水滴物理
-                switch (p.dropPhase) {
+        // 充电粒子运动
+        Iterator<ChargeParticle> ci = chargeParticles.iterator();
+        while (ci.hasNext()) {
+            ChargeParticle p = ci.next();
+            if (p.dead) { ci.remove(); continue; }
 
-                    case 0: // ① 凝聚：从极小慢慢胀大到最大体积
-                        p.y = cy + ringRadius;
-                        p.condenseProgress += p.condenseSpeed;
+            p.x += p.speedX;
+            p.y += p.speedY;
 
-                        // 用平滑曲线，先快后慢地涨到 1.15 倍最大体积
-                        // ease-out：前期涨得快，后期越来越慢，像在"蓄力"
-                        float t = Math.min(1f, p.condenseProgress);
-                        float easeOut = 1f - (1f - t) * (1f - t);
-                        p.radius = p.maxRadius * (0.15f + easeOut);
+            float wobble = dp2px(0.15f) - cRatio * dp2px(0.12f);
+            p.y += (float) Math.sin(animationPhase * 2 * Math.PI + p.wobbleOffset) * wobble;
 
-                        // 凝聚到位 → 进入悬挂拉伸
-                        if (p.condenseProgress >= 1.0f) {
-                            p.dropPhase = 1;
-                        }
-                        break;
+            float targetX = cx - ringRadius * 0.6f;
+            float distToBall = targetX - p.x;
 
-                    case 1: // ② 悬挂拉伸：水滴被重力慢慢往下拽，形成"拉丝"
-                        p.stretchY += p.stretchSpeed;
-                        p.y = cy + ringRadius + p.stretchY * 0.5f;
+            if (distToBall <= dp2px(22f) && distToBall > 0) {
+                // 接近 → 凝聚阶段
+                p.absorbPhase += 0.05f;
+                float absorbProgress = Math.min(1f, p.absorbPhase);
 
-                        // 主体微微缩小（体积被拉长了）
-                        float bodyShrink = 1.0f - (p.stretchY / dp2px(28f)) * 0.15f;
-                        bodyShrink = Math.max(0.85f, bodyShrink);
-                        p.radius = p.maxRadius * bodyShrink;
+                // 减速
+                p.speedX *= 0.88f;
+                p.speedY *= 0.88f;
 
-                        // 颈部也开始变细
-                        p.neckRadius = p.maxRadius * 0.55f * (1f - p.stretchY / dp2px(28f));
-                        p.neckRadius = Math.max(p.maxRadius * 0.12f, p.neckRadius);
+                // 体积膨胀（凝聚感）
+                p.radius = p.maxRadius * (0.4f + 0.8f * absorbProgress);
 
-                        // 拉伸到位 → 进入缩颈断裂
-                        if (p.stretchY >= dp2px(14f)) {
-                            p.dropPhase = 2;
-                        }
-                        break;
+                // 被球面吸附
+                float pullStrength = 1f - (distToBall / dp2px(22f));
+                p.x += (targetX - p.x) * pullStrength * 0.25f;
+                p.y += (cy - p.y) * pullStrength * 0.12f;
 
-                    case 2: // ③ 缩颈断裂：颈部急剧收缩变细，像细线一样被拉断
-                        p.stretchY += p.stretchSpeed * 1.3f;
-                        p.y = cy + ringRadius + p.stretchY * 0.6f;
+                // 凝聚光晕
+                p.growPhase = absorbProgress;
 
-                        // 颈部急剧收缩（电流小→收得更细才断）
-                        p.neckRadius *= p.neckShrink;
-
-                        // 主体体积因断裂而骤缩
-                        float breakRatio = 0.9f * (p.neckRadius / (p.maxRadius * 0.12f));
-                        breakRatio = Math.max(0.55f, Math.min(1.0f, breakRatio));
-                        p.radius = p.maxRadius * breakRatio;
-
-                        // 颈部细到极细 → 彻底断裂，进入坠落
-                        if (p.neckRadius <= p.maxRadius * 0.04f) {
-                            p.dropPhase = 3;
-                            p.hasDetached = true;
-                            // 断裂初速度：电流大→弹得远，电流小→轻轻落下
-                            float dischargeRatio = Math.min(1.0f, Math.abs(chargingCurrent) / 40f);
-                            p.speedY = dp2px(0.2f) + dischargeRatio * dp2px(0.5f);
-                        }
-                        break;
-
-                    case 3: // ④ 自由坠落
-                    default:
-                        p.speedY += dp2px(0.05f);
-                        p.y += p.speedY;
-
-                        // 坠落时恢复圆形
-                        float recoveryProgress = Math.min(1f, p.speedY / dp2px(3f));
-                        p.radius = p.maxRadius * (0.6f + 0.4f * recoveryProgress);
-
-                        float houseTopY = height - dp2px(110f);
-                        if (p.y >= houseTopY) {
-                            float fadeRatio = Math.max(0f, (height - dp2px(40f) - p.y) / dp2px(70f));
-                            p.radius = p.maxRadius * fadeRatio * Math.min(1f, recoveryProgress + 0.4f);
-                        }
-                        if (p.y >= height - dp2px(60f)) {
-                            iterator.remove();
-                        }
-                        break;
+                if (distToBall <= dp2px(2f)) {
+                    p.dead = true;
                 }
-            } else {
-                // ☀️ 充电斜线飞向圆环（不变）
+            } else if (p.x > cx + ringRadius) {
+                ci.remove();
+            }
+        }
+
+        // ===== 2. 放电液滴 =====
+        float dRatio = dischargeRatio();
+        if (dischargeCurrent > 0.1f) {
+            // 40A → 间隔 60ms, 同屏 25颗
+            long interval = (long) (800 - 740 * dRatio);
+            int maxCount = 2 + (int) (23 * dRatio);
+
+            int count = 0;
+            for (DischargeDrop p : dischargeDrops) { if (p.state != 3) count++; }
+
+            if (now - lastDischargeSpawn > interval && count < maxCount) {
+                DischargeDrop drop = new DischargeDrop();
+                float angle = (float) (Math.PI * 0.5 + (random.nextFloat() - 0.5f) * 0.35f);
+                drop.x = cx + (float) Math.cos(angle) * ringRadius * 0.9f;
+                drop.y = cy + (float) Math.sin(angle) * ringRadius * 0.9f;
+                drop.maxRadius = dp2px(2.0f) + dRatio * dp2px(3.5f);
+                drop.radius = drop.maxRadius * 0.15f;
+                drop.state = 0;
+                drop.growTimer = 0f;
+                drop.shrinkTimer = 0f;
+                drop.tailLength = 0f;
+                drop.neckLength = 0f;
+                drop.wobbleOffset = random.nextFloat() * 100f;
+                dischargeDrops.add(drop);
+                lastDischargeSpawn = now;
+            }
+        }
+
+        // 放电液滴运动
+        Iterator<DischargeDrop> di = dischargeDrops.iterator();
+        while (di.hasNext()) {
+            DischargeDrop p = di.next();
+            if (p.state == 3) { di.remove(); continue; }
+
+            if (p.state == 0) {
+                // ===== 凝聚：水滴从球面慢慢挤出 =====
+                p.growTimer += 0.035f;
+                float growProgress = Math.min(1f, p.growTimer);
+
+                p.radius = p.maxRadius * (0.15f + 0.85f * growProgress);
+                p.tailLength = growProgress * p.maxRadius * 2.2f;
+                p.neckLength = growProgress * p.maxRadius * 1.2f;
+
+                // 重力下垂
+                p.y += dp2px(0.25f) * growProgress;
+
+                if (growProgress >= 1f) {
+                    p.state = 1;
+                    float flySpeed = dp2px(0.2f) + dRatio * dp2px(2.5f);
+                    flySpeed = Math.min(flySpeed, dp2px(3.0f));
+                    float dx = targetHouseX - p.x;
+                    float dy = targetHouseY - p.y;
+                    float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                    p.speedX = (dx / dist) * flySpeed;
+                    p.speedY = (dy / dist) * flySpeed;
+                    p.breakAnim = 0f;
+                }
+
+            } else if (p.state == 1) {
+                // ===== 飞行：追踪房子 =====
+                float flySpeed = dp2px(0.1f) + dRatio * dp2px(2.5f);
+                flySpeed = Math.min(flySpeed, dp2px(3.0f));
+
+                float dx = targetHouseX - p.x;
+                float dy = targetHouseY - p.y;
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 0) {
+                    p.speedX = (dx / dist) * flySpeed;
+                    p.speedY = (dy / dist) * flySpeed;
+                }
+
                 p.x += p.speedX;
                 p.y += p.speedY;
 
-                float dynamicWobble = dp2px(0.12f) - (currentRatio * dp2px(0.10f));
-                p.y += (float) Math.sin(animationPhase * 2 * Math.PI + p.wobbleOffset) * dynamicWobble;
+                p.tailLength *= 0.92f;
+                p.neckLength *= 0.9f;
 
-                float ringLeftX = cx - ringRadius;
-                float distanceToLeftEdge = ringLeftX - p.x;
-                float magnetThreshold = dp2px(15f);
-
-                if (distanceToLeftEdge <= magnetThreshold && p.x < cx) {
-                    float pullFactor = Math.max(0f, (magnetThreshold - Math.max(0f, distanceToLeftEdge)) / magnetThreshold);
-                    p.x += dp2px(1.5f) * pullFactor;
-                    p.maxRadius = p.maxRadius * (1.0f + 0.18f * pullFactor);
-
-                    if (p.x >= ringLeftX) {
-                        float overlapDistance = p.x - ringLeftX;
-                        float absorbRatio = Math.max(0f, (dp2px(10f) - overlapDistance) / dp2px(10f));
-                        p.radius = p.maxRadius * absorbRatio;
-                    } else {
-                        p.radius = p.maxRadius;
-                    }
-
-                    if (p.x >= ringLeftX + dp2px(8f)) {
-                        iterator.remove();
-                    }
+                // ✅ 到房子中心附近才消失（6dp）
+                if (dist <= dp2px(6f)) {
+                    p.state = 2;
+                    p.shrinkTimer = 0f;
                 }
+
+            } else if (p.state == 2) {
+                // ===== 撞击凝聚：在房子处扩散消失 =====
+                p.shrinkTimer += 0.05f;
+                float shrinkProgress = Math.min(1f, p.shrinkTimer);
+                p.radius = p.maxRadius * (1f - shrinkProgress * 0.8f);
+
+                if (shrinkProgress >= 1f) {
+                    p.state = 3;
+                }
+            }
+
+            // 兜底
+            if (p.x > width + dp2px(30f) || p.y > height + dp2px(30f) ||
+                    p.x < -dp2px(30f) || p.y < -dp2px(30f)) {
+                p.state = 3;
             }
         }
     }
 
-    private void removeDownParticles() { particles.removeIf(p -> p.isFalling); }
-    private void removeUpParticles() { particles.removeIf(p -> !p.isFalling); }
+    // ==================== 绘制 ====================
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
@@ -311,21 +320,27 @@ public class FluidBubbleView extends View {
         float ringRadius = (ringWidthPx - dp2px(12f)) / 2f;
         float cy = ringRadius + dp2px(6f);
 
-        // ===== 1. 外圈流体环 =====
-        ringOval.set(cx - ringRadius, cy - ringRadius, cx + ringRadius, cy + ringRadius);
-        ringPaint.setColor(fluidColor);
-        fluidRingPath.reset();
 
-        int count = 60;
+        // ===== 1. 外圈流体环 =====
+        ringPaint.setColor(fluidColor);
+        ringPaint.setAntiAlias(true);
+        ringPaint.setStyle(Paint.Style.STROKE);
+        ringPaint.setStrokeCap(Paint.Cap.ROUND);
+        ringPaint.setStrokeJoin(Paint.Join.ROUND);
+
+        fluidRingPath.reset();
+        int count = 120;
         float sweepAngle = 360f;
 
         for (int i = 0; i <= count; i++) {
-            float angleDeg = -90f + (sweepAngle * i / count);
+            float t = (float) i / count;
+            float angleDeg = -90f + (sweepAngle * t);
             float angleRad = (float) Math.toRadians(angleDeg);
 
-            float wave1 = (float) Math.sin(i * 0.4f + animationPhase * 2 * Math.PI) * dp2px(1.6f);
-            float wave2 = (float) Math.cos(i * 0.2f - animationPhase * 3 * Math.PI) * dp2px(1.0f);
-            float currentWave = (wave1 + wave2) * 0.9f;
+            float noise1 = (float) Math.sin(t * Math.PI * 2 * 3 + smoothPhase1) * dp2px(1.4f);
+            float noise2 = (float) Math.cos(t * Math.PI * 2 * 5 - smoothPhase2) * dp2px(0.8f);
+            float noise3 = (float) Math.sin(t * Math.PI * 2 * 2 + smoothPhase3) * dp2px(0.6f);
+            float currentWave = (noise1 + noise2 + noise3) * smoothAmp * 0.9f;
 
             float dynamicRadius = ringRadius + currentWave;
             float px = cx + (float) Math.cos(angleRad) * dynamicRadius;
@@ -334,6 +349,7 @@ public class FluidBubbleView extends View {
             if (i == 0) fluidRingPath.moveTo(px, py);
             else fluidRingPath.lineTo(px, py);
         }
+        fluidRingPath.close();
         canvas.drawPath(fluidRingPath, ringPaint);
 
         // ===== 2. 内部液面 =====
@@ -351,26 +367,12 @@ public class FluidBubbleView extends View {
 
             wavePath.moveTo(cx - ringRadius, height);
             wavePath.lineTo(cx - ringRadius, fluidY + waveBias1);
-            wavePath.quadTo(
-                    cx - ringRadius * 0.5f,
-                    fluidY + waveBias1 + dp2px(3f),
-                    cx,
-                    fluidY + waveBias2
-            );
-            wavePath.quadTo(
-                    cx + ringRadius * 0.5f,
-                    fluidY + waveBias2 - dp2px(3f),
-                    cx + ringRadius,
-                    fluidY + waveBias1
-            );
+            wavePath.quadTo(cx - ringRadius * 0.5f, fluidY + waveBias1 + dp2px(3f), cx, fluidY + waveBias2);
+            wavePath.quadTo(cx + ringRadius * 0.5f, fluidY + waveBias2 - dp2px(3f), cx + ringRadius, fluidY + waveBias1);
             wavePath.lineTo(cx + ringRadius, height);
             wavePath.close();
 
-            fluidPaint.setColor(Color.argb(180,
-                    Color.red(fluidColor),
-                    Color.green(fluidColor),
-                    Color.blue(fluidColor)
-            ));
+            fluidPaint.setColor(Color.argb(180, Color.red(fluidColor), Color.green(fluidColor), Color.blue(fluidColor)));
             canvas.drawPath(wavePath, fluidPaint);
 
             lightWavePath.reset();
@@ -383,151 +385,139 @@ public class FluidBubbleView extends View {
             lightWavePath.lineTo(cx + ringRadius, height);
             lightWavePath.close();
 
-            fluidPaint.setColor(Color.argb(60,
-                    Color.red(fluidColor),
-                    Color.green(fluidColor),
-                    Color.blue(fluidColor)
-            ));
+            fluidPaint.setColor(Color.argb(60, Color.red(fluidColor), Color.green(fluidColor), Color.blue(fluidColor)));
             canvas.drawPath(lightWavePath, fluidPaint);
 
             fluidPaint.setColor(fluidColor);
         }
-
         canvas.restore();
 
-        // ===== 3. 粒子 =====
-        for (EnergyDrop p : particles) {
-            if (p.radius <= 0.5f) continue;
+        // ===== 3. 充电粒子 =====
+        for (ChargeParticle p : chargeParticles) {
+            if (p.radius <= 0.3f || p.dead) continue;
 
-            if (p.isFalling) {
-                // ✅ 水滴形态绘制（根据阶段区分）
-                if (p.dropPhase <= 2) {
-                    // 凝聚/拉伸/缩颈阶段：画水滴主体 + 颈部拉丝连线
+            if (p.absorbPhase > 0) {
+                // 凝聚阶段：画光晕 + 拉伸贴附
+                float ap = Math.min(1f, p.absorbPhase);
 
-                    // 颈部起点：圆环正下方外边缘
-                    float neckTopY = cy + ringRadius - dp2px(1f);
+                // 外层光晕（大）
+                glowPaint.setColor(fluidColor);
+                glowPaint.setAlpha((int) (50 * ap));
+                float glowR = p.radius * (1.5f + ap * 1.5f);
+                bubbleRect.set(p.x - glowR, p.y - glowR, p.x + glowR, p.y + glowR);
+                canvas.drawOval(bubbleRect, glowPaint);
 
-                    // 水滴主体底部位置
-                    float bodyBottomY;
-                    if (p.dropPhase == 0) {
-                        // 凝聚阶段：主体还贴在圆环上
-                        bodyBottomY = p.y + p.radius;
-                    } else {
-                        // 拉伸/缩颈阶段：主体已下垂
-                        bodyBottomY = p.y + p.radius + p.stretchY * 0.4f;
-                    }
+                // 中层光晕
+                glowPaint.setAlpha((int) (100 * ap));
+                glowR = p.radius * (1.2f + ap * 0.8f);
+                bubbleRect.set(p.x - glowR, p.y - glowR, p.x + glowR, p.y + glowR);
+                canvas.drawOval(bubbleRect, glowPaint);
 
-                    // 1) 画颈部拉丝（连接圆环到水滴主体）
-                    if (p.dropPhase >= 1 && bodyBottomY > neckTopY) {
-                        // 颈部从圆环处开始，逐渐变细到主体顶部
-                        float neckTopR = p.neckRadius;           // 圆环处半径（细）
-                        float neckBotR = p.radius * 0.85f;      // 主体连接处半径（粗）
+                glowPaint.setAlpha(255);
+            }
 
-                        // 用两层椭圆模拟锥形拉丝
-                        int neckAlpha = (int) (255 * Math.min(1f, p.neckRadius / (p.maxRadius * 0.4f)));
-                        neckAlpha = Math.max(40, neckAlpha);
-                        fluidPaint.setAlpha(neckAlpha);
+            // 主体
+            float drawW = p.radius * (p.absorbPhase > 0 ? 1.3f : 1.15f);
+            float drawH = p.radius * (p.absorbPhase > 0 ? 1.1f : 1.0f);
+            bubbleRect.set(p.x - drawW, p.y - drawH, p.x + drawW * 1.2f, p.y + drawH);
+            canvas.drawOval(bubbleRect, fluidPaint);
+        }
 
-                        // 拉丝分 4 段画，越往下越粗
-                        int seg = 4;
-                        for (int i = 0; i < seg; i++) {
-                            float f1 = (float) i / seg;
-                            float f2 = (float) (i + 1) / seg;
-                            float y1 = neckTopY + (bodyBottomY - neckTopY) * f1;
-                            float y2 = neckTopY + (bodyBottomY - neckTopY) * f2;
-                            float r1 = neckTopR + (neckBotR - neckTopR) * f1;
-                            float r2 = neckTopR + (neckBotR - neckTopR) * f2;
-                            bubbleRect.set(p.x - r1, y1, p.x + r1, y2 + (r2 - r1));
-                            canvas.drawRect(bubbleRect, fluidPaint);
-                        }
-                        fluidPaint.setAlpha(255);
-                    }
+        // ===== 4. 放电液滴 =====
+        for (DischargeDrop p : dischargeDrops) {
+            if (p.state == 3 || p.radius <= 0.3f) continue;
 
-                    // 2) 画水滴主体（椭圆，拉伸时变扁长）
-                    float bodyHeight;
-                    if (p.dropPhase == 0) {
-                        bodyHeight = p.radius * 2f;
-                    } else {
-                        bodyHeight = p.radius * 2f + p.stretchY * 0.4f;
-                    }
-                    bubbleRect.set(
-                            p.x - p.radius,
-                            p.y - p.radius,
-                            p.x + p.radius,
-                            p.y + bodyHeight
-                    );
-                    canvas.drawOval(bubbleRect, fluidPaint);
+            if (p.state == 0) {
+                // 凝聚中：画水滴形（颈部连接球面）
+                dropPath.reset();
+                // 主体圆
+                float bodyTop = p.y - p.radius;
+                float bodyBottom = p.y + p.radius;
+                float bodyLeft = p.x - p.radius * 0.8f;
+                float bodyRight = p.x + p.radius * 0.8f;
 
-                } else {
-                    // 坠落阶段：水滴形（头朝下）
-                    bubbleRect.set(
-                            p.x - p.radius * 0.85f,
-                            p.y - p.radius * 0.5f,
-                            p.x + p.radius * 0.85f,
-                            p.y + p.radius * 1.4f
-                    );
-                    canvas.drawOval(bubbleRect, fluidPaint);
+                dropPath.addOval(bodyLeft, bodyTop, bodyRight, bodyBottom, Path.Direction.CW);
+
+                // 颈部（连接回球面）
+                if (p.neckLength > 0) {
+                    dropPath.moveTo(p.x - p.radius * 0.4f, bodyTop);
+                    dropPath.lineTo(p.x - p.radius * 0.3f, bodyTop - p.neckLength);
+                    dropPath.lineTo(p.x + p.radius * 0.3f, bodyTop - p.neckLength);
+                    dropPath.lineTo(p.x + p.radius * 0.4f, bodyTop);
+                    dropPath.close();
                 }
 
-                // 高光核
-                fluidPaint.setColor(Color.parseColor("#E0FFD0"));
-                canvas.drawCircle(p.x, p.y + p.radius * 0.15f, p.radius * 0.28f, fluidPaint);
-                fluidPaint.setColor(fluidColor);
+                // 尾部拉伸
+                if (p.tailLength > 0) {
+                    dropPath.moveTo(p.x - p.radius * 0.5f, bodyBottom);
+                    dropPath.lineTo(p.x - p.radius * 0.3f, bodyBottom + p.tailLength);
+                    dropPath.lineTo(p.x + p.radius * 0.3f, bodyBottom + p.tailLength);
+                    dropPath.lineTo(p.x + p.radius * 0.5f, bodyBottom);
+                    dropPath.close();
+                }
 
-            } else {
-                // 充电粒子（不变）
-                bubbleRect.set(p.x - p.radius, p.y - p.radius, p.x + p.radius * 1.35f, p.y + p.radius);
+                canvas.drawPath(dropPath, fluidPaint);
+
+            } else if (p.state == 1) {
+                // 飞行中：椭圆拉伸
+                float stretch = (float) Math.sqrt(p.speedX * p.speedX + p.speedY * p.speedY);
+                float drawW = p.radius + stretch * 0.35f;
+                float drawH = p.radius + stretch * 0.15f;
+                bubbleRect.set(p.x - drawW, p.y - drawH, p.x + drawW, p.y + drawH);
                 canvas.drawOval(bubbleRect, fluidPaint);
 
-                if (p.radius > dp2px(3f)) {
-                    textPaint.setColor(Color.RED);
-                    textPaint.setTextSize(p.radius * 1.2f);
-                    Paint.FontMetrics fm = textPaint.getFontMetrics();
-                    float offsetY = (fm.bottom - fm.top) / 2f - fm.bottom;
-                    canvas.drawText("+", p.x + p.radius * 0.1f, p.y + offsetY, textPaint);
+            } else if (p.state == 2) {
+                // 撞击：扩散涟漪
+                float sp = Math.min(1f, p.shrinkTimer);
+                int alpha = (int) (200 * (1f - sp));
+                if (alpha > 0) {
+                    glowPaint.setColor(fluidColor);
+                    glowPaint.setAlpha(alpha);
+                    float rippleR = p.radius * (1f + sp * 3f);
+                    bubbleRect.set(p.x - rippleR, p.y - rippleR, p.x + rippleR, p.y + rippleR);
+                    canvas.drawOval(bubbleRect, glowPaint);
+                    glowPaint.setAlpha(255);
                 }
+                // 核心
+                bubbleRect.set(p.x - p.radius * 0.7f, p.y - p.radius * 0.7f,
+                        p.x + p.radius * 0.7f, p.y + p.radius * 0.7f);
+                canvas.drawOval(bubbleRect, fluidPaint);
             }
         }
 
-        // ===== 4. 中心文字 =====
+        // ===== 5. 中心文字 =====
         Paint.FontMetrics fm = textPaint.getFontMetrics();
         float textY = cy + (fm.bottom - fm.top) / 2f - fm.bottom;
-
         textPaint.setTextSize(dp2px(10f));
-
-        if (fluidY <= textY) {
-            textPaint.setColor(Color.WHITE);
-        } else {
-            textPaint.setColor(Color.parseColor("#1A1A1A"));
-        }
-
+        textPaint.setColor(Color.parseColor("#1A1A1A"));
         canvas.drawText(
-                String.format(Locale.getDefault(), "%.1f%%", progress),
-                cx,
-                textY,
-                textPaint
+                String.format(java.util.Locale.getDefault(), "%.1f%%", progress),
+                cx, textY, textPaint
         );
     }
 
-    // ✅ EnergyDrop 新增水滴物理字段
-    private class EnergyDrop {
-        float x;
-        float y;
+    private static class ChargeParticle {
+        float x, y;
         float radius;
         float maxRadius;
-        float speedX;
-        float speedY;
+        float speedX, speedY;
         float wobbleOffset;
-        boolean isFalling;
-        float condenseProgress = 0f;
-        boolean hasDetached = false;
+        float growPhase = 0f;
+        float absorbPhase = 0f;
+        boolean dead = false;
+    }
 
-        // ✅ 水滴悬挂物理
-        float stretchY = 0f;          // 纵向拉伸量
-        float neckRadius = 0f;        // 颈部半径
-        int dropPhase = 0;            // 0=凝聚, 1=拉伸, 2=缩颈, 3=坠落
-        float condenseSpeed = 0.02f;  // 凝聚速度
-        float stretchSpeed = dp2px(0.5f); // 拉伸速度
-        float neckShrink = 0.85f;     // 颈部收缩系数
+    private static class DischargeDrop {
+        float x, y;
+        float radius;
+        float maxRadius;
+        float speedX, speedY;
+        float wobbleOffset;
+        float growTimer = 0f;
+        float shrinkTimer = 0f;
+        float tailLength = 0f;
+        float neckLength = 0f;
+        float breakAnim = 0f;
+        int state = 0;
     }
 }

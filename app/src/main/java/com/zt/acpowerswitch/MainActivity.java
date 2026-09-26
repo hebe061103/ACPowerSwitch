@@ -763,13 +763,10 @@ public class MainActivity extends AppCompatActivity{
                 // 系统总交流消耗（用于判断是否充电）
                 float totalAcLoad = loadPowerAc + invSelfConsumption;
                 String useTimeStr;
-                boolean charge_ing;
                 if (pvPowerAc >= totalAcLoad) {
                     // 光伏够用，电池不放电
                     useTimeStr = "充电中";
-                    charge_ing = true;
                 } else {
-                    charge_ing = false;
                     // 光伏不足，电池需要放电
                     // 交流缺口折算到直流侧
                     float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
@@ -823,24 +820,13 @@ public class MainActivity extends AppCompatActivity{
                     originBatHealthCap.setText("暂未校准");
                     cardBatHealthCap.setText("暂未校准");
                 }
-                // 🧠【核心修改2】：抛弃上面复杂的数字锁判断，直接在数据包最外层计算最新状态
+                // 抛弃复杂的数字锁判断，直接在数据包最外层计算最新状态
                 float lastCapValue;
                 if (total_cap == 0) {
                     lastCapValue = -2;
                 } else {
                     float rawValue = (available_cap / total_cap) * 100f;
                     lastCapValue = Math.round(rawValue * 10f) / 10f;
-                }
-
-                // 🔌 解析出最即时的电流浮点数（供粒子数量与速度大小控制阀门使用）
-                float currentA = 0f;
-                try {
-                    String currentStr = uiData.get("修改电池充放电电流值");
-                    if (currentStr != null && !currentStr.isEmpty()) {
-                        currentA = Float.parseFloat(currentStr);
-                    }
-                } catch (Exception e) {
-                    currentA = 0f;
                 }
                 if (lastCapValue > 100) lastCapValue = 100;
                 if (lastCapValue < 0) lastCapValue = 0;
@@ -852,15 +838,27 @@ public class MainActivity extends AppCompatActivity{
                 } else if (lastCapValue <= 60) {
                     fluidColor = Color.parseColor("#FF9800"); // 中电量：橙
                 }
-                boolean isNoDischarge = "无需放电".equals(useTimeStr);
-                // 🚀【终极同步】：跟随 Handler 数据的更新进行高频无条件推送
-                // 只要 charge_ing 开关一变，水滴在 0.01 秒内就会瞬间转弯（充电往上飞、放电往下滴），绝不再有任何延迟！
-                if (originFluidView != null) {
-                    originFluidView.updateConfig(lastCapValue, fluidColor, charge_ing, currentA, isNoDischarge);
+                // ✅ 分别计算充电电流和放电电流
+                float chargeCurrent = 0f;
+                float dischargeCurrent = 0f;
+
+                // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
+                if (pvPowerAc > 0 && totalAcLoad > pvPowerAc) {
+                    // 光伏在充电，电池在补缺口
+                    chargeCurrent = pvPowerAc / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                    dischargeCurrent = (totalAcLoad - pvPowerAc) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                }else if (pvPowerAc > 0 && totalAcLoad < pvPowerAc){
+                    // 光伏提供主功率,剩余功率给电池充电,电池未放电
+                    chargeCurrent = (pvPowerAc - totalAcLoad) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                    dischargeCurrent = 0f;
+                }else if (pvPowerAc <= 0){
+                    // 光伏无功率,不充电,电池放电
+                    chargeCurrent = 0f;
+                    dischargeCurrent = totalAcLoad / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
                 }
-                if (cardFluidView != null) {
-                    cardFluidView.updateConfig(lastCapValue, fluidColor, charge_ing, currentA, isNoDischarge);
-                }
+
+                originFluidView.updateConfig(lastCapValue, fluidColor, chargeCurrent, dischargeCurrent);
+                cardFluidView.updateConfig(lastCapValue, fluidColor, chargeCurrent, dischargeCurrent);
             }
         }
     };
