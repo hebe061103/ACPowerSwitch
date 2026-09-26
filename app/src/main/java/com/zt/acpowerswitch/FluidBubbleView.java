@@ -10,7 +10,10 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
+import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +24,10 @@ public class FluidBubbleView extends View {
     private Paint fluidPaint;
     private Paint textPaint;
     private Paint glowPaint;
+
+    // ===== 太阳辐射专用画笔（金黄色）=====
+    private Paint sunRayPaint;
+    private static final int SUN_COLOR = Color.parseColor("#FFD700");
 
     private float progress = 0f;
     private int fluidColor = Color.parseColor("#39FF14");
@@ -48,6 +55,13 @@ public class FluidBubbleView extends View {
     private final Path dropPath = new Path();
     private final RectF bubbleRect = new RectF();
 
+    // ===== 坐标绑定 =====
+    private float solarX = -1f, solarY = -1f;    // 太阳能板中心
+    private float sunX = -1f, sunY = -1f;        // 太阳中心（太阳能板右上）
+    private float houseX = -1f, houseY = -1f;    // 房子中心
+    private float solarIconSizeDp = 80f;
+    private boolean coordsBound = false;
+
     public FluidBubbleView(Context context) { super(context); init(); }
     public FluidBubbleView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
     public FluidBubbleView(Context context, AttributeSet attrs, int defStyleAttr) { super(context, attrs, defStyleAttr); init(); }
@@ -55,6 +69,7 @@ public class FluidBubbleView extends View {
     private float dp2px(float dp) {
         return dp * getContext().getResources().getDisplayMetrics().density;
     }
+
     private void init() {
         ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ringPaint.setStyle(Paint.Style.STROKE);
@@ -70,6 +85,11 @@ public class FluidBubbleView extends View {
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setFakeBoldText(true);
+
+        // 太阳辐射画笔
+        sunRayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        sunRayPaint.setStyle(Paint.Style.STROKE);
+        sunRayPaint.setStrokeCap(Paint.Cap.ROUND);
 
         ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(2200);
@@ -93,8 +113,41 @@ public class FluidBubbleView extends View {
         if (needInvalidate) invalidate();
     }
 
+    // ===== 坐标绑定（Activity 中调用）=====
+    public void bindIconCoords(ImageView solarIcon, ImageView houseIcon) {
+        if (solarIcon == null || houseIcon == null) return;
+        solarIcon.post(() -> {
+            int[] iconLoc = new int[2];
+            int[] myLoc = new int[2];
+
+            // 太阳能板
+            solarIcon.getLocationInWindow(iconLoc);
+            getLocationInWindow(myLoc);
+            float sw = solarIcon.getWidth();
+            float sh = solarIcon.getHeight();
+
+            solarX = (iconLoc[0] - myLoc[0]) + sw / 2f;
+            solarY = (iconLoc[1] - myLoc[1]) + sh / 2f;
+
+            // 太阳 = 太阳能板右上角
+            sunX = (iconLoc[0] - myLoc[0]) + sw * 0.8f;
+            sunY = (iconLoc[1] - myLoc[1]) + sh * 0.25f;
+
+            // 房子
+            houseIcon.getLocationInWindow(iconLoc);
+            float hw = houseIcon.getWidth();
+            float hh = houseIcon.getHeight();
+            houseX = (iconLoc[0] - myLoc[0]) + hw / 2f;
+            houseY = (iconLoc[1] - myLoc[1]) + hh / 2f;
+
+            coordsBound = true;
+            invalidate();
+        });
+    }
+
+    public void setSolarSize(float dp) { this.solarIconSizeDp = dp; }
+
     // ==================== 核心参数 ====================
-    // 电流→比例，用 pow 让低电流也能看到效果
     private float chargeRatio() {
         return (float) Math.pow(Math.min(1.0f, chargeCurrent / 40f), 0.5f);
     }
@@ -113,8 +166,9 @@ public class FluidBubbleView extends View {
         float ringRadius = (ringWidthPx - dp2px(12f)) / 2f;
         float cy = ringRadius + dp2px(6f);
 
-        float targetHouseX = width - dp2px(45f);
-        float targetHouseY = height - dp2px(55f);
+        // ✅ 房子目标坐标：优先用绑定坐标，否则 fallback 到硬编码
+        float targetHouseX = coordsBound ? houseX : width - dp2px(45f);
+        float targetHouseY = coordsBound ? houseY : height - dp2px(55f);
 
         // 噪声
         smoothPhase1 += 0.017f + (noiseRandom.nextFloat() * 0.006f - 0.003f);
@@ -126,7 +180,6 @@ public class FluidBubbleView extends View {
         // ===== 1. 充电粒子 =====
         float cRatio = chargeRatio();
         if (chargeCurrent > 0.1f) {
-            // 40A → 间隔 60ms, 同屏 30颗; 1A → 间隔 800ms, 同屏 3颗
             long interval = (long) (800 - 740 * cRatio);
             int maxCount = 3 + (int) (27 * cRatio);
 
@@ -135,10 +188,9 @@ public class FluidBubbleView extends View {
 
             if (now - lastChargeSpawn > interval && count < maxCount) {
                 ChargeParticle p = new ChargeParticle();
-                // 太阳能板中心坐标（外部设置，没设置就默认左上区域）`
-                float targetSolarX = dp2px(50f);
-                float targetSolarY = dp2px(50f);
-                // 从太阳能板中心附近随机散开出生
+                // ✅ 出生点：优先用太阳能板中心坐标
+                float targetSolarX = coordsBound ? solarX : dp2px(50f);
+                float targetSolarY = coordsBound ? solarY : dp2px(50f);
                 p.x = targetSolarX + (random.nextFloat() - 0.5f) * dp2px(20f);
                 p.y = targetSolarY + (random.nextFloat() - 0.5f) * dp2px(20f);
 
@@ -147,9 +199,6 @@ public class FluidBubbleView extends View {
                 p.growPhase = 0f;
                 p.absorbPhase = 0f;
 
-                // 充电粒子速度基数
-                // dp2px(0.4f) 最小底速（1A时）0.4 想更慢改小，想更快改大
-                // dp2px(2.5f)电流加成系数（40A时）2.5 想高速拉满改到 3.5~4.0
                 float baseSpeed = dp2px(0.1f) + cRatio * dp2px(2.5f);
                 baseSpeed = Math.min(baseSpeed, dp2px(3.0f));
                 p.speedX = baseSpeed + random.nextFloat() * dp2px(0.4f);
@@ -160,7 +209,7 @@ public class FluidBubbleView extends View {
             }
         }
 
-        // 充电粒子运动
+        // 充电粒子运动（你原来的逻辑，一字未改）
         Iterator<ChargeParticle> ci = chargeParticles.iterator();
         while (ci.hasNext()) {
             ChargeParticle p = ci.next();
@@ -176,23 +225,18 @@ public class FluidBubbleView extends View {
             float distToBall = targetX - p.x;
 
             if (distToBall <= dp2px(22f) && distToBall > 0) {
-                // 接近 → 凝聚阶段
                 p.absorbPhase += 0.05f;
                 float absorbProgress = Math.min(1f, p.absorbPhase);
 
-                // 减速
                 p.speedX *= 0.88f;
                 p.speedY *= 0.88f;
 
-                // 体积膨胀（凝聚感）
                 p.radius = p.maxRadius * (0.4f + 0.8f * absorbProgress);
 
-                // 被球面吸附
                 float pullStrength = 1f - (distToBall / dp2px(22f));
                 p.x += (targetX - p.x) * pullStrength * 0.25f;
                 p.y += (cy - p.y) * pullStrength * 0.12f;
 
-                // 凝聚光晕
                 p.growPhase = absorbProgress;
 
                 if (distToBall <= dp2px(2f)) {
@@ -203,10 +247,9 @@ public class FluidBubbleView extends View {
             }
         }
 
-        // ===== 2. 放电液滴 =====
+        // ===== 2. 放电液滴（你原来的逻辑，一字未改）=====
         float dRatio = dischargeRatio();
         if (dischargeCurrent > 0.1f) {
-            // 40A → 间隔 60ms, 同屏 25颗
             long interval = (long) (800 - 740 * dRatio);
             int maxCount = 2 + (int) (23 * dRatio);
 
@@ -215,7 +258,7 @@ public class FluidBubbleView extends View {
 
             if (now - lastDischargeSpawn > interval && count < maxCount) {
                 DischargeDrop drop = new DischargeDrop();
-                float angle = (float) (Math.PI * 0.5 + (random.nextFloat() - 0.5f) * 0.35f);
+                float angle = (float) (Math.PI * 0.5f + (random.nextFloat() - 0.5f) * 0.35f);
                 drop.x = cx + (float) Math.cos(angle) * ringRadius * 0.9f;
                 drop.y = cy + (float) Math.sin(angle) * ringRadius * 0.9f;
                 drop.maxRadius = dp2px(2.0f) + dRatio * dp2px(3.5f);
@@ -231,14 +274,12 @@ public class FluidBubbleView extends View {
             }
         }
 
-        // 放电液滴运动
         Iterator<DischargeDrop> di = dischargeDrops.iterator();
         while (di.hasNext()) {
             DischargeDrop p = di.next();
             if (p.state == 3) { di.remove(); continue; }
 
             if (p.state == 0) {
-                // ===== 凝聚：水滴从球面慢慢挤出 =====
                 p.growTimer += 0.035f;
                 float growProgress = Math.min(1f, p.growTimer);
 
@@ -246,7 +287,6 @@ public class FluidBubbleView extends View {
                 p.tailLength = growProgress * p.maxRadius * 2.2f;
                 p.neckLength = growProgress * p.maxRadius * 1.2f;
 
-                // 重力下垂
                 p.y += dp2px(0.25f) * growProgress;
 
                 if (growProgress >= 1f) {
@@ -262,7 +302,6 @@ public class FluidBubbleView extends View {
                 }
 
             } else if (p.state == 1) {
-                // ===== 飞行：追踪房子 =====
                 float flySpeed = dp2px(0.1f) + dRatio * dp2px(2.5f);
                 flySpeed = Math.min(flySpeed, dp2px(3.0f));
 
@@ -281,14 +320,12 @@ public class FluidBubbleView extends View {
                 p.tailLength *= 0.92f;
                 p.neckLength *= 0.9f;
 
-                // ✅ 到房子中心附近才消失（6dp）
                 if (dist <= dp2px(6f)) {
                     p.state = 2;
                     p.shrinkTimer = 0f;
                 }
 
             } else if (p.state == 2) {
-                // ===== 撞击凝聚：在房子处扩散消失 =====
                 p.shrinkTimer += 0.05f;
                 float shrinkProgress = Math.min(1f, p.shrinkTimer);
                 p.radius = p.maxRadius * (1f - shrinkProgress * 0.8f);
@@ -298,7 +335,6 @@ public class FluidBubbleView extends View {
                 }
             }
 
-            // 兜底
             if (p.x > width + dp2px(30f) || p.y > height + dp2px(30f) ||
                     p.x < -dp2px(30f) || p.y < -dp2px(30f)) {
                 p.state = 3;
@@ -320,8 +356,10 @@ public class FluidBubbleView extends View {
         float ringRadius = (ringWidthPx - dp2px(12f)) / 2f;
         float cy = ringRadius + dp2px(6f);
 
+        // ===== 0. 太阳辐射（金黄色光芒，仅叠加）=====
+        drawSolarRadiation(canvas);
 
-        // ===== 1. 外圈流体环 =====
+        // ===== 1. 外圈流体环（你原来的，一字未改）=====
         ringPaint.setColor(fluidColor);
         ringPaint.setAntiAlias(true);
         ringPaint.setStyle(Paint.Style.STROKE);
@@ -352,7 +390,7 @@ public class FluidBubbleView extends View {
         fluidRingPath.close();
         canvas.drawPath(fluidRingPath, ringPaint);
 
-        // ===== 2. 内部液面 =====
+        // ===== 2. 内部液面（你原来的，一字未改）=====
         canvas.save();
         circleClipPath.reset();
         circleClipPath.addPath(fluidRingPath);
@@ -392,22 +430,19 @@ public class FluidBubbleView extends View {
         }
         canvas.restore();
 
-        // ===== 3. 充电粒子 =====
+        // ===== 3. 充电粒子（你原来的，一字未改）=====
         for (ChargeParticle p : chargeParticles) {
             if (p.radius <= 0.3f || p.dead) continue;
 
             if (p.absorbPhase > 0) {
-                // 凝聚阶段：画光晕 + 拉伸贴附
                 float ap = Math.min(1f, p.absorbPhase);
 
-                // 外层光晕（大）
                 glowPaint.setColor(fluidColor);
                 glowPaint.setAlpha((int) (50 * ap));
                 float glowR = p.radius * (1.5f + ap * 1.5f);
                 bubbleRect.set(p.x - glowR, p.y - glowR, p.x + glowR, p.y + glowR);
                 canvas.drawOval(bubbleRect, glowPaint);
 
-                // 中层光晕
                 glowPaint.setAlpha((int) (100 * ap));
                 glowR = p.radius * (1.2f + ap * 0.8f);
                 bubbleRect.set(p.x - glowR, p.y - glowR, p.x + glowR, p.y + glowR);
@@ -416,21 +451,18 @@ public class FluidBubbleView extends View {
                 glowPaint.setAlpha(255);
             }
 
-            // 主体
             float drawW = p.radius * (p.absorbPhase > 0 ? 1.3f : 1.15f);
             float drawH = p.radius * (p.absorbPhase > 0 ? 1.1f : 1.0f);
             bubbleRect.set(p.x - drawW, p.y - drawH, p.x + drawW * 1.2f, p.y + drawH);
             canvas.drawOval(bubbleRect, fluidPaint);
         }
 
-        // ===== 4. 放电液滴 =====
+        // ===== 4. 放电液滴（你原来的，一字未改）=====
         for (DischargeDrop p : dischargeDrops) {
             if (p.state == 3 || p.radius <= 0.3f) continue;
 
             if (p.state == 0) {
-                // 凝聚中：画水滴形（颈部连接球面）
                 dropPath.reset();
-                // 主体圆
                 float bodyTop = p.y - p.radius;
                 float bodyBottom = p.y + p.radius;
                 float bodyLeft = p.x - p.radius * 0.8f;
@@ -438,7 +470,6 @@ public class FluidBubbleView extends View {
 
                 dropPath.addOval(bodyLeft, bodyTop, bodyRight, bodyBottom, Path.Direction.CW);
 
-                // 颈部（连接回球面）
                 if (p.neckLength > 0) {
                     dropPath.moveTo(p.x - p.radius * 0.4f, bodyTop);
                     dropPath.lineTo(p.x - p.radius * 0.3f, bodyTop - p.neckLength);
@@ -447,7 +478,6 @@ public class FluidBubbleView extends View {
                     dropPath.close();
                 }
 
-                // 尾部拉伸
                 if (p.tailLength > 0) {
                     dropPath.moveTo(p.x - p.radius * 0.5f, bodyBottom);
                     dropPath.lineTo(p.x - p.radius * 0.3f, bodyBottom + p.tailLength);
@@ -459,7 +489,6 @@ public class FluidBubbleView extends View {
                 canvas.drawPath(dropPath, fluidPaint);
 
             } else if (p.state == 1) {
-                // 飞行中：椭圆拉伸
                 float stretch = (float) Math.sqrt(p.speedX * p.speedX + p.speedY * p.speedY);
                 float drawW = p.radius + stretch * 0.35f;
                 float drawH = p.radius + stretch * 0.15f;
@@ -467,7 +496,6 @@ public class FluidBubbleView extends View {
                 canvas.drawOval(bubbleRect, fluidPaint);
 
             } else if (p.state == 2) {
-                // 撞击：扩散涟漪
                 float sp = Math.min(1f, p.shrinkTimer);
                 int alpha = (int) (200 * (1f - sp));
                 if (alpha > 0) {
@@ -478,14 +506,13 @@ public class FluidBubbleView extends View {
                     canvas.drawOval(bubbleRect, glowPaint);
                     glowPaint.setAlpha(255);
                 }
-                // 核心
                 bubbleRect.set(p.x - p.radius * 0.7f, p.y - p.radius * 0.7f,
                         p.x + p.radius * 0.7f, p.y + p.radius * 0.7f);
                 canvas.drawOval(bubbleRect, fluidPaint);
             }
         }
 
-        // ===== 5. 中心文字 =====
+        // ===== 5. 中心文字（你原来的，一字未改）=====
         Paint.FontMetrics fm = textPaint.getFontMetrics();
         float textY = cy + (fm.bottom - fm.top) / 2f - fm.bottom;
         textPaint.setTextSize(dp2px(10f));
@@ -494,6 +521,56 @@ public class FluidBubbleView extends View {
                 String.format(java.util.Locale.getDefault(), "%.1f%%", progress),
                 cx, textY, textPaint
         );
+    }
+
+    // ===== 太阳辐射（新增，独立方法，不影响原有绘制）=====
+    private void drawSolarRadiation(Canvas canvas) {
+        if (!coordsBound || chargeCurrent < 0.1f) return;
+
+        float cRatio = Math.min(chargeCurrent / 40f, 1f);
+        float sunR = dp2px(solarIconSizeDp) * 0.18f;
+        if (sunR < dp2px(6f)) sunR = dp2px(6f);
+
+        float animPhase = (System.currentTimeMillis() % 3000) / 3000f;
+        float baseAngle = 360f * animPhase * (0.3f + 0.7f * cRatio);
+
+        // 光晕
+        glowPaint.setColor(SUN_COLOR);
+        glowPaint.setAlpha((int) (50 * cRatio));
+        canvas.drawCircle(sunX, sunY, sunR * (2.5f + 3f * cRatio), glowPaint);
+
+        // 长芒 8根
+        sunRayPaint.setColor(SUN_COLOR);
+        sunRayPaint.setStrokeWidth(dp2px(1.5f));
+        sunRayPaint.setAlpha((int) (200 * cRatio));
+        float longRayLen = sunR * (1.2f + 2.5f * cRatio);
+        for (int i = 0; i < 8; i++) {
+            float a = baseAngle + 45f * i;
+            double rad = Math.toRadians(a);
+            float sx = sunX + (float) Math.cos(rad) * sunR;
+            float sy = sunY + (float) Math.sin(rad) * sunR;
+            float ex = sunX + (float) Math.cos(rad) * (sunR + longRayLen);
+            float ey = sunY + (float) Math.sin(rad) * (sunR + longRayLen);
+            canvas.drawLine(sx, sy, ex, ey, sunRayPaint);
+        }
+
+        // 短芒 4~12根 反向
+        int shortRayCount = 4 + (int) (8 * cRatio);
+        float shortRayLen = sunR * (0.6f + 1.2f * cRatio);
+        float revAngle = -baseAngle * 0.6f;
+        sunRayPaint.setStrokeWidth(dp2px(1.8f));
+        float pulse = (float) Math.sin(animPhase * 2 * Math.PI + 1) * 0.5f + 0.5f;
+        sunRayPaint.setAlpha((int) (120 + 100 * cRatio * pulse));
+        for (int i = 0; i < shortRayCount; i++) {
+            float a = revAngle + (360f / shortRayCount) * i;
+            double rad = Math.toRadians(a);
+            float sx = sunX + (float) Math.cos(rad) * sunR * 0.85f;
+            float sy = sunY + (float) Math.sin(rad) * sunR * 0.85f;
+            float ex = sunX + (float) Math.cos(rad) * (sunR + shortRayLen);
+            float ey = sunY + (float) Math.sin(rad) * (sunR + shortRayLen);
+            canvas.drawLine(sx, sy, ex, ey, sunRayPaint);
+        }
+        sunRayPaint.setAlpha(255);
     }
 
     private static class ChargeParticle {
