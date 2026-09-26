@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity{
     private CustomMarkerView originMarker, cardMarker;
     private FluidBubbleView originFluidView;
     private FluidBubbleView cardFluidView;
-    private ImageView originsolarIcon,originhouseIcon,cardsolarIcon,cardhouseIcon;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -225,8 +225,8 @@ public class MainActivity extends AppCompatActivity{
         origin_menu_bt = originalView.findViewById(R.id.menu_img);
 
         // ===== 充电动画控件 =====
-        originsolarIcon = originalView.findViewById(R.id.solar_icon);
-        originhouseIcon = originalView.findViewById(R.id.house_icon);
+        ImageView originsolarIcon = originalView.findViewById(R.id.solar_icon);
+        ImageView originhouseIcon = originalView.findViewById(R.id.house_icon);
         originFluidView = originalView.findViewById(R.id.fluidView);
 
         // ===== 卡片布局（child 1）=====
@@ -290,8 +290,8 @@ public class MainActivity extends AppCompatActivity{
         card_menu_bt = cardView.findViewById(R.id.menu_img);
 
         // ===== 充电动画控件 =====
-        cardsolarIcon = cardView.findViewById(R.id.solar_icon);
-        cardhouseIcon = cardView.findViewById(R.id.house_icon);
+        ImageView cardsolarIcon = cardView.findViewById(R.id.solar_icon);
+        ImageView cardhouseIcon = cardView.findViewById(R.id.house_icon);
         cardFluidView = cardView.findViewById(R.id.fluidView);
 
         // 一行绑定坐标（必须在 setContentView 之后）
