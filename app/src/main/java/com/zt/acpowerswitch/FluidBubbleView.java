@@ -201,7 +201,7 @@ public class FluidBubbleView extends View {
                 p.x = targetSolarX + (random.nextFloat() - 0.5f) * dp2px(20f);
                 p.y = targetSolarY + (random.nextFloat() - 0.5f) * dp2px(20f);
 
-                p.maxRadius = dp2px(6.5f) + cRatio * dp2px(8.0f);
+                p.maxRadius = dp2px(6.5f) + cRatio * dp2px(3.0f); // 改变充电时的粒子大小,调后面这个参数,要大改大,要小改小
                 p.radius = p.maxRadius * 0.2f;
                 p.growPhase = 0f;
                 p.absorbPhase = 0f;
@@ -258,7 +258,7 @@ public class FluidBubbleView extends View {
         float dRatio = dischargeRatio();
         if (dischargeCurrent > 0.1f) {
             long interval = (long) (800 - 740 * dRatio);
-            int maxCount = 2 + (int) (23 * dRatio);
+            int maxCount = 1 + (int) (10 * dRatio); // 放电时粒子的数量上限,改第二个值,要多改大,要少改小
 
             int count = 0;
             for (DischargeDrop p : dischargeDrops) { if (p.state != 3) count++; }
@@ -268,7 +268,7 @@ public class FluidBubbleView extends View {
                 float angle = (float) (Math.PI * 0.5f + (random.nextFloat() - 0.5f) * 0.35f);
                 drop.x = cx + (float) Math.cos(angle) * ringRadius * 0.9f;
                 drop.y = cy + (float) Math.sin(angle) * ringRadius * 0.9f;
-                drop.maxRadius = dp2px(2.0f) + dRatio * dp2px(3.5f);
+                drop.maxRadius = dp2px(2.0f) + dRatio * dp2px(1.0f); // 改变放电时的粒子大小,调后面这个参数,要大改大,要小改小
                 drop.radius = drop.maxRadius * 0.15f;
                 drop.state = 0;
                 drop.growTimer = 0f;
@@ -327,15 +327,22 @@ public class FluidBubbleView extends View {
                 p.tailLength *= 0.92f;
                 p.neckLength *= 0.9f;
 
-                if (dist <= dp2px(6f)) {
+                if (dist <= dp2px(18f)) {
                     p.state = 2;
                     p.shrinkTimer = 0f;
                 }
 
             } else if (p.state == 2) {
-                p.shrinkTimer += 0.05f;
+                p.shrinkTimer += 0.04f;  // 稍慢一点，更柔和
                 float shrinkProgress = Math.min(1f, p.shrinkTimer);
-                p.radius = p.maxRadius * (1f - shrinkProgress * 0.8f);
+
+                // 半径缩小到 0
+                p.radius = p.maxRadius * (1f - shrinkProgress);
+
+                // 加一个"向内收缩"的效果——往房子中心方向收拢
+                float pullStrength = shrinkProgress * 0.3f;
+                p.x += (targetHouseX - p.x) * pullStrength * 0.15f;
+                p.y += (targetHouseY - p.y) * pullStrength * 0.15f;
 
                 if (shrinkProgress >= 1f) {
                     p.state = 3;
@@ -504,19 +511,29 @@ public class FluidBubbleView extends View {
 
             } else if (p.state == 2) {
                 float sp = Math.min(1f, p.shrinkTimer);
-                int alpha = (int) (200 * (1f - sp));
-                if (alpha > 0) {
+
+                // 光晕淡出（扩散+消散）
+                int glowAlpha = (int) (180 * (1f - sp));
+                if (glowAlpha > 0) {
                     glowPaint.setColor(fluidColor);
-                    glowPaint.setAlpha(alpha);
-                    float rippleR = p.radius * (1f + sp * 3f);
+                    glowPaint.setAlpha(glowAlpha);
+                    float rippleR = p.radius * (1f + sp * 2.5f);
                     bubbleRect.set(p.x - rippleR, p.y - rippleR, p.x + rippleR, p.y + rippleR);
                     canvas.drawOval(bubbleRect, glowPaint);
                     glowPaint.setAlpha(255);
                 }
-                bubbleRect.set(p.x - p.radius * 0.7f, p.y - p.radius * 0.7f,
-                        p.x + p.radius * 0.7f, p.y + p.radius * 0.7f);
-                canvas.drawOval(bubbleRect, fluidPaint);
+
+                // 粒子本体淡出（alpha 从 255 → 0）
+                int bodyAlpha = (int) (255 * (1f - sp * 0.7f)); // 留一点余量，不完全透明才消失
+                if (bodyAlpha > 0) {
+                    fluidPaint.setAlpha(bodyAlpha);
+                    bubbleRect.set(p.x - p.radius * 0.8f, p.y - p.radius * 0.8f,
+                            p.x + p.radius * 0.8f, p.y + p.radius * 0.8f);
+                    canvas.drawOval(bubbleRect, fluidPaint);
+                    fluidPaint.setAlpha(255); // 恢复
+                }
             }
+
         }
 
         // ===== 中心文字 =====
