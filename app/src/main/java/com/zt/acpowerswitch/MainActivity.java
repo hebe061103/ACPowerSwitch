@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity{
     private FluidBubbleView cardFluidView;
     private ImageView origin_solarIcon,origin_houseIcon,card_solarIcon,card_houseIcon;
     private final Map<String, String> info = new HashMap<>();
-    private Float max_chargerCurrent,bat_energy_last,chargeCurrent,dischargeCurrent,bat_healthy_value,switch_point_voltage;
+    private Float max_chargerCurrent,chargeCurrent,dischargeCurrent,bat_healthy_value,switch_point_voltage,bat_energy_ball;
     private String p_charged,charged, discharged,total_cap,available_cap,useTimeStr;
     private int layout_mode,fluidColor,date_num;
     private static final int COLOR_GREEN = Color.parseColor("#39FF14");
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity{
     private String last_alone_bat_voltage;
     private String last_pv_voltage;
     private String last_pv_current;
-    private String last_pv_time_poser;
+    private String last_pv_time_power;
     private String last_bat_charged_discharged_text;
     private String last_bat_charged_discharged_value;
     private String last_mp_pt_temp;
@@ -193,6 +193,8 @@ public class MainActivity extends AppCompatActivity{
     private String last_useTimeStr;
     private String last_bat_health_text;
     private String last_bat_health_detail;
+    // 逆变器自身功耗
+    private final float invSelfConsumption = 30f;
     private void resetLastValues() {
         last_AcVoltage = null;
         last_ac_current = null;
@@ -205,7 +207,7 @@ public class MainActivity extends AppCompatActivity{
         last_alone_bat_voltage = null;
         last_pv_voltage = null;
         last_pv_current = null;
-        last_pv_time_poser = null;
+        last_pv_time_power = null;
         last_bat_charged_discharged_text = null;
         last_bat_charged_discharged_value = null;
         last_mp_pt_temp = null;
@@ -605,18 +607,29 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("pv_current", info.get("Sun_Current"));
                         }
                         //光伏实时输出功率
-                        uiData.put("pv_time_poser", info.get("Sun_time_power"));
+                        uiData.put("pv_time_power", info.get("Sun_time_power"));
                         //逆变器不同模式下电池的充放电电流计算
-                        //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.0为逆变器关闭时控制板功耗的估算
+                        //充放电电流计算,其中的30为逆变器开启时自身功耗的估算包含主板功耗3W,3.0为逆变器关闭时控制板3W功耗的估算
                         float pw = Float.parseFloat(Objects.requireNonNull(info.get("Sun_time_power")));//太阳能板的发电功率
+                        // 逆变器参数
+                        float invEff;
+                        if (Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power"))) < 200.0f){
+                            invEff = 0.75f;
+                        }else{
+                            invEff = 0.94f;
+                        }
+                        // 负载交流有功功率（W）
+                        float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
+                        // 系统总交流消耗（用于判断是否充电）
+                        float totalAcLoad = loadPowerAc / invEff + invSelfConsumption;
                         if (Objects.equals(info.get("out_mode"), "逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
-                            if (pw - ((AC_power + 30)) > 0) {
+                            if (pw - totalAcLoad > 0) {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("bat_charged_discharged_value", df.format((pw - (AC_power+ 30)) / bat_voltage));
+                                uiData.put("bat_charged_discharged_value", df.format((pw - totalAcLoad / bat_voltage)));
                             } else {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("bat_charged_discharged_value", df.format(((AC_power + 30) - pw) / bat_voltage));
+                                uiData.put("bat_charged_discharged_value", df.format((totalAcLoad - pw) / bat_voltage));
                             }
                         } else if (Objects.equals(info.get("out_mode"), "市电供电")) {
                             //市电供电模式下,逆变器为关闭状态的充放电电流计算
@@ -638,12 +651,12 @@ public class MainActivity extends AppCompatActivity{
                             }
                         } else if (Objects.equals(info.get("out_mode"), "固定逆变模式")) {
                             //固定逆变模式下,逆变器为开启状态的充放电电流计算
-                            if (pw - ((AC_power + 30)) > 0) {
+                            if (pw - totalAcLoad > 0) {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("bat_charged_discharged_value", df.format((pw - (AC_power + 30)) / bat_voltage));
+                                uiData.put("bat_charged_discharged_value", df.format((pw - totalAcLoad) / bat_voltage));
                             } else {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("bat_charged_discharged_value", df.format(((AC_power + 30) - pw) / bat_voltage));
+                                uiData.put("bat_charged_discharged_value", df.format((totalAcLoad - pw) / bat_voltage));
                             }
                         } else if (Objects.equals(info.get("out_mode"), "固定市电模式")) {
                             //固定市电模式下,逆变器为关闭状态的充放电电流计算
@@ -683,27 +696,6 @@ public class MainActivity extends AppCompatActivity{
                         uiData.put("fan_time_speed", info.get("fan_speed_value"));
                         //开启逆变的电压阈值
                         safeSaveFlash(info,"on_inv_value");
-
-                        //电池充放电信息表
-                        p_charged = String.format("☀️ 今日光伏发电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("pv_energy_today"))));
-                        charged = String.format("⛽️ 今日电池充电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_charged_today"))));
-                        discharged = String.format("⚡ 今日电池放电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_discharged_today"))));
-                        total_cap = String.format("📋 当前电池总容量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))));
-                        available_cap = String.format("🔋 当前电池可用电量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))));
-                        bat_healthy_value = Float.parseFloat(Objects.requireNonNull(info.get("bat_healthy_data")));
-                        switch_point_voltage = Float.parseFloat(Objects.requireNonNull(info.get("switch_point_voltage")));
-                        if (bat_healthy_value > 0) {
-                            uiData.put("bat_health_text", bat_healthy_value >= 90 ? "优秀" :
-                                    bat_healthy_value >= 85 ? "良好" :
-                                            bat_healthy_value >= 80 ? "预警" : "严重衰减");
-                            uiData.put("bat_health_detail", "健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
-                        } else if (bat_healthy_value < 0) {
-                            uiData.put("bat_health_text", "校准中...");
-                            uiData.put("bat_health_detail", "");
-                        } else {
-                            uiData.put("bat_health_text", "暂未校准");
-                            uiData.put("bat_health_detail", "");
-                        }
                         // 光耦和电阻的物理硬件延迟误差
                         safeSaveFlash(info,"hardware_offset_us");
                         // 极致锁相峰值微秒差
@@ -712,31 +704,37 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"SYSTEM_R");
                         // 请求电池校准
                         safeSaveFlash(info,"request_calibration");
+                        //电池充放电信息表
+                        p_charged = String.format("☀️ 今日光伏发电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("pv_energy_today"))));
+                        charged = String.format("⛽️ 今日电池充电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_charged_today"))));
+                        discharged = String.format("⚡ 今日电池放电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_discharged_today"))));
+                        total_cap = String.format("📋 当前电池总容量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))));
+                        available_cap = String.format("🔋 当前电池可用电量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))));
+                        switch_point_voltage = Float.parseFloat(Objects.requireNonNull(info.get("switch_point_voltage")));
+                        bat_healthy_value = Float.parseFloat(Objects.requireNonNull(info.get("bat_healthy_data")));
+                        // 显示电池健康度
+                        if (bat_healthy_value > 0) {
+                            uiData.put("bat_health_text", bat_healthy_value >= 90 ? "优秀" :
+                                    bat_healthy_value >= 85 ? "良好" :
+                                            bat_healthy_value >= 80 ? "预警" : "严重衰减");
+                            uiData.put("bat_health_detail", "健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
+                        } else if (bat_healthy_value < 0) {
+                            uiData.put("bat_health_text", "校准中");
+                            uiData.put("bat_health_detail", "");
+                        } else {
+                            uiData.put("bat_health_text", "暂未校准");
+                            uiData.put("bat_health_detail", "");
+                        }
                         // 计算在最高允许功率下的电池放电电流
                         max_chargerCurrent = Float.parseFloat(Objects.requireNonNull(info.get("power"))) / bat_voltage;
-                        // 光伏实时输出功率（W）
-                        float pvPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("pv_time_poser")));
-                        // 负载交流有功功率（W）
-                        float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
-                        // 逆变器参数
-                        float invEff;
-                        if (Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power"))) < 200.0f){
-                            invEff = 0.75f;
-                        }else{
-                            invEff = 0.94f;
-                        }
-                        float invSelfConsumption = 30f;
                         // 电池可用电量（Wh）
-                        float availableCapWh = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) * 1000;
-                        // 系统总交流消耗（用于判断是否充电）
-                        float totalAcLoad = loadPowerAc + invSelfConsumption;
-                        if (pvPowerAc >= totalAcLoad) {
+                        float availableCapWh = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) * 1000f;
+                        if (pw >= totalAcLoad) {
                             // 光伏够用，电池不放电
                             useTimeStr = "充电中";
                         } else {
-                            // 光伏不足，电池需要放电
-                            // 交流缺口折算到直流侧
-                            float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
+                            // 光伏不足，电池需要放电,交流缺口折算到直流侧
+                            float dcDischargePower = totalAcLoad - pw;
                             // 防止极小放电功率导致“天文数字”
                             if (dcDischargePower < 10f) {
                                 useTimeStr = "无需放电";
@@ -753,31 +751,30 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             }
                         }
-                        bat_energy_last = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last")));
-                        if (bat_energy_last > 0) {
-                            float rawValue = (Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) / Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data")))) * 100f;
-                            bat_energy_last = Math.round(rawValue * 10f) / 10f;
+                        if (availableCapWh > 0) {
+                            float rawValue = (availableCapWh / 1000f / Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data")))) * 100f;
+                            bat_energy_ball = Math.round(rawValue * 10f) / 10f;
                         }
-                        if (bat_energy_last > 100) bat_energy_last = 100f;
-                        if (bat_energy_last < 0) bat_energy_last = 0f;
+                        if (bat_energy_ball > 100) bat_energy_ball = 100f;
+                        if (bat_energy_ball < 0) bat_energy_ball = 0f;
 
                         // 1. 根据电量，在外部精准计算出当前应该呈现的科技主题颜色
                         fluidColor = COLOR_GREEN; // 默认：高电量科技绿
-                        if (bat_energy_last <= 20) {
+                        if (bat_energy_ball <= 20) {
                             fluidColor = COLOR_RED; // 低电量：红
-                        } else if (bat_energy_last <= 60) {
+                        } else if (bat_energy_ball <= 60) {
                             fluidColor = COLOR_ORANGE; // 中电量：橙
                         }
                         // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
-                        if (pvPowerAc > 0 && totalAcLoad > pvPowerAc) {
+                        if (pw > 0 && totalAcLoad > pw) {
                             // 光伏在充电，电池在补缺口
-                            chargeCurrent = pvPowerAc / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                            dischargeCurrent = (totalAcLoad - pvPowerAc) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                        }else if (pvPowerAc > 0 && totalAcLoad < pvPowerAc){
+                            chargeCurrent = pw / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                            dischargeCurrent = (totalAcLoad - pw) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                        }else if (pw > 0 && totalAcLoad < pw){
                             // 光伏提供主功率,剩余功率给电池充电,电池未放电
-                            chargeCurrent = (pvPowerAc - totalAcLoad) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                            chargeCurrent = (pw - totalAcLoad) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
                             dischargeCurrent = 0f;
-                        }else if (pvPowerAc <= 0){
+                        }else if (pw <= 0){
                             // 光伏无功率,不充电,电池放电
                             chargeCurrent = 0f;
                             dischargeCurrent = totalAcLoad / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
@@ -893,10 +890,10 @@ public class MainActivity extends AppCompatActivity{
                     last_pv_current = newVal;
                 }
                 //光伏实时输出功率
-                newVal = uiData.get("pv_time_poser");
-                if (!Objects.equals(newVal, last_pv_time_poser)) {
+                newVal = uiData.get("pv_time_power");
+                if (!Objects.equals(newVal, last_pv_time_power)) {
                     ((layout_mode == 0) ? originPvPowerResult : cardPvPowerResult).setText(newVal);
-                    last_pv_time_poser = newVal;
+                    last_pv_time_power = newVal;
                 }
                 //为逆变模式时修改计算电池的充放电电流文本
                 newVal = uiData.get("bat_charged_discharged_text");
@@ -1002,9 +999,9 @@ public class MainActivity extends AppCompatActivity{
                 }
                 //充电动画刷新（这个每次都调，因为粒子动画需要持续驱动）
                 if (layout_mode == 0) {
-                    originFluidView.updateConfig(bat_energy_last, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    originFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
                 } else {
-                    cardFluidView.updateConfig(bat_energy_last, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    cardFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
                 }
             }
         }
