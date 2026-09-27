@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity{
     public ArrayList<BarEntry> _barChart_list = new ArrayList<>();
     public ArrayList <Entry> _mem_use_list = new ArrayList<>();
     public static ArrayList<String> debugList = new ArrayList<>();
-    public int date_num;
     private ComponentName topActivity;
     public static LineDataSet bat_lineDataSet,mem_lineDataSet;
     public static int page_refresh_time;
@@ -96,7 +95,8 @@ public class MainActivity extends AppCompatActivity{
     public SmartRefreshLayout smartRefreshLayout;
     private boolean request_homepage_run;
     public static int year,month,day;
-    Map<String, String> uiData = new HashMap<>();
+    private final Map<String, String> uiData = new HashMap<>();
+    private final DecimalFormat df = new DecimalFormat("#.##");
     private float startX = 0f;
     private float startY = 0f;
     private ViewSwitcher viewSwitcher;
@@ -119,11 +119,11 @@ public class MainActivity extends AppCompatActivity{
     private TextView originPvPowerResult, cardPvPowerResult;
 
     // ===== 电池系统 =====
-    private TextView originBatVoltage, cardBatVoltage ,cardone_bat_Voltage;
+    private TextView originBatVoltage, cardBatVoltage ,card_one_bat_Voltage;
     private TextView originBatOutCurrent, cardBatOutCurrent;
-    private TextView originBatHealthCap, cardBatHealthCap, cardbat_3;
+    private TextView originBatHealthCap, cardBatHealthCap, card_bat_3;
     private TextView originBat_use_time, cardBat_use_time;
-    private TextView cardswitch_point;
+    private TextView card_switch_point;
 
     // ===== 温度 & 风扇 =====
     private TextView originTemp0Value, cardTemp0Value;
@@ -156,8 +156,73 @@ public class MainActivity extends AppCompatActivity{
     private CustomMarkerView originMarker, cardMarker;
     private FluidBubbleView originFluidView;
     private FluidBubbleView cardFluidView;
-    private ImageView originsolarIcon,originhouseIcon,cardsolarIcon,cardhouseIcon;
-
+    private ImageView origin_solarIcon,origin_houseIcon,card_solarIcon,card_houseIcon;
+    private final Map<String, String> info = new HashMap<>();
+    private Float max_chargerCurrent,bat_energy_last,chargeCurrent,dischargeCurrent,bat_healthy_value,switch_point_voltage;
+    private String p_charged,charged, discharged,total_cap,available_cap,useTimeStr;
+    private int layout_mode,fluidColor,date_num;
+    private static final int COLOR_GREEN = Color.parseColor("#39FF14");
+    private static final int COLOR_RED = Color.parseColor("#F44336");
+    private static final int COLOR_ORANGE = Color.parseColor("#FF9800");
+    // 新旧值对比
+    private String last_AcVoltage;
+    private String last_ac_current;
+    private String last_ac_power;
+    private String last_sj_power;
+    private String last_power_ys;
+    private String last_ac_freq;
+    private String last_power_use;
+    private String last_bat_voltage;
+    private String last_alone_bat_voltage;
+    private String last_pv_voltage;
+    private String last_pv_current;
+    private String last_pv_time_poser;
+    private String last_bat_charged_discharged_text;
+    private String last_bat_charged_discharged_value;
+    private String last_mp_pt_temp;
+    private String last_current_out_mode;
+    private String last_mem_use_info;
+    private String last_mos_time_temp;
+    private String last_fan_time_speed;
+    private String last_p_charged;
+    private String last_charged;
+    private String last_discharged;
+    private String last_total_cap;
+    private String last_available_cap;
+    private String last_switch_point_voltage;
+    private String last_useTimeStr;
+    private String last_bat_health_text;
+    private String last_bat_health_detail;
+    private void resetLastValues() {
+        last_AcVoltage = null;
+        last_ac_current = null;
+        last_ac_power = null;
+        last_sj_power = null;
+        last_power_ys = null;
+        last_ac_freq = null;
+        last_power_use = null;
+        last_bat_voltage = null;
+        last_alone_bat_voltage = null;
+        last_pv_voltage = null;
+        last_pv_current = null;
+        last_pv_time_poser = null;
+        last_bat_charged_discharged_text = null;
+        last_bat_charged_discharged_value = null;
+        last_mp_pt_temp = null;
+        last_current_out_mode = null;
+        last_mem_use_info = null;
+        last_mos_time_temp = null;
+        last_fan_time_speed = null;
+        last_p_charged = null;
+        last_charged = null;
+        last_discharged = null;
+        last_total_cap = null;
+        last_available_cap = null;
+        last_switch_point_voltage = null;
+        last_useTimeStr = null;
+        last_bat_health_text = null;
+        last_bat_health_detail = null;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -166,8 +231,8 @@ public class MainActivity extends AppCompatActivity{
         viewSwitcher = findViewById(R.id.viewSwitcher);
         // 恢复显示模式
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
-        int mode = sp.getInt("mode", 0); // 0 = 经典，1 = 卡片
-        viewSwitcher.setDisplayedChild(mode);
+        layout_mode = sp.getInt("mode", 0); // 0 = 经典，1 = 卡片
+        viewSwitcher.setDisplayedChild(layout_mode);
         // ===== 经典布局（child 0）=====
         View originalView = viewSwitcher.getChildAt(0);
 
@@ -226,8 +291,8 @@ public class MainActivity extends AppCompatActivity{
         origin_menu_bt = originalView.findViewById(R.id.menu_img);
 
         // ===== 充电动画控件 =====
-        originsolarIcon = originalView.findViewById(R.id.solar_icon);
-        originhouseIcon = originalView.findViewById(R.id.house_icon);
+        origin_solarIcon = originalView.findViewById(R.id.solar_icon);
+        origin_houseIcon = originalView.findViewById(R.id.house_icon);
         originFluidView = originalView.findViewById(R.id.fluidView);
 
         // ===== 卡片布局（child 1）=====
@@ -251,12 +316,12 @@ public class MainActivity extends AppCompatActivity{
 
         // 电池系统
         cardBatVoltage = cardView.findViewById(R.id.bat_Voltage);
-        cardone_bat_Voltage = cardView.findViewById(R.id.one_bat_Voltage);
+        card_one_bat_Voltage = cardView.findViewById(R.id.one_bat_Voltage);
         cardBatOutCurrent = cardView.findViewById(R.id.bat_out_current);
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
         cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
-        cardswitch_point = cardView.findViewById(R.id.switch_point);
-        cardbat_3 = cardView.findViewById(R.id.bat_3);
+        card_switch_point = cardView.findViewById(R.id.switch_point);
+        card_bat_3 = cardView.findViewById(R.id.bat_3);
 
         // 温度 & 风扇
         cardTemp0Value = cardView.findViewById(R.id.temp0_value);
@@ -291,13 +356,13 @@ public class MainActivity extends AppCompatActivity{
         card_menu_bt = cardView.findViewById(R.id.menu_img);
 
         // ===== 充电动画控件 =====
-        cardsolarIcon = cardView.findViewById(R.id.solar_icon);
-        cardhouseIcon = cardView.findViewById(R.id.house_icon);
+        card_solarIcon = cardView.findViewById(R.id.solar_icon);
+        card_houseIcon = cardView.findViewById(R.id.house_icon);
         cardFluidView = cardView.findViewById(R.id.fluidView);
 
         // 一行绑定坐标（必须在 setContentView 之后）
-        originFluidView.bindIconCoords(originsolarIcon, originhouseIcon);
-        cardFluidView.bindIconCoords(cardsolarIcon, cardhouseIcon);
+        originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
+        cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
         originFluidView.setSolarSize(80f); // 跟布局里 80dp 一致
         cardFluidView.setSolarSize(80f);
     }
@@ -380,7 +445,6 @@ public class MainActivity extends AppCompatActivity{
     public void start_Thread(){
         new Thread(() -> {
             while (!Thread_Run) {
-                // 现在它在子线程运行，不会再报 NetworkOnMainThreadException 了
                 if (tcpClient.tcpConnect() && !Thread_Run) {
                     about.log(TAG, "开始调用线程");
                     mData_pro_thread();
@@ -391,21 +455,21 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         }).start();
-        if (_min_bat_list == null || _min_bat_list.isEmpty()) {
-            new Thread(() -> {
-                while (socket == null || originOutVoltage.getText().toString().isEmpty() || cardOutVoltage.getText().toString().isEmpty()) {
-                    try {
-                        Thread.sleep(100); // 每次检查休眠 100ms，降低 CPU 占用
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+        new Thread(() -> {
+            while (true) {
+                if (_min_bat_list == null || _min_bat_list.isEmpty()) {
+                    if (!request_homepage_run && socket != null) {
+                        request_homepage_run = true;
+                        request_homepage_date();
                     }
                 }
-                if (!request_homepage_run && socket!=null) {
-                    request_homepage_run=true;
-                    request_homepage_date();
+                try {
+                    Thread.sleep(1000); // 每次检查休眠 1000ms，降低 CPU 占用
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            }).start();
-        }
+            }
+        }).start();
     }
     public void proEsp32Text(TextView Dev) {
         Dev.setOnLongClickListener(view -> {
@@ -482,6 +546,7 @@ public class MainActivity extends AppCompatActivity{
 
         return result[0]; // 返回结果
     }
+    @SuppressLint("DefaultLocale")
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
@@ -490,13 +555,11 @@ public class MainActivity extends AppCompatActivity{
                     String udp_response = tcpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("AC_voltage")) {
-                        Log.i(TAG, "数据内容: " + udp_response );
-                        Map<String, String> info = new HashMap<>();
+                        Log.d(TAG, "数据内容: " + udp_response );
                         for (String pair : udp_response.trim().replace("mark1", "").split(",")) {
                             String[] kv = pair.split(":", 2);
                             if (kv.length == 2) info.put(kv[0].trim(), kv[1].trim());
                         }
-                        DecimalFormat df = new DecimalFormat("#.##");
                         Float sj_power = 0.0F;
                         //交流电压
                         uiData.put("ac_voltage", info.get("AC_voltage"));
@@ -508,6 +571,7 @@ public class MainActivity extends AppCompatActivity{
                         String iv = info.get("AC_current");
                         //交流有功功率
                         uiData.put("ac_power", info.get("AC_power"));
+                        float AC_power = Float.parseFloat(Objects.requireNonNull(info.get("AC_power")));
                         //交流视在功率
                         if (ac != null && iv != null) {
                             sj_power = Float.parseFloat(ac) * Float.parseFloat(iv);
@@ -515,7 +579,7 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("sj_power", formattedValue);
                         }
                         //功率因数
-                        String pf_value = df.format(Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) / sj_power);
+                        String pf_value = df.format(AC_power / sj_power);
                         uiData.put("power_ys", pf_value);
                         //交流频率
                         uiData.put("ac_freq", info.get("AC_frequency") + " hz");
@@ -528,8 +592,9 @@ public class MainActivity extends AppCompatActivity{
                         }
                         //储能电池电压
                         uiData.put("bat_voltage", info.get("Battery_Voltage"));
+                        float bat_voltage = Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
                         //单电池电压
-                        String alone_bat_voltage = df.format(Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))/8);
+                        String alone_bat_voltage = df.format(bat_voltage/8);
                         uiData.put("alone_bat_voltage",alone_bat_voltage);
                         //光伏板电压
                         uiData.put("pv_voltage", info.get("Sun_Voltage"));
@@ -540,70 +605,70 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("pv_current", info.get("Sun_Current"));
                         }
                         //光伏实时输出功率
-                        uiData.put("光伏实时输出功率", info.get("Sun_time_power"));
+                        uiData.put("pv_time_poser", info.get("Sun_time_power"));
                         //逆变器不同模式下电池的充放电电流计算
                         //充放电电流计算,其中的30为逆变器开启时自身功耗的估算,3.0为逆变器关闭时控制板功耗的估算
                         float pw = Float.parseFloat(Objects.requireNonNull(info.get("Sun_time_power")));//太阳能板的发电功率
                         if (Objects.equals(info.get("out_mode"), "逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
-                            if (pw - ((Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30)) > 0) {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(Objects.requireNonNull(info.get("AC_power")))+ 30)) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));
+                            if (pw - ((AC_power + 30)) > 0) {
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format((pw - (AC_power+ 30)) / bat_voltage));
                             } else {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30) - pw) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format(((AC_power + 30) - pw) / bat_voltage));
                             }
                         } else if (Objects.equals(info.get("out_mode"), "市电供电")) {
                             //市电供电模式下,逆变器为关闭状态的充放电电流计算
                             if ((pw - 3.0) > 0) {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage"))))); //3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format((pw - 3.0) / bat_voltage)); //3.0w为估算值,具体要测量才知道
                             } else {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));//3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format(3.0 / bat_voltage));//3.0w为估算值,具体要测量才知道
                             }
                         } else if (Objects.equals(info.get("out_mode"), "电池电压过低")) {
                             //电池电压过低,逆变器为关闭状态的充放电电流计算
                             if ((pw - 3.0) > 0) {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage"))))); //3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format((pw - 3.0) / bat_voltage)); //3.0w为估算值,具体要测量才知道
                             } else {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));//3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format(3.0 / bat_voltage));//3.0w为估算值,具体要测量才知道
                             }
                         } else if (Objects.equals(info.get("out_mode"), "固定逆变模式")) {
                             //固定逆变模式下,逆变器为开启状态的充放电电流计算
-                            if (pw - ((Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30)) > 0) {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format((pw - (Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30)) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));
+                            if (pw - ((AC_power + 30)) > 0) {
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format((pw - (AC_power + 30)) / bat_voltage));
                             } else {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format(((Float.parseFloat(Objects.requireNonNull(info.get("AC_power"))) + 30) - pw) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format(((AC_power + 30) - pw) / bat_voltage));
                             }
                         } else if (Objects.equals(info.get("out_mode"), "固定市电模式")) {
                             //固定市电模式下,逆变器为关闭状态的充放电电流计算
                             if ((pw - 3.0) > 0) {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format((pw - 3.0) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage"))))); //3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format((pw - 3.0) / bat_voltage)); //3.0w为估算值,具体要测量才知道
                             } else {
-                                uiData.put("修改电池充放电电流text", "\uD83D\uDCA7 放电电流(A):");
-                                uiData.put("修改电池充放电电流值", df.format(3.0 / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")))));//3.0w为估算值,具体要测量才知道
+                                uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
+                                uiData.put("bat_charged_discharged_value", df.format(3.0 / bat_voltage));//3.0w为估算值,具体要测量才知道
                             }
                         }
                         //为MPTT散热片温度
-                        uiData.put("mptt温度", info.get("MPPT温度") + "°C");
+                        uiData.put("mp_pt_temp", info.get("MPPT温度") + "°C");
                         //当前输出模式
                         if (Objects.equals(info.get("out_mode"), "电池电压过低")){
-                            uiData.put("当前输出模式", "电池低压");
+                            uiData.put("current_out_mode", "电池低压");
                         }else if (Objects.equals(info.get("out_mode"), "固定市电模式")){
-                            uiData.put("当前输出模式", "固定市电");
+                            uiData.put("current_out_mode", "固定市电");
                         }else if (Objects.equals(info.get("out_mode"), "固定逆变模式")){
-                            uiData.put("当前输出模式", "固定逆变");
+                            uiData.put("current_out_mode", "固定逆变");
                         }else{
-                            uiData.put("当前输出模式", info.get("out_mode"));
+                            uiData.put("current_out_mode", info.get("out_mode"));
                         }
                         //内存使用信息
-                        uiData.put("内存使用信息", info.get("mem_usage"));
+                        uiData.put("mem_use_info", info.get("mem_usage"));
                         //市电切换阈值
                         safeSaveFlash(info,"power");
                         //电池低于此值则市电常开
@@ -613,18 +678,32 @@ public class MainActivity extends AppCompatActivity{
                         //主功率板散执片风扇开启温度
                         safeSaveFlash(info,"mos_temp_value");
                         //主功率板散热片实时温度
-                        uiData.put("散热片实时温度", info.get("sys_ntc_value"));
+                        uiData.put("mos_time_temp", info.get("sys_ntc_value"));
                         //主功率板散热风扇转速值
-                        uiData.put("散热风扇转速值", info.get("fan_speed_value"));
+                        uiData.put("fan_time_speed", info.get("fan_speed_value"));
                         //开启逆变的电压阈值
                         safeSaveFlash(info,"on_inv_value");
-                        uiData.put("光伏发电度数计量", info.get("pv_energy_today"));
-                        uiData.put("电池充电度数计量", info.get("bat_charged_today"));
-                        uiData.put("电池放电度数计量", info.get("bat_discharged_today"));
-                        uiData.put("电池健康度计量", info.get("bat_healthy_data"));
-                        uiData.put("电池总容量计量", info.get("bat_cap_data"));
-                        uiData.put("电池可用容量计量", info.get("bat_energy_last"));
-                        uiData.put("电池低压切换点电压", info.get("switch_point_voltage"));
+
+                        //电池充放电信息表
+                        p_charged = String.format("☀️ 今日光伏发电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("pv_energy_today"))));
+                        charged = String.format("⛽️ 今日电池充电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_charged_today"))));
+                        discharged = String.format("⚡ 今日电池放电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_discharged_today"))));
+                        total_cap = String.format("📋 当前电池总容量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))));
+                        available_cap = String.format("🔋 当前电池可用电量: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))));
+                        bat_healthy_value = Float.parseFloat(Objects.requireNonNull(info.get("bat_healthy_data")));
+                        switch_point_voltage = Float.parseFloat(Objects.requireNonNull(info.get("switch_point_voltage")));
+                        if (bat_healthy_value > 0) {
+                            uiData.put("bat_health_text", bat_healthy_value >= 90 ? "优秀" :
+                                    bat_healthy_value >= 85 ? "良好" :
+                                            bat_healthy_value >= 80 ? "预警" : "严重衰减");
+                            uiData.put("bat_health_detail", "健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
+                        } else if (bat_healthy_value < 0) {
+                            uiData.put("bat_health_text", "校准中...");
+                            uiData.put("bat_health_detail", "");
+                        } else {
+                            uiData.put("bat_health_text", "暂未校准");
+                            uiData.put("bat_health_detail", "");
+                        }
                         // 光耦和电阻的物理硬件延迟误差
                         safeSaveFlash(info,"hardware_offset_us");
                         // 极致锁相峰值微秒差
@@ -633,6 +712,76 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"SYSTEM_R");
                         // 请求电池校准
                         safeSaveFlash(info,"request_calibration");
+                        // 计算在最高允许功率下的电池放电电流
+                        max_chargerCurrent = Float.parseFloat(Objects.requireNonNull(info.get("power"))) / bat_voltage;
+                        // 光伏实时输出功率（W）
+                        float pvPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("pv_time_poser")));
+                        // 负载交流有功功率（W）
+                        float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
+                        // 逆变器参数
+                        float invEff;
+                        if (Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power"))) < 200.0f){
+                            invEff = 0.75f;
+                        }else{
+                            invEff = 0.94f;
+                        }
+                        float invSelfConsumption = 30f;
+                        // 电池可用电量（Wh）
+                        float availableCapWh = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) * 1000;
+                        // 系统总交流消耗（用于判断是否充电）
+                        float totalAcLoad = loadPowerAc + invSelfConsumption;
+                        if (pvPowerAc >= totalAcLoad) {
+                            // 光伏够用，电池不放电
+                            useTimeStr = "充电中";
+                        } else {
+                            // 光伏不足，电池需要放电
+                            // 交流缺口折算到直流侧
+                            float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
+                            // 防止极小放电功率导致“天文数字”
+                            if (dcDischargePower < 10f) {
+                                useTimeStr = "无需放电";
+                            } else {
+                                if (Objects.requireNonNull(uiData.get("current_out_mode")).contains("逆变")) {
+                                    double hours = availableCapWh / dcDischargePower;
+                                    long totalMinutes = (long) (hours * 60); // 偏保守
+                                    long d = totalMinutes / 1440;
+                                    long h = (totalMinutes % 1440) / 60;
+                                    long m = totalMinutes % 60;
+                                    useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                                }else{
+                                    useTimeStr = "任意时长";
+                                }
+                            }
+                        }
+                        bat_energy_last = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last")));
+                        if (bat_energy_last > 0) {
+                            float rawValue = (Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) / Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data")))) * 100f;
+                            bat_energy_last = Math.round(rawValue * 10f) / 10f;
+                        }
+                        if (bat_energy_last > 100) bat_energy_last = 100f;
+                        if (bat_energy_last < 0) bat_energy_last = 0f;
+
+                        // 1. 根据电量，在外部精准计算出当前应该呈现的科技主题颜色
+                        fluidColor = COLOR_GREEN; // 默认：高电量科技绿
+                        if (bat_energy_last <= 20) {
+                            fluidColor = COLOR_RED; // 低电量：红
+                        } else if (bat_energy_last <= 60) {
+                            fluidColor = COLOR_ORANGE; // 中电量：橙
+                        }
+                        // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
+                        if (pvPowerAc > 0 && totalAcLoad > pvPowerAc) {
+                            // 光伏在充电，电池在补缺口
+                            chargeCurrent = pvPowerAc / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                            dischargeCurrent = (totalAcLoad - pvPowerAc) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                        }else if (pvPowerAc > 0 && totalAcLoad < pvPowerAc){
+                            // 光伏提供主功率,剩余功率给电池充电,电池未放电
+                            chargeCurrent = (pvPowerAc - totalAcLoad) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                            dischargeCurrent = 0f;
+                        }else if (pvPowerAc <= 0){
+                            // 光伏无功率,不充电,电池放电
+                            chargeCurrent = 0f;
+                            dischargeCurrent = totalAcLoad / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
+                        }
                         // 通知数据刷新
                         Message message = messageProHandler.obtainMessage();
                         message.what = 1;
@@ -641,7 +790,6 @@ public class MainActivity extends AppCompatActivity{
                     }
                     if (checkScreenStatus() && udp_response != null && udp_response.startsWith("live>") && udp_response.contains("mark3")){
                         about.log(TAG, "收到实时分时数据,更新分时图表");
-                        //live>16:30 26.8,39.9,1.5,50.0#h>15 0.03,mark3
                         String[] str = udp_response.split("#");
                         String[] min = str[0].split(">");
                         String[] _f = min[1].split(" ");
@@ -679,198 +827,185 @@ public class MainActivity extends AppCompatActivity{
             if (msg.what == 1 && msg.obj instanceof Map) {
                 Map<String, String> uiData = (Map<String, String>) msg.obj;
                 //交流电压
-                originOutVoltage.setText(uiData.get("ac_voltage"));
-                cardOutVoltage.setText(uiData.get("ac_voltage"));
-                //交流电流
-                originOutCurrent.setText(uiData.get("ac_current"));
-                cardOutCurrent.setText(uiData.get("ac_current"));
-                //交流有功功率
-                originPowerKw.setText(uiData.get("ac_power"));
-                cardPowerKw.setText(uiData.get("ac_power"));
-                //交流视在功率
-                originSjPowerKw.setText(uiData.get("sj_power"));
-                cardSjPowerKw.setText(uiData.get("sj_power"));
-                //功率因数
-                originPf.setText(uiData.get("power_ys"));
-                cardPf.setText(uiData.get("power_ys"));
-                //交流频率
-                originOutFrequency.setText(uiData.get("ac_freq"));
-                cardOutFrequency.setText(uiData.get("ac_freq"));
-                //负载使用率
-                originLoadRateValue.setText(uiData.get("power_use"));
-                cardLoadRateValue.setText(uiData.get("power_use"));
-                //电池电压
-                originBatVoltage.setText(uiData.get("bat_voltage"));
-                cardBatVoltage.setText(uiData.get("bat_voltage"));
-                cardone_bat_Voltage.setText(uiData.get("alone_bat_voltage"));
-                //光伏电压
-                originSunVoltageValue.setText(uiData.get("pv_voltage"));
-                cardSunVoltageValue.setText(uiData.get("pv_voltage"));
-                //太阳能电流
-                originLeCurrent.setText(uiData.get("pv_current"));
-                cardLeCurrent.setText(uiData.get("pv_current"));
-                //光伏实时输出功率
-                originPvPowerResult.setText(uiData.get("光伏实时输出功率"));
-                cardPvPowerResult.setText(uiData.get("光伏实时输出功率"));
-                //为逆变模式时修改计算电池的充放电电流文本
-                originCurrentDirection.setText(uiData.get("修改电池充放电电流text"));
-                if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 充电电流(A):")){
-                    cardCurrentDirection.setText("充电电流");
-                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 放电电流(A):")){
-                    cardCurrentDirection.setText("放电电流");
-                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 充电电流(A):")){
-                    cardCurrentDirection.setText("充电电流");
-                }else if (Objects.equals(uiData.get("修改电池充放电电流text"), "\uD83D\uDCA7 放电电流(A):")){
-                    cardCurrentDirection.setText("放电电流");
+                String newVal = uiData.get("ac_voltage");
+                if (!Objects.equals(newVal, last_AcVoltage)) {
+                    ((layout_mode == 0) ? originOutVoltage : cardOutVoltage).setText(newVal);
+                    last_AcVoltage = newVal;
                 }
-                //为逆变模式时计算电池的充放电电流
-                originBatOutCurrent.setText(uiData.get("修改电池充放电电流值"));
-                cardBatOutCurrent.setText(uiData.get("修改电池充放电电流值"));
-                //为MPTT散热片温度
-                originTemp0Value.setText(uiData.get("mptt温度"));
-                cardTemp0Value.setText(uiData.get("mptt温度"));
-                //当前输出模式
-                originOutMode.setText(uiData.get("当前输出模式"));
-                cardOutMode.setText(uiData.get("当前输出模式"));
-                //内存使用信息
-                mem_data_display_to_chart(uiData.get("内存使用信息"),originMmUse);
-                mem_data_display_to_chart(uiData.get("内存使用信息"),cardMmUse);
-                //主功率板散热片实时温度
-                originTemp1Value.setText(uiData.get("散热片实时温度"));
-                cardTemp1Value.setText(uiData.get("散热片实时温度"));
-                //主功率板散热风扇转速值
-                originFanValue.setText(uiData.get("散热风扇转速值"));
-                cardFanValue.setText(uiData.get("散热风扇转速值"));
-                //电池充放电信息表
-                float p_charged = Float.parseFloat(Objects.requireNonNull(uiData.get("光伏发电度数计量")));
-                float charged = Float.parseFloat(Objects.requireNonNull(uiData.get("电池充电度数计量")));
-                float discharged = Float.parseFloat(Objects.requireNonNull(uiData.get("电池放电度数计量")));
-                float total_cap = Float.parseFloat(Objects.requireNonNull(uiData.get("电池总容量计量")));
-                float available_cap = Float.parseFloat(Objects.requireNonNull(uiData.get("电池可用容量计量")));
-
-                originPvCharged.setText(String.format("☀️ 今日光伏发电: %.3f kWh", p_charged));
-                cardPvCharged.setText(String.format("☀️ 今日光伏发电: %.3f kWh", p_charged));
-
-                originTvRollover.setText(String.format("⛽️ 今日电池充电: %.3f kWh", charged));
-                cardTvRollover.setText(String.format("⛽️ 今日电池充电: %.3f kWh", charged));
-
-                originTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
-                cardTvCharged.setText(String.format("⚡ 今日电池放电: %.3f kWh", discharged));
-
-                originTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
-                cardTvDischarged.setText(String.format("📋 当前电池总容量: %.3f kWh", total_cap));
-
-                originTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
-                cardTvAvailable.setText(String.format("🔋 当前电池可用电量: %.3f kWh", available_cap));
-
-                // 光伏实时输出功率（W）
-                float pvPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("光伏实时输出功率")));
-                // 负载交流有功功率（W）
-                float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
-                // 逆变器参数
-                float invEff = 0.9f;
-                float invSelfConsumption = 30f;
-                // 电池可用电量（Wh）
-                float availableCapWh = available_cap * 1000;
-                // 系统总交流消耗（用于判断是否充电）
-                float totalAcLoad = loadPowerAc + invSelfConsumption;
-                String useTimeStr;
-                if (pvPowerAc >= totalAcLoad) {
-                    // 光伏够用，电池不放电
-                    useTimeStr = "充电中";
-                } else {
-                    // 光伏不足，电池需要放电
-                    // 交流缺口折算到直流侧
-                    float dcDischargePower = (totalAcLoad - pvPowerAc) / invEff; //电池的放电功率 = (系统总交流消耗 - 光伏实时输出功率) / 逆变器效率
-                    // 防止极小放电功率导致“天文数字”
-                    if (dcDischargePower < 10f) {
-                        useTimeStr = "无需放电";
+                //交流电流
+                newVal = uiData.get("ac_current");
+                if (!Objects.equals(newVal, last_ac_current)) {
+                    ((layout_mode == 0) ? originOutCurrent : cardOutCurrent).setText(newVal);
+                    last_ac_current = newVal;
+                }
+                //交流有功功率
+                newVal = uiData.get("ac_power");
+                if (!Objects.equals(newVal, last_ac_power)) {
+                    ((layout_mode == 0) ? originPowerKw : cardPowerKw).setText(newVal);
+                    last_ac_power = newVal;
+                }
+                //交流视在功率
+                newVal = uiData.get("sj_power");
+                if (!Objects.equals(newVal, last_sj_power)) {
+                    ((layout_mode == 0) ? originSjPowerKw : cardSjPowerKw).setText(newVal);
+                    last_sj_power = newVal;
+                }
+                //功率因数
+                newVal = uiData.get("power_ys");
+                if (!Objects.equals(newVal, last_power_ys)) {
+                    ((layout_mode == 0) ? originPf : cardPf).setText(newVal);
+                    last_power_ys = newVal;
+                }
+                //交流频率
+                newVal = uiData.get("ac_freq");
+                if (!Objects.equals(newVal, last_ac_freq)) {
+                    ((layout_mode == 0) ? originOutFrequency : cardOutFrequency).setText(newVal);
+                    last_ac_freq = newVal;
+                }
+                //负载使用率
+                newVal = uiData.get("power_use");
+                if (!Objects.equals(newVal, last_power_use)) {
+                    ((layout_mode == 0) ? originLoadRateValue : cardLoadRateValue).setText(newVal);
+                    last_power_use = newVal;
+                }
+                //电池电压
+                newVal = uiData.get("bat_voltage");
+                if (!Objects.equals(newVal, last_bat_voltage)) {
+                    ((layout_mode == 0) ? originBatVoltage : cardBatVoltage).setText(newVal);
+                    last_bat_voltage = newVal;
+                }
+                //单节电池电压
+                newVal = uiData.get("alone_bat_voltage");
+                if (!Objects.equals(newVal, last_alone_bat_voltage)) {
+                    card_one_bat_Voltage.setText(newVal);
+                    last_alone_bat_voltage = newVal;
+                }
+                //光伏电压
+                newVal = uiData.get("pv_voltage");
+                if (!Objects.equals(newVal, last_pv_voltage)) {
+                    ((layout_mode == 0) ? originSunVoltageValue : cardSunVoltageValue).setText(newVal);
+                    last_pv_voltage = newVal;
+                }
+                //太阳能电流
+                newVal = uiData.get("pv_current");
+                if (!Objects.equals(newVal, last_pv_current)) {
+                    ((layout_mode == 0) ? originLeCurrent : cardLeCurrent).setText(newVal);
+                    last_pv_current = newVal;
+                }
+                //光伏实时输出功率
+                newVal = uiData.get("pv_time_poser");
+                if (!Objects.equals(newVal, last_pv_time_poser)) {
+                    ((layout_mode == 0) ? originPvPowerResult : cardPvPowerResult).setText(newVal);
+                    last_pv_time_poser = newVal;
+                }
+                //为逆变模式时修改计算电池的充放电电流文本
+                newVal = uiData.get("bat_charged_discharged_text");
+                if (!Objects.equals(newVal, last_bat_charged_discharged_text)) {
+                    if (layout_mode == 0) {
+                        originCurrentDirection.setText(newVal);
                     } else {
-                        if (Objects.requireNonNull(uiData.get("当前输出模式")).contains("逆变")) {
-                            double hours = availableCapWh / dcDischargePower;
-                            long totalMinutes = (long) (hours * 60); // 偏保守
-                            long d = totalMinutes / 1440;
-                            long h = (totalMinutes % 1440) / 60;
-                            long m = totalMinutes % 60;
-                            useTimeStr = String.format("%d天%d时%02d分", d, h, m);
-                        }else{
-                            useTimeStr = "任意时长";
+                        if (Objects.equals(newVal, "\uD83D\uDCA7 充电电流(A):")) {
+                            cardCurrentDirection.setText("充电电流");
+                        } else if (Objects.equals(newVal, "\uD83D\uDCA7 放电电流(A):")) {
+                            cardCurrentDirection.setText("放电电流");
                         }
                     }
+                    last_bat_charged_discharged_text = newVal;
                 }
-                originBat_use_time.setText(useTimeStr);
-                cardBat_use_time.setText(useTimeStr);
-                if (Float.parseFloat(Objects.requireNonNull(uiData.get("电池低压切换点电压"))) < 0 ) {
-                    cardswitch_point.setText("免切换");
-                }else{
-                    cardswitch_point.setText(uiData.get("电池低压切换点电压"));
+                //为逆变模式时计算电池的充放电电流
+                newVal = uiData.get("bat_charged_discharged_value");
+                if (!Objects.equals(newVal, last_bat_charged_discharged_value)) {
+                    ((layout_mode == 0) ? originBatOutCurrent : cardBatOutCurrent).setText(newVal);
+                    last_bat_charged_discharged_value = newVal;
                 }
-                //计算电池健康度
-                float bat_healthy_value = Float.parseFloat(Objects.requireNonNull(uiData.get("电池健康度计量")));
-                if (bat_healthy_value > 0){
-                    if (bat_healthy_value >= 90){
-                        originBatHealthCap.setText("优秀");
-                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
-                        cardBatHealthCap.setText("优秀");
-                    }else if (bat_healthy_value >= 85){
-                        originBatHealthCap.setText("良好");
-                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
-                        cardBatHealthCap.setText("良好");
-                    }else if (bat_healthy_value >= 80){
-                        originBatHealthCap.setText("预警");
-                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
-                        cardBatHealthCap.setText("预警");
-                    }else{
-                        originBatHealthCap.setText("严重衰减");
-                        cardbat_3.setText("健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
-                        cardBatHealthCap.setText("严重衰减");
+                //为MPTT散热片温度
+                newVal = uiData.get("mp_pt_temp");
+                if (!Objects.equals(newVal, last_mp_pt_temp)) {
+                    ((layout_mode == 0) ? originTemp0Value : cardTemp0Value).setText(newVal);
+                    last_mp_pt_temp = newVal;
+                }
+                //当前输出模式
+                newVal = uiData.get("current_out_mode");
+                if (!Objects.equals(newVal, last_current_out_mode)) {
+                    ((layout_mode == 0) ? originOutMode : cardOutMode).setText(newVal);
+                    last_current_out_mode = newVal;
+                }
+                //内存使用信息
+                newVal = uiData.get("mem_use_info");
+                if (!Objects.equals(newVal, last_mem_use_info)) {
+                    if (layout_mode == 0) {
+                        mem_data_display_to_chart(newVal, originMmUse);
+                    } else {
+                        mem_data_display_to_chart(newVal, cardMmUse);
                     }
-                }else if (bat_healthy_value < 0){
-                    originBatHealthCap.setText("校准中...");
-                    cardBatHealthCap.setText("校准中...");
-                }else {
-                    originBatHealthCap.setText("暂未校准");
-                    cardBatHealthCap.setText("暂未校准");
+                    last_mem_use_info = newVal;
                 }
-                // 抛弃复杂的数字锁判断，直接在数据包最外层计算最新状态
-                float lastCapValue;
-                if (total_cap == 0) {
-                    lastCapValue = -2;
+                //主功率板散热片实时温度
+                newVal = uiData.get("mos_time_temp");
+                if (!Objects.equals(newVal, last_mos_time_temp)) {
+                    ((layout_mode == 0) ? originTemp1Value : cardTemp1Value).setText(newVal);
+                    last_mos_time_temp = newVal;
+                }
+                //主功率板散热风扇转速值
+                newVal = uiData.get("fan_time_speed");
+                if (!Objects.equals(newVal, last_fan_time_speed)) {
+                    ((layout_mode == 0) ? originFanValue : cardFanValue).setText(newVal);
+                    last_fan_time_speed = newVal;
+                }
+                //今日光伏发电
+                if (!Objects.equals(p_charged, last_p_charged)) {
+                    ((layout_mode == 0) ? originPvCharged : cardPvCharged).setText(p_charged);
+                    last_p_charged = p_charged;
+                }
+                //今日电池充电
+                if (!Objects.equals(charged, last_charged)) {
+                    ((layout_mode == 0) ? originTvRollover : cardTvRollover).setText(charged);
+                    last_charged = charged;
+                }
+                //今日电池放电
+                if (!Objects.equals(discharged, last_discharged)) {
+                    ((layout_mode == 0) ? originTvCharged : cardTvCharged).setText(discharged);
+                    last_discharged = discharged;
+                }
+                //当前电池总容量
+                if (!Objects.equals(total_cap, last_total_cap)) {
+                    ((layout_mode == 0) ? originTvDischarged : cardTvDischarged).setText(total_cap);
+                    last_total_cap = total_cap;
+                }
+                //当前电池可用电量
+                if (!Objects.equals(available_cap, last_available_cap)) {
+                    ((layout_mode == 0) ? originTvAvailable : cardTvAvailable).setText(available_cap);
+                    last_available_cap = available_cap;
+                }
+                //电池低压的动态切换点
+                newVal = switch_point_voltage < 0 ? "免切换" : String.valueOf(switch_point_voltage);
+                if (!Objects.equals(newVal, last_switch_point_voltage)) {
+                    card_switch_point.setText(newVal);
+                    last_switch_point_voltage = newVal;
+                }
+                //电池可用时长
+                if (!Objects.equals(useTimeStr, last_useTimeStr)) {
+                    ((layout_mode == 0) ? originBat_use_time : cardBat_use_time).setText(useTimeStr);
+                    last_useTimeStr = useTimeStr;
+                }
+                //电池健康度结果显示
+                newVal = uiData.get("bat_health_text");
+                if (!Objects.equals(newVal, last_bat_health_text)) {
+                    ((layout_mode == 0) ? originBatHealthCap : cardBatHealthCap).setText(newVal);
+                    last_bat_health_text = newVal;
+                }
+                //电池健康度上的小文字
+                newVal = uiData.get("bat_health_detail");
+                if (!Objects.equals(newVal, last_bat_health_detail)) {
+                    card_bat_3.setText(newVal);
+                    last_bat_health_detail = newVal;
+                }
+                //充电动画刷新（这个每次都调，因为粒子动画需要持续驱动）
+                if (layout_mode == 0) {
+                    originFluidView.updateConfig(bat_energy_last, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
                 } else {
-                    float rawValue = (available_cap / total_cap) * 100f;
-                    lastCapValue = Math.round(rawValue * 10f) / 10f;
+                    cardFluidView.updateConfig(bat_energy_last, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
                 }
-                if (lastCapValue > 100) lastCapValue = 100;
-                if (lastCapValue < 0) lastCapValue = 0;
-
-                // 1. 根据电量，在外部精准计算出当前应该呈现的科技主题颜色
-                int fluidColor = Color.parseColor("#39FF14"); // 默认：高电量科技绿
-                if (lastCapValue <= 20) {
-                    fluidColor = Color.parseColor("#F44336"); // 低电量：红
-                } else if (lastCapValue <= 60) {
-                    fluidColor = Color.parseColor("#FF9800"); // 中电量：橙
-                }
-                // ✅ 分别计算充电电流和放电电流
-                float chargeCurrent = 0f;
-                float dischargeCurrent = 0f;
-
-                // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
-                if (pvPowerAc > 0 && totalAcLoad > pvPowerAc) {
-                    // 光伏在充电，电池在补缺口
-                    chargeCurrent = pvPowerAc / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                    dischargeCurrent = (totalAcLoad - pvPowerAc) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                }else if (pvPowerAc > 0 && totalAcLoad < pvPowerAc){
-                    // 光伏提供主功率,剩余功率给电池充电,电池未放电
-                    chargeCurrent = (pvPowerAc - totalAcLoad) / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                    dischargeCurrent = 0f;
-                }else if (pvPowerAc <= 0){
-                    // 光伏无功率,不充电,电池放电
-                    chargeCurrent = 0f;
-                    dischargeCurrent = totalAcLoad / Math.max(Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage"))), 12f);
-                }
-
-                originFluidView.updateConfig(lastCapValue, fluidColor, chargeCurrent, dischargeCurrent);
-                cardFluidView.updateConfig(lastCapValue, fluidColor, chargeCurrent, dischargeCurrent);
             }
         }
     };
@@ -893,6 +1028,7 @@ public class MainActivity extends AppCompatActivity{
                 originPowerChart.setNoDataText("暂无小时数据");
                 cardPowerChart.setNoDataText("暂无小时数据");
             }
+            request_homepage_run = false;
         }).start();
     }
     public void pro_data_request(){
@@ -910,7 +1046,7 @@ public class MainActivity extends AppCompatActivity{
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
         for (String line : all_data) {
             if (line != null && line.contains("f>")) {
-                //Log.i(TAG, "发现包含分时的数据: " + line);
+                //Log.d(TAG, "发现包含分时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 String[] _f = _l[1].split(" ");
 
@@ -920,19 +1056,19 @@ public class MainActivity extends AppCompatActivity{
                 String min = h+":"+m+" "+_f[1];
                 _min_bat_list.add(min);
             } else if (line != null && line.contains("h>")) {
-                //Log.i(TAG, "发现包含小时的数据: " + line);
+                //Log.d(TAG, "发现包含小时的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _H_Total_power.add(_l[1]);
             } else if (line != null && line.contains("d>")) {
-                //Log.i(TAG, "发现包含每天的数据: " + line);
+                //Log.d(TAG, "发现包含每天的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _D_Total_power.add(year+"-"+_l[1]);
             } else if (line != null && line.contains("m>")) {
-                //Log.i(TAG, "发现包含每月的数据: " + line);
+                //Log.d(TAG, "发现包含每月的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 _M_Total_power.add(year+"-"+_l[1]);
             } else if (line != null && line.contains("y>")) {
-                //Log.i(TAG, "发现包含每年的数据: " + line);
+                //Log.d(TAG, "发现包含每年的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 String[] _j = _l[1].split(" ");
 
@@ -943,11 +1079,11 @@ public class MainActivity extends AppCompatActivity{
                 String _y = y+"-"+m+"-"+d+" "+ _j[1];
                 _Y_Total_power.add(_y);
             } else if (line != null && line.contains("debug>")) {
-                //Log.i(TAG, "发现包含调试的数据: " + line);
+                //Log.d(TAG, "发现包含调试的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
-                //Log.i(TAG, "发现包含结尾的数据: " + line);
+                //Log.d(TAG, "发现包含结尾的数据: " + line);
                 about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
                         " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
                 data_rec_finish = true;
@@ -961,7 +1097,6 @@ public class MainActivity extends AppCompatActivity{
         }
         retryCount = 0;
         stop_send = false;
-        request_homepage_run = false;
         smartRefreshLayout.finishRefresh();
     }
     @SuppressLint("DefaultLocale")
@@ -1441,20 +1576,22 @@ public class MainActivity extends AppCompatActivity{
             if (itemId == R.id.switch_card_mode) {
                 if (viewSwitcher != null) {
                     viewSwitcher.showNext();
-                    int mode = viewSwitcher.getDisplayedChild();
+                    layout_mode = viewSwitcher.getDisplayedChild();
 
                     getSharedPreferences("ui", MODE_PRIVATE)
                             .edit()
-                            .putInt("mode", mode)
+                            .putInt("mode", layout_mode)
                             .apply();
 
                     viewSwitcher.post(() -> {
-                        if (mode == 0) {
+                        if (layout_mode == 0) {
                             // 切到了经典布局（child 0）
-                            originFluidView.bindIconCoords(originsolarIcon, originhouseIcon);
+                            resetLastValues();
+                            originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
                         } else {
                             // 切到了卡片布局（child 1）
-                            cardFluidView.bindIconCoords(cardsolarIcon, cardhouseIcon);
+                            resetLastValues();
+                            cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
                         }
                     });
                 }

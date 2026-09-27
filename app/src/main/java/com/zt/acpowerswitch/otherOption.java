@@ -75,7 +75,7 @@ public class otherOption extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                Log.i(TAG,"先暂停发送数据");
+                Log.d(TAG,"先暂停发送数据");
                 MainActivity.stop_send = true;
             }
 

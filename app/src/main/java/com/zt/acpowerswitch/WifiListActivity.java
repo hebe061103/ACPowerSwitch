@@ -99,7 +99,7 @@ public class WifiListActivity extends AppCompatActivity implements WiFiConnectio
                     (ipAddress & 0xff),
                     (ipAddress >> 8 & 0xff),
                     (ipAddress >> 16 & 0xff));
-            Log.i("逆变器UDPServerIP地址:", ip);
+            Log.d("逆变器UDPServerIP地址:", ip);
 
             DatagramSocket udpSocket = null;
             try {
