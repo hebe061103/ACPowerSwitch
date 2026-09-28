@@ -403,7 +403,7 @@ public class MainActivity extends AppCompatActivity{
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
             about.log(TAG, "下拉刷新");
-            if (socket!=null) {
+            if (!request_homepage_run && socket != null) {
                 request_homepage_date();
             }
         });
@@ -496,7 +496,9 @@ public class MainActivity extends AppCompatActivity{
             }
             @Override
             public void onNothingSelected() {
+                // 当用户点击/触摸了图表上「没有数据点」的区域时
                 origincustomMarker.setVisibility(View.GONE);
+                originBatLineChart.highlightValue(null);
             }
         });
         cardBatLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
@@ -560,7 +562,9 @@ public class MainActivity extends AppCompatActivity{
             }
             @Override
             public void onNothingSelected() {
-                // 可以不做处理
+                // 当用户点击/触摸了图表上「没有数据点」的区域时
+                cardcustomMarker.setVisibility(View.GONE);
+                cardBatLineChart.highlightValue(null);
             }
         });
         start_Thread();
@@ -599,7 +603,7 @@ public class MainActivity extends AppCompatActivity{
                     }
                 }
                 try {
-                    Thread.sleep(1000); // 每次检查休眠 1000ms，降低 CPU 占用
+                    Thread.sleep(2000); // 每次检查休眠 1000ms，降低 CPU 占用
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
