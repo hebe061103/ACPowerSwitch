@@ -611,39 +611,6 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/chart_shape" />
 
-                <ImageView
-                    android:id="@+id/solar_icon"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_marginStart="20dp"
-                    android:src="@drawable/solar"
-                    tools:ignore="ContentDescription,ImageContrastCheck" />
-
-                <ImageView
-                    android:id="@+id/house_icon"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_gravity="bottom|end"
-                    android:layout_marginEnd="5dp"
-                    android:layout_marginBottom="30dp"
-                    android:src="@drawable/house"
-                    tools:ignore="ContentDescription,ImageContrastCheck" />
-
-                <FrameLayout
-                    android:id="@+id/ring_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="top|end"
-                    android:layout_marginEnd="2dp"
-                    android:layout_marginBottom="30dp">
-
-                    <com.zt.acpowerswitch.FluidBubbleView
-                        android:id="@+id/fluidView"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"/>
-                </FrameLayout>
-
                 <LinearLayout
                     android:id="@+id/overlay_summary"
                     android:layout_width="wrap_content"
@@ -702,8 +669,124 @@
 
                 </LinearLayout>
 
-            </FrameLayout>
+                <ImageView
+                    android:id="@+id/solar_icon"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="20dp"
+                    android:src="@drawable/solar"
+                    tools:ignore="ContentDescription,ImageContrastCheck" />
 
+                <ImageView
+                    android:id="@+id/house_icon"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="5dp"
+                    android:layout_marginBottom="30dp"
+                    android:src="@drawable/house"
+                    tools:ignore="ContentDescription,ImageContrastCheck" />
+
+                <FrameLayout
+                    android:id="@+id/ring_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="2dp"
+                    android:layout_marginBottom="30dp">
+
+                    <com.zt.acpowerswitch.FluidBubbleView
+                        android:id="@+id/fluidView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="5dp"/>
+                </FrameLayout>
+                <FrameLayout
+                    android:id="@+id/marker_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clickable="false"
+                    android:focusable="false">
+
+                    <!-- 自定义黄底信息框（初始隐藏） -->
+                    <LinearLayout
+                        android:id="@+id/custom_marker"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/marker_bg_round"
+                        android:padding="1dp"
+                        android:visibility="gone"
+                        tools:ignore="UselessParent">
+
+                        <TextView
+                            android:id="@+id/m_year"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="year:"
+                            android:textSize="8sp"
+                            android:textColor="#2BB3F6"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        <TextView
+                            android:id="@+id/m_time"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="time:"
+                            android:textSize="8sp"
+                            android:textColor="#555555"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/m_year"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        <TextView
+                            android:id="@+id/m_value"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="value:"
+                            android:textSize="8sp"
+                            android:textColor="#1B5E20"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/m_time"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        <TextView
+                            android:id="@+id/pv_voltage"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="value:"
+                            android:textSize="8sp"
+                            android:textColor="#1B5E20"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/m_value"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        <TextView
+                            android:id="@+id/pv_current"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="value:"
+                            android:textSize="8sp"
+                            android:textColor="#1B5E20"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/pv_voltage"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+
+                        <TextView
+                            android:id="@+id/pv_power"
+                            android:layout_width="70dp"
+                            android:layout_height="wrap_content"
+                            android:hint="value:"
+                            android:textSize="8sp"
+                            android:textColor="#1B5E20"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/pv_current"
+                            tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
+                    </LinearLayout>
+                </FrameLayout>
+            </FrameLayout>
             <TextView
                 android:id="@+id/textView27"
                 android:layout_width="wrap_content"

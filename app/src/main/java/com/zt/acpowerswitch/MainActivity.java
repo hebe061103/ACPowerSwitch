@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -37,10 +38,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -53,7 +52,6 @@ import com.github.mikephil.charting.formatter.DefaultValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
-import com.github.mikephil.charting.utils.MPPointF;
 import com.scwang.smart.refresh.header.MaterialHeader;
 import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 
@@ -153,9 +151,11 @@ public class MainActivity extends AppCompatActivity{
     private TextView originDevIpPort, cardDevIpPort;
 
     // ===== MarkerView =====
-    private CustomMarkerView originMarker, cardMarker;
-    private FluidBubbleView originFluidView;
-    private FluidBubbleView cardFluidView;
+    private FrameLayout originmarkerContainer,cardmarkerContainer;
+    private View origincustomMarker,cardcustomMarker;
+    private TextView origin_m_year, origin_m_time, origin_m_value,origin_pv_voltage, origin_pv_current, origin_pv_power;
+    private TextView card_m_year, card_m_time, card_m_value,card_pv_voltage, card_pv_current, card_pv_power;
+    private FluidBubbleView originFluidView,cardFluidView;
     private ImageView origin_solarIcon,origin_houseIcon,card_solarIcon,card_houseIcon;
     private final Map<String, String> info = new HashMap<>();
     private Float max_chargerCurrent,chargeCurrent,dischargeCurrent,bat_healthy_value,switch_point_voltage,bat_energy_ball;
@@ -286,8 +286,14 @@ public class MainActivity extends AppCompatActivity{
         originDevIpPort = originalView.findViewById(R.id.dev_ip_port);
 
         // Marker（✅ 已修复）
-        originMarker = new CustomMarkerView(this, R.layout.custom_marker_view, originBatLineChart);
-        originMarker.setChartView(originBatLineChart);
+        originmarkerContainer = originalView.findViewById(R.id.marker_container);
+        origincustomMarker = originalView.findViewById(R.id.custom_marker);
+        origin_m_year = originalView.findViewById(R.id.m_year);
+        origin_m_time = originalView.findViewById(R.id.m_time);
+        origin_m_value = originalView.findViewById(R.id.m_value);
+        origin_pv_voltage = originalView.findViewById(R.id.pv_voltage);
+        origin_pv_current = originalView.findViewById(R.id.pv_current);
+        origin_pv_power = originalView.findViewById(R.id.pv_power);
 
         // image
         origin_menu_bt = originalView.findViewById(R.id.menu_img);
@@ -351,8 +357,14 @@ public class MainActivity extends AppCompatActivity{
         cardDevIpPort = cardView.findViewById(R.id.dev_ip_port);
 
         // Marker（✅ 已修复）
-        cardMarker = new CustomMarkerView(this, R.layout.custom_marker_view, cardBatLineChart);
-        cardMarker.setChartView(cardBatLineChart);
+        cardmarkerContainer = cardView.findViewById(R.id.marker_container);
+        cardcustomMarker = cardView.findViewById(R.id.custom_marker);
+        card_m_year = cardView.findViewById(R.id.m_year);
+        card_m_time = cardView.findViewById(R.id.m_time);
+        card_m_value = cardView.findViewById(R.id.m_value);
+        card_pv_voltage = cardView.findViewById(R.id.pv_voltage);
+        card_pv_current = cardView.findViewById(R.id.pv_current);
+        card_pv_power = cardView.findViewById(R.id.pv_power);
 
         // image
         card_menu_bt = cardView.findViewById(R.id.menu_img);
@@ -368,6 +380,17 @@ public class MainActivity extends AppCompatActivity{
         originFluidView.setSolarSize(80f); // 跟布局里 80dp 一致
         cardFluidView.setSolarSize(80f);
     }
+    private final Handler markerHandler = new Handler(Looper.getMainLooper());
+    private final Runnable markerHideRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (layout_mode == 0) {
+                origincustomMarker.setVisibility(View.GONE);
+            }else{
+                cardcustomMarker.setVisibility(View.GONE);
+            }
+        }
+    };
     private void init_module(){
         Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);       // 年
@@ -411,19 +434,127 @@ public class MainActivity extends AppCompatActivity{
         bt_listen(card_year_power,cardPowerChart,_Y_Total_power, "年份柱状图表", "暂无年份数据");
 
         originBatLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @SuppressLint("SetTextI18n")
             @Override
-            public void onValueSelected(Entry entry, Highlight highlight) {
-                originBatLineChart.setMarkerView(originMarker);
+            public void onValueSelected(Entry e, Highlight h) {
+                markerHandler.removeCallbacks(markerHideRunnable);
+
+                // ===== 1. 坐标计算 =====
+                float chartX = h.getXPx();
+                float chartY = h.getYPx();
+
+                int[] chartLoc = new int[2];
+                int[] containerLoc = new int[2];
+                originBatLineChart.getLocationOnScreen(chartLoc);
+                originmarkerContainer.getLocationOnScreen(containerLoc);
+
+                float offsetX = chartLoc[0] - containerLoc[0];
+                float offsetY = chartLoc[1] - containerLoc[1];
+
+                float markerX = chartX + offsetX;
+                float markerY = chartY + offsetY;
+
+                // ===== 2. 设置文字内容 =====
+                int index = (int) e.getX();
+                if (index >= 0 && index < MainActivity._min_bat_list.size()) {
+                    String[] _tmp = MainActivity._min_bat_list.get(index).split(" ");
+
+                    origin_m_year.setText(" " + MainActivity.year + "-" + MainActivity.month + "-" + MainActivity.day);
+                    origin_m_time.setText(" " + _tmp[0] + ":00");
+
+                    String[] all_data = _tmp[1].split(",");
+                    origin_m_value.setText(" 电池电压:" + all_data[0]);
+                    origin_pv_voltage.setText(" 光伏电压:" + all_data[1]);
+                    origin_pv_current.setText(" 光伏电流:" + all_data[2]);
+                    origin_pv_power.setText(" 光伏功率:" + all_data[3]);
+                }
+
+                // ===== 3. 显示 + 定位 =====
+                origincustomMarker.setVisibility(View.VISIBLE);
+
+                origincustomMarker.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                int markerW = origincustomMarker.getMeasuredWidth();
+                int markerH = origincustomMarker.getMeasuredHeight();
+
+                float finalX = markerX + 20;
+                float finalY = markerY - markerH - 10;
+
+                if (finalX + markerW > originmarkerContainer.getWidth()) {
+                    finalX = markerX - markerW - 20;
+                }
+                if (finalY < 0) {
+                    finalY = markerY + 20;
+                }
+
+                origincustomMarker.setX(finalX);
+                origincustomMarker.setY(finalY);
+
+                // 4 .启动3秒倒计时，到点自动隐藏
+                markerHandler.postDelayed(markerHideRunnable, 5000);
             }
             @Override
             public void onNothingSelected() {
-                // 可以不做处理
+                origincustomMarker.setVisibility(View.GONE);
             }
         });
         cardBatLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @SuppressLint("SetTextI18n")
             @Override
-            public void onValueSelected(Entry entry, Highlight highlight) {
-                cardBatLineChart.setMarkerView(cardMarker);
+            public void onValueSelected(Entry e, Highlight h) {
+                markerHandler.removeCallbacks(markerHideRunnable);
+
+                // ===== 1. 坐标计算 =====
+                float chartX = h.getXPx();
+                float chartY = h.getYPx();
+
+                int[] chartLoc = new int[2];
+                int[] containerLoc = new int[2];
+                cardBatLineChart.getLocationOnScreen(chartLoc);
+                cardmarkerContainer.getLocationOnScreen(containerLoc);
+
+                float offsetX = chartLoc[0] - containerLoc[0];
+                float offsetY = chartLoc[1] - containerLoc[1];
+
+                float markerX = chartX + offsetX;
+                float markerY = chartY + offsetY;
+
+                // ===== 2. 设置文字内容 =====
+                int index = (int) e.getX();
+                if (index >= 0 && index < MainActivity._min_bat_list.size()) {
+                    String[] _tmp = MainActivity._min_bat_list.get(index).split(" ");
+
+                    card_m_year.setText(" " + MainActivity.year + "-" + MainActivity.month + "-" + MainActivity.day);
+                    card_m_time.setText(" " + _tmp[0] + ":00");
+
+                    String[] all_data = _tmp[1].split(",");
+                    card_m_value.setText(" 电池电压:" + all_data[0]);
+                    card_pv_voltage.setText(" 光伏电压:" + all_data[1]);
+                    card_pv_current.setText(" 光伏电流:" + all_data[2]);
+                    card_pv_power.setText(" 光伏功率:" + all_data[3]);
+                }
+
+                // ===== 3. 显示 + 定位 =====
+                cardcustomMarker.setVisibility(View.VISIBLE);
+
+                cardcustomMarker.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                int markerW = cardcustomMarker.getMeasuredWidth();
+                int markerH = cardcustomMarker.getMeasuredHeight();
+
+                float finalX = markerX + 20;
+                float finalY = markerY - markerH - 10;
+
+                if (finalX + markerW > cardmarkerContainer.getWidth()) {
+                    finalX = markerX - markerW - 20;
+                }
+                if (finalY < 0) {
+                    finalY = markerY + 20;
+                }
+
+                cardcustomMarker.setX(finalX);
+                cardcustomMarker.setY(finalY);
+
+                // 4 .启动3秒倒计时，到点自动隐藏
+                markerHandler.postDelayed(markerHideRunnable, 5000);
             }
             @Override
             public void onNothingSelected() {
@@ -620,13 +751,13 @@ public class MainActivity extends AppCompatActivity{
                         }
                         // 负载交流有功功率（W）
                         float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
-                        // 系统总交流消耗（用于判断是否充电）
+                        // 系统交流侧总功率消耗
                         float totalAcLoad = loadPowerAc / invEff + invSelfConsumption;
                         if (Objects.equals(info.get("out_mode"), "逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
                             if (pw - totalAcLoad > 0) {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 充电电流(A):");
-                                uiData.put("bat_charged_discharged_value", df.format((pw - totalAcLoad / bat_voltage)));
+                                uiData.put("bat_charged_discharged_value", df.format((pw - totalAcLoad) / bat_voltage));
                             } else {
                                 uiData.put("bat_charged_discharged_text", "\uD83D\uDCA7 放电电流(A):");
                                 uiData.put("bat_charged_discharged_value", df.format((totalAcLoad - pw) / bat_voltage));
@@ -1770,73 +1901,5 @@ class NoValueFormatter extends ValueFormatter {
     @Override
     public String getFormattedValue(float value) {
         return "";
-    }
-}
-@SuppressLint("ViewConstructor")
-class CustomMarkerView extends MarkerView {
-    private final Chart chart;
-    private final TextView m_year,m_time,m_value,pv_voltage,pv_current,pv_power;
-    public CustomMarkerView (Context context, int layoutResource, Chart chart) {
-        super(context, layoutResource);
-        m_year = findViewById(R.id.m_year);
-        m_time = findViewById(R.id.m_time);
-        m_value = findViewById(R.id.m_value);
-        pv_voltage = findViewById(R.id.pv_voltage);
-        pv_current = findViewById(R.id.pv_current);
-        pv_power = findViewById(R.id.pv_power);
-        this.chart = chart;
-        setChartView(chart);
-    }
-    @SuppressLint("SetTextI18n")
-    @Override
-    public void refreshContent(Entry e, Highlight highlight) {
-        String[] _tmp = MainActivity._min_bat_list.get((int) e.getX()).split(" ");
-        m_year.setText(" " + MainActivity.year + "-" + MainActivity.month + "-" + MainActivity.day);
-        m_time.setText(" " + _tmp[0] + ":00");
-        String[] all_data = _tmp[1].split(",");
-        m_value.setText(" 电池电压:" + all_data[0]);
-        pv_voltage.setText(" 光伏电压:" + all_data[1]);
-        pv_current.setText(" 光伏电流:" + all_data[2]);
-        pv_power.setText(" 光伏功率:" + all_data[3]);
-
-        super.refreshContent(e, highlight);
-    }
-    @Override
-    public MPPointF getOffsetForDrawingAtPoint(float posX, float posY) {
-        MPPointF offset = new MPPointF();
-        offset.x = -(getWidth() / 2f);
-        offset.y = -getHeight() - 20; // 默认：Marker 在数据点正上方
-
-        // 防止超出左边界
-        if (posX + offset.x < 0) {
-            offset.x = -posX + 8; // 左边留 8px 边距
-        }
-
-        // 防止超出右边界
-        if (chart != null && posX + offset.x + getWidth() > chart.getWidth()) {
-            offset.x = chart.getWidth() - posX - getWidth() - 8; // 右边留 8px 边距
-        }
-
-        // 防止超出上边界（新增）
-        if (posY + offset.y < 0) {
-            offset.y = -posY + 8; // 顶部留 8px 边距
-        }
-
-        // 防止超出下边界（新增）
-        if (chart != null && posY + offset.y + getHeight() > chart.getHeight()) {
-            offset.y = chart.getHeight() - posY - getHeight() - 8; // 底部留 8px 边距
-        }
-
-        // 右上角碰到圆环 → 翻到下方（保留你之前的业务逻辑）
-        if (chart != null && posX > chart.getWidth() * 0.6f && posY < chart.getHeight() * 0.4f) {
-            offset.y = 20; // 翻到下方
-        }
-
-        // 左上角碰到圆环 → 翻到下方（新增，对称处理）
-        if (chart != null && posX < chart.getWidth() * 0.4f && posY < chart.getHeight() * 0.4f) {
-            offset.y = 20; // 翻到下方
-        }
-
-        return offset;
     }
 }
