@@ -652,13 +652,13 @@ public class FluidBubbleView extends View {
         float glowAlpha = (50 * cRatio) * breath;
         glowPaint.setColor(SUN_COLOR);
         glowPaint.setAlpha((int) Math.min(255, glowAlpha));
-        canvas.drawCircle(sunX, sunY, sunR * (2.5f + 3f * cRatio), glowPaint);
+        canvas.drawCircle(sunX, sunY, sunR * (2.5f + 1.5f * cRatio), glowPaint);
 
         // 长芒 8根（角度加随机抖动）
         sunRayPaint.setColor(SUN_COLOR);
         sunRayPaint.setStrokeWidth(dp2px(1.5f));
         sunRayPaint.setAlpha((int) (200 * cRatio));
-        float longRayLen = sunR * (1.2f + 2.5f * cRatio);
+        float longRayLen = sunR * (1.2f + 0.8f * cRatio);
 
         for (int i = 0; i < 8; i++) {
             float jitter = (float) Math.sin(sunWobblePhase + i * 1.7f) * 3f * cRatio;
@@ -674,7 +674,7 @@ public class FluidBubbleView extends View {
 
         // 短芒 4~12根（反向旋转）
         int shortRayCount = 4 + (int) (8 * cRatio);
-        float shortRayLen = sunR * (0.6f + 1.2f * cRatio);
+        float shortRayLen = sunR * (0.6f + 0.4f * cRatio);
         float revAngle = -baseAngle * 0.6f;
 
         sunRayPaint.setStrokeWidth(dp2px(1.8f));
