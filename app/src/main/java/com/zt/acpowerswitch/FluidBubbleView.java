@@ -62,10 +62,10 @@ public class FluidBubbleView extends View {
     private float sunX = -1f, sunY = -1f;        // 太阳中心（太阳能板右上）
     private float houseX = -1f, houseY = -1f;    // 房子中心
     private float solarIconSizeDp = 80f;         // 太阳能板图标尺寸（dp）
-    private boolean coords_Bound = false;         // 坐标是否已绑定完成
+    private boolean coords_Bound = false;        // 坐标是否已绑定完成
 
-    private float sunPhase = 0f;              // 太阳辐射旋转相位（0~1）
-    private float sunWobblePhase = 0f;         // 太阳光芒抖动相位
+    private float sunPhase = 0f;                 // 太阳辐射旋转相位（0~1）
+    private float sunWobblePhase = 0f;           // 太阳光芒抖动相位
     private final Random sunRandom = new Random();
 
     // ===== 构造函数 =====
@@ -365,11 +365,9 @@ public class FluidBubbleView extends View {
                 }
 
             } else if (p.state == 2) {
-                // 状态2：到达房子后收缩消失
+                // 状态2：到达房子后，先炸出金色光爆再消失
                 p.shrinkTimer += 0.04f;
                 float shrinkProgress = Math.min(1f, p.shrinkTimer);
-
-                p.radius = p.maxRadius * (1f - shrinkProgress);
 
                 // 向内收缩效果
                 float pullStrength = shrinkProgress * 0.3f;
@@ -380,14 +378,12 @@ public class FluidBubbleView extends View {
                     p.state = 3;   // 消失
                 }
             }
-
             // 飞出屏幕边界则移除
             if (p.x > width + dp2px(30f) || p.y > height + dp2px(30f) ||
                     p.x < -dp2px(30f) || p.y < -dp2px(30f)) {
                 p.state = 3;
             }
         }
-
         // ===== 太阳辐射旋转相位更新（噪声驱动，电流越大转越快）=====
         float sunPhaseSpeed = 0.05f + 0.1f * chargeRatio();
         float speedNoise = (sunRandom.nextFloat() - 0.5f) * 0.3f;
