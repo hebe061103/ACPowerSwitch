@@ -386,8 +386,10 @@ public class MainActivity extends AppCompatActivity{
         public void run() {
             if (layout_mode == 0) {
                 origincustomMarker.setVisibility(View.GONE);
+                originBatLineChart.highlightValue(null);
             }else{
                 cardcustomMarker.setVisibility(View.GONE);
+                cardBatLineChart.highlightValue(null);
             }
         }
     };
