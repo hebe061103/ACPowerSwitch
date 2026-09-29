@@ -405,6 +405,8 @@ public class MainActivity extends AppCompatActivity{
             about.log(TAG, "下拉刷新");
             if (!request_homepage_run && socket != null) {
                 request_homepage_date();
+            } else {
+                refreshLayout.finishRefresh();
             }
         });
         date_num = getCurrentMonthLastDay();
@@ -423,17 +425,29 @@ public class MainActivity extends AppCompatActivity{
         });
 
         //小时图表按键监听
-        bt_listen(origin_hour_power,originPowerChart,_H_Total_power, "小时柱状图表", "暂无小时数据");
-        bt_listen(card_hour_power,cardPowerChart,_H_Total_power, "小时柱状图表", "暂无小时数据");
+        if (layout_mode == 0) {
+            bt_listen(origin_hour_power, originPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
+        }else {
+            bt_listen(card_hour_power, cardPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
+        }
         //日期图表按键监听
-        bt_listen(origin_day_power,originPowerChart,_D_Total_power, "日期柱状图表", "暂无日期数据");
-        bt_listen(card_day_power,cardPowerChart,_D_Total_power, "日期柱状图表", "暂无日期数据");
+        if (layout_mode == 0) {
+            bt_listen(origin_day_power, originPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
+        }else {
+            bt_listen(card_day_power, cardPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
+        }
         //月份图表按键监听
-        bt_listen(origin_month_power,originPowerChart,_M_Total_power, "月份柱状图表", "暂无月份数据");
-        bt_listen(card_month_power,cardPowerChart,_M_Total_power, "月份柱状图表", "暂无月份数据");
+        if (layout_mode == 0) {
+            bt_listen(origin_month_power, originPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
+        }else {
+            bt_listen(card_month_power, cardPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
+        }
         //年图表按键监听
-        bt_listen(origin_year_power,originPowerChart,_Y_Total_power, "年份柱状图表", "暂无年份数据");
-        bt_listen(card_year_power,cardPowerChart,_Y_Total_power, "年份柱状图表", "暂无年份数据");
+        if (layout_mode == 0) {
+            bt_listen(origin_year_power, originPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
+        }else {
+            bt_listen(card_year_power, cardPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
+        }
 
         originBatLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @SuppressLint("SetTextI18n")
@@ -596,17 +610,11 @@ public class MainActivity extends AppCompatActivity{
         }).start();
         new Thread(() -> {
             while (true) {
-                if (_min_bat_list == null || _min_bat_list.isEmpty()) {
-                    if (!request_homepage_run && socket != null) {
-                        request_homepage_run = true;
-                        request_homepage_date();
-                    }
+                if (!request_homepage_run && !data_rec_finish && socket != null) {
+                    request_homepage_date();
+                    Log.d(TAG,"请求首页数据");
                 }
-                try {
-                    Thread.sleep(2000); // 每次检查休眠 1000ms，降低 CPU 占用
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                sleep(2000);
             }
         }).start();
     }
@@ -932,14 +940,20 @@ public class MainActivity extends AppCompatActivity{
                         String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[1]));
                         String _min = h+":"+m+" "+_f[1];
                         _min_bat_list.add(_min);
-                        pro_min_chart_data(_min_bat_list, "每15分钟电压",originBatLineChart);
-                        pro_min_chart_data(_min_bat_list, "每15分钟电压",cardBatLineChart);
+                        if (layout_mode == 0) {
+                            pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);
+                        }else {
+                            pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);
+                        }
                         if (!h.equals("00") && !str[1].contains("none")) {
                             String[] h_ = str[1].split(">");
                             String[] hour = h_[1].split(",");
                             _H_Total_power.add(hour[0]);
-                            pro_day_chart_data(_H_Total_power, "小时柱状图表",originPowerChart);
-                            pro_day_chart_data(_H_Total_power, "小时柱状图表",cardPowerChart);
+                            if (layout_mode == 0) {
+                                pro_day_chart_data(_H_Total_power, "小时柱状图表", originPowerChart);
+                            }else {
+                                pro_day_chart_data(_H_Total_power, "小时柱状图表", cardPowerChart);
+                            }
                         }
                     }
                     if (!checkScreenStatus()) {
@@ -1144,54 +1158,73 @@ public class MainActivity extends AppCompatActivity{
         }
     };
     private void request_homepage_date() {
+        if (request_homepage_run) {
+            return;
+        }
+        request_homepage_run = true;
         new Thread(() -> {
             pro_data_request();//请求数据
-            if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                if (originBatLineChart != null || cardBatLineChart != null){
-                    if (layout_mode == 0) {
-                        assert originBatLineChart != null;
-                        originBatLineChart.clear();//清空图表
-                        originBatLineChart.notifyDataSetChanged();//通知数据巳改变
-                        originBatLineChart.invalidate();//清理无效数据,用于动态刷新
-                    }else{
-                        assert cardBatLineChart != null;
-                        cardBatLineChart.clear();//清空图表
-                        cardBatLineChart.notifyDataSetChanged();//通知数据巳改变
-                        cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
-                    }
-                }
-                pro_min_chart_data(_min_bat_list, "每15分钟电压",originBatLineChart);//把数据放到折线图上
-                pro_min_chart_data(_min_bat_list, "每15分钟电压",cardBatLineChart);//把数据放到折线图上
-                about.log(TAG, "15分钟刷新完成");
-            }else{
-                originBatLineChart.setNoDataText("暂无分时数据");
-                cardBatLineChart.setNoDataText("暂无分时数据");
-            }
-            if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                if (originPowerChart != null || cardPowerChart != null){
-                    //清理无效数据,用于动态刷新
-                    //通知数据巳改变
-                    if (layout_mode == 0) {
-                        assert originPowerChart != null;
-                        originPowerChart.clear();//清空图表
-                        originPowerChart.notifyDataSetChanged();//通知数据巳改变
-                        originPowerChart.invalidate();//清理无效数据,用于动态刷新
-                    }else{
-                        assert cardPowerChart != null;
-                        cardPowerChart.clear();//清空图表
-                        cardPowerChart.notifyDataSetChanged();//通知数据巳改变
-                        cardPowerChart.invalidate();//清理无效数据,用于动态刷新
-                    }
-                }
-                pro_day_chart_data(_H_Total_power,"小时柱状图表",originPowerChart);//把小时数据放到柱状图上
-                pro_day_chart_data(_H_Total_power,"小时柱状图表",cardPowerChart);//把小时数据放到柱状图上
-                about.log(TAG, "小时柱状图刷新完成");
-            }else{
-                originPowerChart.setNoDataText("暂无小时数据");
-                cardPowerChart.setNoDataText("暂无小时数据");
-            }
+            display_data(); //显示数据
             request_homepage_run = false;
         }).start();
+    }
+    private void display_data() {
+        if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+            if (originBatLineChart != null || cardBatLineChart != null){
+                if (layout_mode == 0) {
+                    assert originBatLineChart != null;
+                    originBatLineChart.clear();//清空图表
+                    originBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                    originBatLineChart.invalidate();//清理无效数据,用于动态刷新
+                }else{
+                    assert cardBatLineChart != null;
+                    cardBatLineChart.clear();//清空图表
+                    cardBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                    cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
+                }
+            }
+            if (layout_mode == 0) {
+                pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);//把数据放到折线图上
+            }else {
+                pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);//把数据放到折线图上
+            }
+            about.log(TAG, "15分钟刷新完成");
+        }else{
+            if (layout_mode == 0) {
+                originBatLineChart.setNoDataText("暂无分时数据");
+            }else {
+                cardBatLineChart.setNoDataText("暂无分时数据");
+            }
+        }
+        if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+            if (originPowerChart != null || cardPowerChart != null){
+                //清理无效数据,用于动态刷新
+                //通知数据巳改变
+                if (layout_mode == 0) {
+                    assert originPowerChart != null;
+                    originPowerChart.clear();//清空图表
+                    originPowerChart.notifyDataSetChanged();//通知数据巳改变
+                    originPowerChart.invalidate();//清理无效数据,用于动态刷新
+                }else{
+                    assert cardPowerChart != null;
+                    cardPowerChart.clear();//清空图表
+                    cardPowerChart.notifyDataSetChanged();//通知数据巳改变
+                    cardPowerChart.invalidate();//清理无效数据,用于动态刷新
+                }
+            }
+            if (layout_mode == 0) {
+                pro_day_chart_data(_H_Total_power, "小时柱状图表", originPowerChart);//把小时数据放到柱状图上
+            }else {
+                pro_day_chart_data(_H_Total_power, "小时柱状图表", cardPowerChart);//把小时数据放到柱状图上
+            }
+            about.log(TAG, "小时柱状图刷新完成");
+        }else{
+            if (layout_mode == 0) {
+                originPowerChart.setNoDataText("暂无小时数据");
+            }else {
+                cardPowerChart.setNoDataText("暂无小时数据");
+            }
+        }
     }
     public void pro_data_request(){
         _min_bat_list.clear();
@@ -1253,7 +1286,13 @@ public class MainActivity extends AppCompatActivity{
         }
         if (!data_rec_finish && retryCount < MAX_RETRY ){
             retryCount++;
-            about.log(TAG, "数据不完整,再次请求!");
+            about.log(TAG, "数据不完整,重试"+retryCount+"次");
+            _min_bat_list.clear();
+            _H_Total_power.clear();
+            _D_Total_power.clear();
+            _M_Total_power.clear();
+            _Y_Total_power.clear();
+            debugList.clear();
             sleep(3000);
             pro_data_request();
         }
@@ -1283,8 +1322,11 @@ public class MainActivity extends AppCompatActivity{
                     maxEntry = new Entry(i, Float.parseFloat(_u[0]));
                 }
             }
-            bat_data_display_to_chart(originBatLineChart, _time_value, _value_list, minute_des);
-            bat_data_display_to_chart(cardBatLineChart, _time_value, _value_list, minute_des);
+            if (layout_mode == 0) {
+                bat_data_display_to_chart(originBatLineChart, _time_value, _value_list, minute_des);
+            }else {
+                bat_data_display_to_chart(cardBatLineChart, _time_value, _value_list, minute_des);
+            }
             // 👇 新增：在数据填充后，为图表绑定自定义红点渲染器
             if (maxEntry != null) {
                 MyLineChartRenderer customRenderer = new MyLineChartRenderer(
@@ -1562,7 +1604,6 @@ public class MainActivity extends AppCompatActivity{
         chart.notifyDataSetChanged();//通知数据巳改变
         chart.invalidate();//清理无效数据,用于动态刷新
         // 强制拦截父布局手势，防止滑动坐标时“断线”
-        // 强制拦截父布局手势，防止滑动坐标时“断线”
         chart.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -1670,6 +1711,43 @@ public class MainActivity extends AppCompatActivity{
         }
         carChart.notifyDataSetChanged();//通知数据巳改变
         carChart.invalidate();//清理无效数据,用于动态刷新
+        // 强制拦截父布局手势，防止滑动坐标时“断线”
+        carChart.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    // 1. 记录按下的初始绝对坐标
+                    startX = event.getRawX();
+                    startY = event.getRawY();
+                    // 按下时先默认不拦截，等待滑动方向明确
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    // 2. 计算当前位置与按下位置的绝对距离
+                    float distanceX = Math.abs(event.getRawX() - startX);
+                    float distanceY = Math.abs(event.getRawY() - startY);
+
+                    // 3. 判断是否为明显的横向滑动（横向位移大于纵向位移，且超过防误触阈值）
+                    if (distanceX > distanceY && distanceX > 10) {
+                        if (v.getParent() != null) {
+                            // 确认是横向滑动，强制禁止父布局拦截
+                            v.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                    }
+                    break;
+
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    // 4. 手指抬起，恢复父布局拦截权限
+                    if (v.getParent() != null) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    }
+                    break;
+            }
+            return false; // 返回 false，让 MPAndroidChart 内部继续处理高亮十字线手势
+        });
     }
     @NonNull
     private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
@@ -1749,10 +1827,12 @@ public class MainActivity extends AppCompatActivity{
                         if (layout_mode == 0) {
                             // 切到了经典布局（child 0）
                             resetLastValues();
+                            display_data(); //显示数据
                             originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
                         } else {
                             // 切到了卡片布局（child 1）
                             resetLastValues();
+                            display_data(); //显示数据
                             cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
                         }
                     });
@@ -1797,7 +1877,7 @@ public class MainActivity extends AppCompatActivity{
         try {
             Thread.sleep(s);
         } catch (InterruptedException e) {
-            //throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
     protected void onResume() {
