@@ -1147,6 +1147,19 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             pro_data_request();//请求数据
             if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+                if (originBatLineChart != null || cardBatLineChart != null){
+                    if (layout_mode == 0) {
+                        assert originBatLineChart != null;
+                        originBatLineChart.clear();//清空图表
+                        originBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                        originBatLineChart.invalidate();//清理无效数据,用于动态刷新
+                    }else{
+                        assert cardBatLineChart != null;
+                        cardBatLineChart.clear();//清空图表
+                        cardBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                        cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
+                    }
+                }
                 pro_min_chart_data(_min_bat_list, "每15分钟电压",originBatLineChart);//把数据放到折线图上
                 pro_min_chart_data(_min_bat_list, "每15分钟电压",cardBatLineChart);//把数据放到折线图上
                 about.log(TAG, "15分钟刷新完成");
@@ -1155,8 +1168,23 @@ public class MainActivity extends AppCompatActivity{
                 cardBatLineChart.setNoDataText("暂无分时数据");
             }
             if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-                pro_day_chart_data(_H_Total_power,"小时柱状图表",originPowerChart);//把数据放到柱状图上
-                pro_day_chart_data(_H_Total_power,"小时柱状图表",cardPowerChart);//把数据放到柱状图上
+                if (originPowerChart != null || cardPowerChart != null){
+                    //清理无效数据,用于动态刷新
+                    //通知数据巳改变
+                    if (layout_mode == 0) {
+                        assert originPowerChart != null;
+                        originPowerChart.clear();//清空图表
+                        originPowerChart.notifyDataSetChanged();//通知数据巳改变
+                        originPowerChart.invalidate();//清理无效数据,用于动态刷新
+                    }else{
+                        assert cardPowerChart != null;
+                        cardPowerChart.clear();//清空图表
+                        cardPowerChart.notifyDataSetChanged();//通知数据巳改变
+                        cardPowerChart.invalidate();//清理无效数据,用于动态刷新
+                    }
+                }
+                pro_day_chart_data(_H_Total_power,"小时柱状图表",originPowerChart);//把小时数据放到柱状图上
+                pro_day_chart_data(_H_Total_power,"小时柱状图表",cardPowerChart);//把小时数据放到柱状图上
                 about.log(TAG, "小时柱状图刷新完成");
             }else{
                 originPowerChart.setNoDataText("暂无小时数据");
