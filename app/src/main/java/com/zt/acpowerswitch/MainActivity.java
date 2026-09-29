@@ -866,10 +866,10 @@ public class MainActivity extends AppCompatActivity{
                             uiData.put("bat_health_detail", "健康度(" + String.format("%.1f", bat_healthy_value) + "%)");
                         } else if (bat_healthy_value < 0) {
                             uiData.put("bat_health_text", "校准中");
-                            uiData.put("bat_health_detail", "");
+                            uiData.put("bat_health_detail", "健康度");
                         } else {
                             uiData.put("bat_health_text", "暂未校准");
-                            uiData.put("bat_health_detail", "");
+                            uiData.put("bat_health_detail", "健康度");
                         }
                         // 计算在最高允许功率下的电池放电电流
                         max_chargerCurrent = Float.parseFloat(Objects.requireNonNull(info.get("power"))) / bat_voltage;
@@ -900,16 +900,19 @@ public class MainActivity extends AppCompatActivity{
                         if (availableCapWh > 0) {
                             float rawValue = (availableCapWh / 1000f / Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data")))) * 100f;
                             bat_energy_ball = Math.round(rawValue * 10f) / 10f;
+                        }else if(availableCapWh <= 0){
+                            bat_energy_ball = 0f;
                         }
-                        if (bat_energy_ball > 100) bat_energy_ball = 100f;
-                        if (bat_energy_ball < 0) bat_energy_ball = 0f;
+                        if (bat_energy_ball >= 100f) bat_energy_ball = 100f;
+                        if (bat_energy_ball <= 0f) bat_energy_ball = 0f;
 
                         // 1. 根据电量，在外部精准计算出当前应该呈现的科技主题颜色
-                        fluidColor = COLOR_GREEN; // 默认：高电量科技绿
                         if (bat_energy_ball <= 20) {
                             fluidColor = COLOR_RED; // 低电量：红
                         } else if (bat_energy_ball <= 60) {
                             fluidColor = COLOR_ORANGE; // 中电量：橙
+                        }else {
+                            fluidColor = COLOR_GREEN; // 高电量：绿
                         }
                         // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
                         if (pw > 0 && totalAcLoad > pw) {
