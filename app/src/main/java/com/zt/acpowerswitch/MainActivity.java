@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -1647,7 +1648,6 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint({"DefaultLocale", "ClickableViewAccessibility"})
     private void pro_date_power_data(BarChart carChart,ArrayList<BarEntry> barChart, String label, String des, String type) {
         //X轴设置显示位置在底部
-        carChart.fitScreen();
         XAxis xAxis = carChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         YAxis leftAxis = carChart.getAxisLeft();//左侧Y轴保留两位小数
@@ -1711,43 +1711,96 @@ public class MainActivity extends AppCompatActivity{
         }
         carChart.notifyDataSetChanged();//通知数据巳改变
         carChart.invalidate();//清理无效数据,用于动态刷新
-        // 强制拦截父布局手势，防止滑动坐标时“断线”
-        carChart.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    // 1. 记录按下的初始绝对坐标
-                    startX = event.getRawX();
-                    startY = event.getRawY();
-                    // 按下时先默认不拦截，等待滑动方向明确
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                    }
-                    break;
+        carChart.setOnTouchListener(new View.OnTouchListener() {
+            private float startX;
+            private float startY;
+            private boolean lockHorizontal;
+            private boolean hasSentCancelToChart;
 
-                case MotionEvent.ACTION_MOVE:
-                    // 2. 计算当前位置与按下位置的绝对距离
-                    float distanceX = Math.abs(event.getRawX() - startX);
-                    float distanceY = Math.abs(event.getRawY() - startY);
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        startX = event.getRawX();
+                        startY = event.getRawY();
+                        lockHorizontal = false;
+                        hasSentCancelToChart = false;
 
-                    // 3. 判断是否为明显的横向滑动（横向位移大于纵向位移，且超过防误触阈值）
-                    if (distanceX > distanceY && distanceX > 10) {
-                        if (v.getParent() != null) {
-                            // 确认是横向滑动，强制禁止父布局拦截
-                            v.getParent().requestDisallowInterceptTouchEvent(true);
+                        // 初始不要锁父布局，让页面能正常上下滑
+                        requestParentDisallow(v, false);
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = Math.abs(event.getRawX() - startX);
+                        float dy = Math.abs(event.getRawY() - startY);
+
+                        // 阈值别太大，10~15够用
+                        float slop = 12f;
+
+                        if (!lockHorizontal) {
+                            if (dx > dy && dx > slop) {
+                                // 明确横向：交给图表
+                                lockHorizontal = true;
+                                requestParentDisallow(v, true);
+                                hasSentCancelToChart = false;
+                            } else if (dy > slop) {
+                                // 明确竖向：必须让页面滚，别给图表
+                                requestParentDisallow(v, false);
+                                lockHorizontal = false;
+
+                                // 关键：告诉 Chart 取消当前手势，避免它继续占着
+                                if (!hasSentCancelToChart) {
+                                    sendCancelToChart(carChart);
+                                    hasSentCancelToChart = true;
+                                }
+                                // 这里返回 true，表示这波竖向不给 Chart 继续吃
+                                return true;
+                            }
+                        } else {
+                            // 已经锁横向后，仍要检测“变成明显竖向”
+                            if (dy > dx && dy > slop * 2) {
+                                lockHorizontal = false;
+                                requestParentDisallow(v, false);
+
+                                if (!hasSentCancelToChart) {
+                                    sendCancelToChart(carChart);
+                                    hasSentCancelToChart = true;
+                                }
+                                return true;
+                            }
                         }
-                    }
-                    break;
+                        break;
 
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    // 4. 手指抬起，恢复父布局拦截权限
-                    if (v.getParent() != null) {
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                    }
-                    break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        lockHorizontal = false;
+                        requestParentDisallow(v, false);
+                        break;
+                }
+
+                // 没明确竖向时，让 Chart 自己处理点击/横向拖
+                return false;
             }
-            return false; // 返回 false，让 MPAndroidChart 内部继续处理高亮十字线手势
         });
+    }
+    private void requestParentDisallow(View v, boolean disallow) {
+        ViewParent p = v.getParent();
+        while (p != null) {
+            p.requestDisallowInterceptTouchEvent(disallow);
+            p = p.getParent();
+        }
+    }
+
+    private void sendCancelToChart(BarChart chart) {
+        if (chart == null) return;
+        MotionEvent cancel = MotionEvent.obtain(
+                System.currentTimeMillis(),
+                System.currentTimeMillis(),
+                MotionEvent.ACTION_CANCEL,
+                0, 0, 0
+        );
+        chart.onTouchEvent(cancel);
+        cancel.recycle();
     }
     @NonNull
     private static BarData getBarData(ArrayList<BarEntry> barChart, String label) {
