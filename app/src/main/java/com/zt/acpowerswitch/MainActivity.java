@@ -834,7 +834,7 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"lowvoltage");
                         //输出模式
                         safeSaveFlash(info,"work_mode");
-                        //主功率板散执片风扇开启温度
+                        //主功率板散执片风扇开启温度阈值
                         safeSaveFlash(info,"mos_temp_value");
                         //主功率板散热片实时温度
                         uiData.put("mos_time_temp", info.get("sys_ntc_value"));

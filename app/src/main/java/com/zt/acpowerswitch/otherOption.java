@@ -151,17 +151,17 @@ public class otherOption extends AppCompatActivity {
         w_edit.setOnClickListener(view -> send_arg_server("设置负载最大功率阈值(最大不超过5KW)"));
         //开启逆变阈值
         open_pv_value = findViewById(R.id.open_pv_value);
-        String saved_open_pv_value = readDate(otherOption.this, "open_pv_value");
+        String saved_open_pv_value = readDate(otherOption.this, "on_inv_value");
         open_pv_value.setText(saved_open_pv_value != null ? saved_open_pv_value : "");
         open_pv_value.setOnClickListener(view -> send_arg_server("开启逆变阈值(高于此电压则开启逆变,默认值:27.2)"));
         //最低电压值设置
         low_voltage_set = findViewById(R.id.low_voltage_set);
-        String saved_low_voltage = readDate(otherOption.this, "low_voltage");
+        String saved_low_voltage = readDate(otherOption.this, "lowvoltage");
         low_voltage_set.setText(saved_low_voltage != null ? saved_low_voltage : "");
         low_voltage_set.setOnClickListener(view -> send_arg_server("低于此电压则关闭逆变器(截止电压默认值:24)"));
         //MOS风扇温度触发值设置
         mos_trigger_value = findViewById(R.id.mos_trigger_value);
-        String saved_mos_temp = readDate(otherOption.this, "mos_temp");
+        String saved_mos_temp = readDate(otherOption.this, "mos_temp_value");
         mos_trigger_value.setText(saved_mos_temp != null ? saved_mos_temp : "");
         mos_trigger_value.setOnClickListener(view -> send_arg_server("主功率板MOS温度风扇触发值(默认值:28度)"));
         //刷新时间设置
@@ -171,7 +171,7 @@ public class otherOption extends AppCompatActivity {
         refresh_time_set.setOnClickListener(view -> send_arg_server("获取远程数据的时间间隔(默认值:1000ms)"));
         //极致锁相峰值误差范围
         lock_us_diff = findViewById(R.id.lock_us_diff);
-        String saved_lock_us_diff = readDate(otherOption.this, "lock_us_diff");
+        String saved_lock_us_diff = readDate(otherOption.this, "peakToPeakDiff");
         lock_us_diff.setText(saved_lock_us_diff != null ? saved_lock_us_diff : "");
         lock_us_diff.setOnClickListener(view -> send_arg_server("设置极致锁相峰值误差范围(默认值:200us)"));
         //系统总内阻
