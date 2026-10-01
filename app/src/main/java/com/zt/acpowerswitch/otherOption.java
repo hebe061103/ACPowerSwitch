@@ -49,6 +49,7 @@ public class otherOption extends AppCompatActivity {
     private TextView system_r;
     private TextView request_calibration;
 
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.other_activity);
@@ -183,6 +184,10 @@ public class otherOption extends AppCompatActivity {
         request_calibration = findViewById(R.id.request_calibration);
         refresh_calibration_display();
         request_calibration.setOnClickListener(view -> request_bat_calibration());
+        //系统总内阻
+        TextView dead_cap = findViewById(R.id.dead_cap);
+        String saved_dead_cap = readDate(otherOption.this, "est_dead_zone_kwh");
+        dead_cap.setText(saved_dead_cap != null ? saved_dead_cap : "");
         //输出模式
         auto_mode = findViewById(R.id.auto_mode);
         power_grid_mode = findViewById(R.id.power_grid_mode);

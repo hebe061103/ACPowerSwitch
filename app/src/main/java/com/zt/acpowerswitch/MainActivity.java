@@ -850,6 +850,8 @@ public class MainActivity extends AppCompatActivity{
                         safeSaveFlash(info,"SYSTEM_R");
                         // 请求电池校准
                         safeSaveFlash(info,"request_calibration");
+                        // 电池死区容量
+                        safeSaveFlash(info,"est_dead_zone_kwh");
                         //电池充放电信息表
                         p_charged = String.format("☀️ 今日光伏发电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("pv_energy_today"))));
                         charged = String.format("⛽️ 今日电池充电: %.3f kWh",Float.parseFloat(Objects.requireNonNull(info.get("bat_charged_today"))));
