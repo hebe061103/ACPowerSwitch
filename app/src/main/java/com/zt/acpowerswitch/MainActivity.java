@@ -1652,70 +1652,115 @@ public class MainActivity extends AppCompatActivity{
      */
     @SuppressLint({"DefaultLocale", "ClickableViewAccessibility"})
     private void pro_date_power_data(BarChart carChart,ArrayList<BarEntry> barChart, String label, String des, String type) {
-        //X轴设置显示位置在底部
+        // 先重置，清掉上一个类型的残留状态
+        carChart.fitScreen();
+        carChart.resetZoom();
+
         XAxis xAxis = carChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        YAxis leftAxis = carChart.getAxisLeft();//左侧Y轴保留两位小数
+        xAxis.setGranularity(1f);
+
+        YAxis leftAxis = carChart.getAxisLeft();
         leftAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
-                // 💡 确保这里使用的是逗号 ,
                 return String.format("%.2f", value);
             }
         });
         carChart.getAxisRight().setEnabled(false);
-        // X 轴网格
-        carChart.getXAxis().setGridColor(Color.GRAY);
-        carChart.getXAxis().setGridColor(0x26808080); // ✅ 隐约可见
-        // 左 Y 轴网格
-        carChart.getAxisLeft().setGridColor(Color.GRAY);
-        carChart.getAxisLeft().setGridColor(0x26808080);
-        // 这里不为false的话,网格线设置不起作用
-        carChart.getAxisRight().setDrawGridLines(false);// 右 Y 轴（通常关掉)
+        carChart.getAxisRight().setDrawGridLines(false);
+
+        xAxis.setGridColor(0x26808080);
+        leftAxis.setGridColor(0x26808080);
+
+        BarData barData = getBarData(barChart, label);
+        barData.setValueTextSize(8f);
+        barData.setValueTypeface(Typeface.DEFAULT_BOLD);
+        barData.setValueTextColor(Color.DKGRAY);
+        barData.setValueFormatter(new DefaultValueFormatter(2));
+
+        carChart.getDescription().setText(des);
+        carChart.getDescription().setTextSize(9f);
+        carChart.setDoubleTapToZoomEnabled(false);
+        carChart.setScaleYEnabled(false);
+
+        int count = barData.getEntryCount();
+
         switch (type) {
             case "小时":
                 xAxis.setAxisMinimum(-0.5f);
                 xAxis.setAxisMaximum(23.5f);
-                carChart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
+                leftAxis.setAxisMinimum(0f);
+
+                barData.setBarWidth(0.8f);
+
+                // 清掉月份/年份可能留下的 X 范围锁
+                carChart.setVisibleXRangeMinimum(1f);
+                carChart.setVisibleXRangeMaximum(18f);
+
+                carChart.setScaleXEnabled(false);
+                carChart.setDragEnabled(true);
+
+                if (count > 18) {
+                    int x = count - 18;
+                    carChart.moveViewToX(carChart.getLowestVisibleX() + x + 1);
+                }
                 break;
+
             case "日期":
-                xAxis.setAxisMinimum(1-0.5f);
-                xAxis.setAxisMaximum(date_num+0.5f);
-                carChart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
+                xAxis.setAxisMinimum(1 - 0.5f);
+                xAxis.setAxisMaximum(date_num + 0.5f);
+                leftAxis.setAxisMinimum(0f);
+
+                barData.setBarWidth(0.8f);
+
+                carChart.setVisibleXRangeMinimum(1f);
+                carChart.setVisibleXRangeMaximum(18f);
+
+                carChart.setScaleXEnabled(false);
+                carChart.setDragEnabled(true);
+
+                if (count > 18) {
+                    int x = count - 18;
+                    carChart.moveViewToX(carChart.getLowestVisibleX() + x + 1);
+                }
                 break;
+
             case "月份":
                 xAxis.setAxisMinimum(0.5f);
                 xAxis.setAxisMaximum(12.5f);
-                carChart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
+                leftAxis.setAxisMinimum(0f);
+
+                barData.setBarWidth(0.8f);
+
+                carChart.setVisibleXRangeMinimum(12f);
+                carChart.setVisibleXRangeMaximum(12f);
+
+                carChart.setScaleXEnabled(false);
+                carChart.setDragEnabled(false);
+
+                carChart.moveViewToX(0.5f);
                 break;
+
             case "年份":
-                xAxis.setAxisMinimum(2025-0.5f);
-                xAxis.setAxisMaximum(2055+0.5f);
-                carChart.getAxisLeft().setAxisMinimum(0f);//左侧Y轴最小值
+                xAxis.setAxisMinimum(2025 - 0.5f);
+                xAxis.setAxisMaximum(2037 - 0.5f); // 2025~2036 共12年，上限是 2036+0.5=2036.5
+                leftAxis.setAxisMinimum(0f);
+
+                barData.setBarWidth(0.8f);
+
+                carChart.setVisibleXRangeMinimum(12f);
+                carChart.setVisibleXRangeMaximum(12f);
+
+                carChart.setScaleXEnabled(false);
+                carChart.setDragEnabled(false);
+
+                carChart.moveViewToX(2025 - 0.5f); // 移到2025起始位置
                 break;
         }
-        xAxis.setGranularity(1f);
-        BarData barData = getBarData(barChart, label);
-        barData.setValueTextSize(8f);//柱状图顶部文字大小
-        barData.setValueTypeface(Typeface.DEFAULT_BOLD);//顶部文字加粗
-        barData.setValueTextColor(Color.DKGRAY);
-        barData.setValueFormatter(new DefaultValueFormatter(2));
-        barData.setBarWidth(0.92f);//柱状图的分隔宽度
-        carChart.getDescription().setText(des);//右下角描述
-        carChart.getDescription().setTextSize(9f);
-        carChart.setData(barData);//调置数据
-        carChart.setDoubleTapToZoomEnabled(false);// 禁用双击缩放
-        carChart.setScaleXEnabled(false); // 允许水平缩放（或设为 false 仅允许滑动）
-        carChart.setScaleYEnabled(false); // 禁止垂直缩放，防止 Y 轴乱跳
-        carChart.setDragEnabled(true); // 必须开启，否则无法滑动查看后面的数据
-        carChart.setVisibleXRangeMaximum(18f);
-        int count = barData.getEntryCount();
-        if (count > 18) {
-            int x = count - 18;
-            carChart.moveViewToX((carChart.getLowestVisibleX() + x) + 1);
-        }
-        carChart.notifyDataSetChanged();//通知数据巳改变
-        carChart.invalidate();//清理无效数据,用于动态刷新
+        carChart.setData(barData);
+        carChart.notifyDataSetChanged();
+        carChart.invalidate();
         carChart.setOnTouchListener(new View.OnTouchListener() {
             private float startX;
             private float startY;
