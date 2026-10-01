@@ -1696,13 +1696,13 @@ public class MainActivity extends AppCompatActivity{
 
                 // 清掉月份/年份可能留下的 X 范围锁
                 carChart.setVisibleXRangeMinimum(1f);
-                carChart.setVisibleXRangeMaximum(18f);
+                carChart.setVisibleXRangeMaximum(16f);
 
                 carChart.setScaleXEnabled(false);
                 carChart.setDragEnabled(true);
 
-                if (count > 18) {
-                    int x = count - 18;
+                if (count > 16) {
+                    int x = count - 16;
                     carChart.moveViewToX(carChart.getLowestVisibleX() + x + 1);
                 }
                 break;
@@ -1715,13 +1715,13 @@ public class MainActivity extends AppCompatActivity{
                 barData.setBarWidth(0.8f);
 
                 carChart.setVisibleXRangeMinimum(1f);
-                carChart.setVisibleXRangeMaximum(18f);
+                carChart.setVisibleXRangeMaximum(16f);
 
                 carChart.setScaleXEnabled(false);
                 carChart.setDragEnabled(true);
 
-                if (count > 18) {
-                    int x = count - 18;
+                if (count > 16) {
+                    int x = count - 16;
                     carChart.moveViewToX(carChart.getLowestVisibleX() + x + 1);
                 }
                 break;
