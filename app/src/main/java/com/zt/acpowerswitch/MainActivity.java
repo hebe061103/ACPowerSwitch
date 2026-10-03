@@ -938,7 +938,7 @@ public class MainActivity extends AppCompatActivity{
                             }else{
                                 // 光伏功率小于0,电池只给控制板供电(非逆变模式下,纯电池给控制板供电)
                                 chargeCurrent = 0f;
-                                dischargeCurrent = 3f;
+                                dischargeCurrent = 3f / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
                             }
                         }
                         // 通知数据刷新
