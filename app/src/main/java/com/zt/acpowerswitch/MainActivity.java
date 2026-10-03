@@ -887,7 +887,7 @@ public class MainActivity extends AppCompatActivity{
                             if (dcDischargePower < 10f) {
                                 useTimeStr = "无需放电";
                             } else {
-                                if (Objects.requireNonNull(uiData.get("current_out_mode")).contains("逆变")) {
+                                if ( Objects.requireNonNull(info.get("out_mode")).contains("逆变")) {
                                     double hours = availableCapWh / dcDischargePower;
                                     long totalMinutes = (long) (hours * 60); // 偏保守
                                     long d = totalMinutes / 1440;
@@ -916,23 +916,30 @@ public class MainActivity extends AppCompatActivity{
                         }else {
                             fluidColor = COLOR_GREEN; // 高电量：绿
                         }
-                        // ✅ 边充边放的判断：如果光伏功率 > 0 且负载 > 光伏，两者同时有值
-                        if (pw > 0 && totalAcLoad > pw ) {
-                            // 光伏在充电，电池在补缺口
-                            chargeCurrent = pw / Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage")));
-                            dischargeCurrent = (totalAcLoad - pw) / Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage")));
-                        }else if (pw > 0 && totalAcLoad < pw){
-                            // 光伏提供主功率,剩余功率给电池充电,电池未放电
-                            chargeCurrent = (pw - totalAcLoad) / Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage")));
-                            dischargeCurrent = 0f;
-                        }else if (pw <= 0 && Objects.requireNonNull(info.get("out_mode")).contains("逆变")){
-                            // 光伏无功率,不充电,电池放电
-                            chargeCurrent = 0f;
-                            dischargeCurrent = totalAcLoad / Float.parseFloat(Objects.requireNonNull(uiData.get("bat_voltage")));
+                        if ( Objects.requireNonNull(info.get("out_mode")).contains("逆变")) {
+                            if (pw > 0 && totalAcLoad > pw) {
+                                // 光伏在充电，电池在补缺口(负载功率大于光伏输出功率)
+                                chargeCurrent = pw / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
+                                dischargeCurrent = (totalAcLoad - pw) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
+                            } else if (pw > 0 && totalAcLoad < pw) {
+                                // 光伏提供主功率,剩余功率给电池充电,电池未放电(光伏输出功率大于负载所需的功率)
+                                chargeCurrent = (pw - totalAcLoad) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
+                                dischargeCurrent = 0f;
+                            } else if (pw <= 0) {
+                                // 光伏无功率,不充电,电池放电(光伏无功率,纯电池放电)
+                                chargeCurrent = 0f;
+                                dischargeCurrent = totalAcLoad / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
+                            }
                         }else{
-                            // 光伏无功率,不充电,电池只给控制供电(非逆变模式)
-                            chargeCurrent = 0f;
-                            dischargeCurrent = 3.0f;
+                            if (pw > 0) {
+                                // 光伏给控制板供电,剩余功率给电池充电(非逆变模式下,光伏给电池充电)
+                                chargeCurrent = (pw - 3f) / Float.parseFloat(Objects.requireNonNull(info.get("Battery_Voltage")));
+                                dischargeCurrent = 0f;
+                            }else{
+                                // 光伏功率小于0,电池只给控制板供电(非逆变模式下,纯电池给控制板供电)
+                                chargeCurrent = 0f;
+                                dischargeCurrent = 3f;
+                            }
                         }
                         // 通知数据刷新
                         Message message = messageProHandler.obtainMessage();
