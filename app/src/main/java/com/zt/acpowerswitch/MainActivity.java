@@ -424,32 +424,6 @@ public class MainActivity extends AppCompatActivity{
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(card_menu_bt);
         });
-
-        //小时图表按键监听
-        if (layout_mode == 0) {
-            bt_listen(origin_hour_power, originPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
-        }else {
-            bt_listen(card_hour_power, cardPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
-        }
-        //日期图表按键监听
-        if (layout_mode == 0) {
-            bt_listen(origin_day_power, originPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
-        }else {
-            bt_listen(card_day_power, cardPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
-        }
-        //月份图表按键监听
-        if (layout_mode == 0) {
-            bt_listen(origin_month_power, originPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
-        }else {
-            bt_listen(card_month_power, cardPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
-        }
-        //年图表按键监听
-        if (layout_mode == 0) {
-            bt_listen(origin_year_power, originPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
-        }else {
-            bt_listen(card_year_power, cardPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
-        }
-
         originBatLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @SuppressLint("SetTextI18n")
             @Override
@@ -582,8 +556,32 @@ public class MainActivity extends AppCompatActivity{
                 cardBatLineChart.highlightValue(null);
             }
         });
+        pro_button_listen(); // 处理柱状图上的时.日.月,年按键监听
         start_Thread();
     }
+
+    private void pro_button_listen() {
+        if (layout_mode == 0) {
+            //小时图表按键监听
+            bt_listen(origin_hour_power, originPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
+            //日期图表按键监听
+            bt_listen(origin_day_power, originPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
+            //月份图表按键监听
+            bt_listen(origin_month_power, originPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
+            //年图表按键监听
+            bt_listen(origin_year_power, originPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
+        }else{
+            //小时图表按键监听
+            bt_listen(card_hour_power, cardPowerChart, _H_Total_power, "小时柱状图表", "暂无小时数据");
+            //日期图表按键监听
+            bt_listen(card_day_power, cardPowerChart, _D_Total_power, "日期柱状图表", "暂无日期数据");
+            //月份图表按键监听
+            bt_listen(card_month_power, cardPowerChart, _M_Total_power, "月份柱状图表", "暂无月份数据");
+            //年图表按键监听
+            bt_listen(card_year_power, cardPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
+        }
+    }
+
     public void bt_listen(TextView bt,BarChart chart,ArrayList<String> data, String text, String data_null){
         bt.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -1187,18 +1185,14 @@ public class MainActivity extends AppCompatActivity{
     }
     private void display_data() {
         if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-            if (originBatLineChart != null || cardBatLineChart != null){
-                if (layout_mode == 0) {
-                    assert originBatLineChart != null;
-                    originBatLineChart.clear();//清空图表
-                    originBatLineChart.notifyDataSetChanged();//通知数据巳改变
-                    originBatLineChart.invalidate();//清理无效数据,用于动态刷新
-                }else{
-                    assert cardBatLineChart != null;
-                    cardBatLineChart.clear();//清空图表
-                    cardBatLineChart.notifyDataSetChanged();//通知数据巳改变
-                    cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
-                }
+            if (layout_mode == 0 && originBatLineChart != null) {
+                originBatLineChart.clear();//清空图表
+                originBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                originBatLineChart.invalidate();//清理无效数据,用于动态刷新
+            }else if (layout_mode == 1 && cardBatLineChart != null){
+                cardBatLineChart.clear();//清空图表
+                cardBatLineChart.notifyDataSetChanged();//通知数据巳改变
+                cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
             }
             if (layout_mode == 0) {
                 pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);//把数据放到折线图上
@@ -1214,20 +1208,14 @@ public class MainActivity extends AppCompatActivity{
             }
         }
         if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
-            if (originPowerChart != null || cardPowerChart != null){
-                //清理无效数据,用于动态刷新
-                //通知数据巳改变
-                if (layout_mode == 0) {
-                    assert originPowerChart != null;
-                    originPowerChart.clear();//清空图表
-                    originPowerChart.notifyDataSetChanged();//通知数据巳改变
-                    originPowerChart.invalidate();//清理无效数据,用于动态刷新
-                }else{
-                    assert cardPowerChart != null;
-                    cardPowerChart.clear();//清空图表
-                    cardPowerChart.notifyDataSetChanged();//通知数据巳改变
-                    cardPowerChart.invalidate();//清理无效数据,用于动态刷新
-                }
+            if (layout_mode == 0 && originPowerChart != null) {
+                originPowerChart.clear();//清空图表
+                originPowerChart.notifyDataSetChanged();//通知数据巳改变
+                originPowerChart.invalidate();//清理无效数据,用于动态刷新
+            }else if (layout_mode == 1 && cardPowerChart != null){
+                cardPowerChart.clear();//清空图表
+                cardPowerChart.notifyDataSetChanged();//通知数据巳改变
+                cardPowerChart.invalidate();//清理无效数据,用于动态刷新
             }
             if (layout_mode == 0) {
                 pro_day_chart_data(_H_Total_power, "小时柱状图表", originPowerChart);//把小时数据放到柱状图上
@@ -1942,11 +1930,13 @@ public class MainActivity extends AppCompatActivity{
                             // 切到了经典布局（child 0）
                             resetLastValues();
                             display_data(); //显示数据
+                            pro_button_listen(); //重新处理按键监听
                             originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
                         } else {
                             // 切到了卡片布局（child 1）
                             resetLastValues();
                             display_data(); //显示数据
+                            pro_button_listen(); //重新处理按键监听
                             cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
                         }
                     });
