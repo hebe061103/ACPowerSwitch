@@ -745,11 +745,7 @@ public class MainActivity extends AppCompatActivity{
                         //光伏板电压
                         uiData.put("pv_voltage", info.get("Sun_Voltage"));
                         //光伏板电流
-                        if (Float.parseFloat(Objects.requireNonNull(info.get("Sun_Current"))) < 0.5) { //防止夜晚功率计算错误
-                            uiData.put("pv_current", String.valueOf(0));
-                        }else {
-                            uiData.put("pv_current", info.get("Sun_Current"));
-                        }
+                        uiData.put("pv_current", info.get("Sun_Current"));
                         //光伏实时输出功率
                         uiData.put("pv_time_power", info.get("Sun_time_power"));
                         //逆变器不同模式下电池的充放电电流计算
@@ -757,15 +753,13 @@ public class MainActivity extends AppCompatActivity{
                         float pw = Float.parseFloat(Objects.requireNonNull(info.get("Sun_time_power")));//太阳能板的发电功率
                         // 逆变器参数
                         float invEff;
-                        if (Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power"))) < 200.0f){
+                        if (AC_power < 200.0f){
                             invEff = 0.75f;
                         }else{
                             invEff = 0.94f;
                         }
-                        // 负载交流有功功率（W）
-                        float loadPowerAc = Float.parseFloat(Objects.requireNonNull(uiData.get("ac_power")));
                         // 系统交流侧总功率消耗
-                        float totalAcLoad = loadPowerAc / invEff + invSelfConsumption;
+                        float totalAcLoad = AC_power / invEff + invSelfConsumption;
                         if (Objects.equals(info.get("out_mode"), "逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
                             if (pw - totalAcLoad > 0) {
@@ -1916,6 +1910,7 @@ public class MainActivity extends AppCompatActivity{
             int itemId = item.getItemId();
 
             if (itemId == R.id.switch_card_mode) {
+                goAnim(this, 50);
                 if (viewSwitcher != null) {
                     viewSwitcher.showNext();
                     layout_mode = viewSwitcher.getDisplayedChild();
