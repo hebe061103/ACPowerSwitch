@@ -751,15 +751,8 @@ public class MainActivity extends AppCompatActivity{
                         //逆变器不同模式下电池的充放电电流计算
                         //充放电电流计算,其中的30为逆变器开启时自身功耗的估算包含主板功耗3W,3.0为逆变器关闭时控制板3W功耗的估算
                         float pw = Float.parseFloat(Objects.requireNonNull(info.get("Sun_time_power")));//太阳能板的发电功率
-                        // 逆变器参数
-                        float invEff;
-                        if (AC_power < 200.0f){
-                            invEff = 0.75f;
-                        }else{
-                            invEff = 0.94f;
-                        }
                         // 系统交流侧总功率消耗
-                        float totalAcLoad = AC_power / invEff + invSelfConsumption;
+                        float totalAcLoad = AC_power + invSelfConsumption;
                         if (Objects.equals(info.get("out_mode"), "逆变供电")) {
                             //逆变供电模式下,逆变器为开启状态的充放电电流计算
                             if (pw - totalAcLoad > 0) {

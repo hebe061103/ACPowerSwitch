@@ -826,7 +826,6 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textSize="10sp"
-                                android:text="暂无"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
@@ -835,7 +834,6 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textSize="10sp"
-                                android:text="暂无"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
 
@@ -843,7 +841,6 @@
                                 android:id="@+id/tv_charged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="暂无"
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -852,7 +849,6 @@
                                 android:id="@+id/tv_discharged"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="暂无"
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
@@ -861,7 +857,6 @@
                                 android:id="@+id/tv_available"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="暂无"
                                 android:textSize="10sp"
                                 android:textColor="#000000"
                                 tools:ignore="HardcodedText,SmallSp,TextContrastCheck" />
