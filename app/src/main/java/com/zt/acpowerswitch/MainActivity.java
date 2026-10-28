@@ -1,7 +1,6 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.zt.acpowerswitch.TCPClient.socket;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -404,7 +403,7 @@ public class MainActivity extends AppCompatActivity{
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
             about.log(TAG, "下拉刷新");
-            if (!request_homepage_run && socket != null) {
+            if (!request_homepage_run) {
                 request_homepage_date();
             } else {
                 refreshLayout.finishRefresh();
@@ -609,7 +608,7 @@ public class MainActivity extends AppCompatActivity{
         }).start();
         new Thread(() -> {
             while (true) {
-                if (!request_homepage_run && !data_rec_finish && socket != null) {
+                if (!request_homepage_run && !data_rec_finish) {
                     request_homepage_date();
                     Log.d(TAG,"请求首页数据");
                 }
@@ -1265,14 +1264,15 @@ public class MainActivity extends AppCompatActivity{
                 String d = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_n[2]));
                 String _y = y+"-"+m+"-"+d+" "+ _j[1];
                 _Y_Total_power.add(_y);
-            } else if (line != null && line.contains("debug>")) {
+            } else if (line != null && line.contains("log>")) {
                 //Log.d(TAG, "发现包含调试的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
                 //Log.d(TAG, "发现包含结尾的数据: " + line);
                 about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
-                        " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size());
+                        " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() +
+                        " 调试数据数量:" + debugList.size());
                 data_rec_finish = true;
             }
         }
