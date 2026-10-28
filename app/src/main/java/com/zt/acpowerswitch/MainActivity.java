@@ -403,7 +403,7 @@ public class MainActivity extends AppCompatActivity{
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
             about.log(TAG, "下拉刷新");
-            if (!request_homepage_run) {
+            if (!request_homepage_run && tcpClient.isConnected()) {
                 request_homepage_date();
             } else {
                 refreshLayout.finishRefresh();
@@ -608,11 +608,11 @@ public class MainActivity extends AppCompatActivity{
         }).start();
         new Thread(() -> {
             while (true) {
-                if (!request_homepage_run && !data_rec_finish) {
+                if (!request_homepage_run && !data_rec_finish && tcpClient.isConnected()) {
                     request_homepage_date();
                     Log.d(TAG,"请求首页数据");
                 }
-                sleep(2000);
+                sleep(500);
             }
         }).start();
     }

@@ -158,9 +158,7 @@ public class TCPClient {
      * ✅ 连接状态判断
      */
     public boolean isConnected() {
-        return socket != null
-                && socket.isConnected()
-                && !socket.isClosed();
+        return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     /**
