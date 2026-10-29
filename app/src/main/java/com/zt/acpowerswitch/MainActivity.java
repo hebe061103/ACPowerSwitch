@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity{
     private float startX = 0f;
     private float startY = 0f;
     private ViewSwitcher viewSwitcher;
-    private static final int MAX_RETRY = 3;
+    private static final int MAX_RETRY = 10;
     private static int retryCount = 0;
     // ===== 交流输出 =====
     private TextView originOutVoltage, cardOutVoltage;
@@ -402,9 +402,9 @@ public class MainActivity extends AppCompatActivity{
         //设置 Header 为 贝塞尔雷达 样式
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
-            about.log(TAG, "下拉刷新");
             if (!request_homepage_run && tcpClient.isConnected()) {
                 request_homepage_date();
+                about.log(TAG,"下拉刷新首页图表数据");
             } else {
                 refreshLayout.finishRefresh();
             }
@@ -597,12 +597,12 @@ public class MainActivity extends AppCompatActivity{
         new Thread(() -> {
             while (!Thread_Run) {
                 if (tcpClient.tcpConnect() && !Thread_Run) {
-                    about.log(TAG, "开始调用线程");
+                    about.log(TAG, "开始调用数据刷新线程");
                     mData_pro_thread();
                     break;
                 }
                 if (Thread_Run) {
-                    about.log(TAG, "线程调用完成");
+                    about.log(TAG, "数据刷新线程调用完成");
                 }
             }
         }).start();
@@ -610,7 +610,7 @@ public class MainActivity extends AppCompatActivity{
             while (true) {
                 if (!request_homepage_run && !data_rec_finish && tcpClient.isConnected()) {
                     request_homepage_date();
-                    Log.d(TAG,"请求首页数据");
+                    about.log(TAG,"获取首页图表数据");
                 }
                 sleep(500);
             }
@@ -966,7 +966,6 @@ public class MainActivity extends AppCompatActivity{
             }
             isPaused=false;
             Thread_Run = false;
-            about.log(TAG, "数据更新线程巳退出");
         }).start();
     }
     @SuppressLint("HandlerLeak")
@@ -1226,7 +1225,6 @@ public class MainActivity extends AppCompatActivity{
         debugList.clear();
         stop_send = true;
         data_rec_finish=false;
-        about.log(TAG, "获取所有历史记录数据");
         String result = tcpClient.sendAndReceive("get_all_file");
         // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
@@ -1270,15 +1268,15 @@ public class MainActivity extends AppCompatActivity{
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
                 //Log.d(TAG, "发现包含结尾的数据: " + line);
-                about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() +
-                        " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() +
-                        " 调试数据数量:" + debugList.size());
-                data_rec_finish = true;
+                if (!_min_bat_list.isEmpty() && !_H_Total_power.isEmpty() && !_D_Total_power.isEmpty() && !_M_Total_power.isEmpty() && !_Y_Total_power.isEmpty()) {
+                    about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
+                    data_rec_finish = true;
+                }
             }
         }
         if (!data_rec_finish && retryCount < MAX_RETRY ){
             retryCount++;
-            about.log(TAG, "数据不完整,重试"+retryCount+"次");
+            about.log(TAG, "数据有误,重试"+retryCount+"次");
             _min_bat_list.clear();
             _H_Total_power.clear();
             _D_Total_power.clear();
