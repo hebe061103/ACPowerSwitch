@@ -1268,7 +1268,7 @@ public class MainActivity extends AppCompatActivity{
                 debugList.add(_l[1]);
             } else if (line != null && line.contains("mark2")) {
                 //Log.d(TAG, "发现包含结尾的数据: " + line);
-                if (!_min_bat_list.isEmpty() && !_H_Total_power.isEmpty() && !_D_Total_power.isEmpty() && !_M_Total_power.isEmpty() && !_Y_Total_power.isEmpty()) {
+                if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
                     data_rec_finish = true;
                 }
