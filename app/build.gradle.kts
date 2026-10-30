@@ -9,6 +9,7 @@ android {
     defaultConfig {
         applicationId = "com.zt.acpowerswitch"
         minSdk = 26
+        //noinspection OldTargetApi
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -60,4 +61,6 @@ dependencies {
     implementation  ("io.github.scwang90:refresh-header-material:2.1.0") //谷歌刷新头
     //noinspection UseTomlInstead
     implementation  ("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
+    //noinspection UseTomlInstead
+    implementation  ("com.squareup.okhttp3:okhttp:4.12.0")               //DNS解析
 }
