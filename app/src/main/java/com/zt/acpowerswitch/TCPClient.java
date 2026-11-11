@@ -18,6 +18,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -64,10 +65,34 @@ public class TCPClient {
     private InputStream inputStream;
     private OutputStream outputStream;
 
+    // ============ DOH 缓存（新增） ============
+    /**
+     * 缓存条目：地址列表 + DNS返回的TTL(秒) + 缓存写入时间(毫秒)
+     */
+    private static class DnsCacheEntry {
+        final List<InetAddress> addresses;
+        final long ttl;
+        final long cacheTime;
+
+        DnsCacheEntry(List<InetAddress> addresses, long ttl) {
+            this.addresses = addresses;
+            this.ttl = ttl;
+            this.cacheTime = System.currentTimeMillis();
+        }
+
+        boolean isExpired() {
+            if (ttl <= 0) return false; // TTL=0 视为永不过期
+            return System.currentTimeMillis() > cacheTime + ttl * 1000;
+        }
+    }
+
+    // hostname → 缓存条目，线程安全
+    private final ConcurrentHashMap<String, DnsCacheEntry> dnsCache = new ConcurrentHashMap<>();
+
     // =================================================
 
     /**
-     * ✅ 建立/重建 TCP 连接（DOH 解析）
+     * ✅ 建立/重建 TCP 连接（DOH 解析，优先用缓存）
      */
     @SuppressLint("DefaultLocale")
     public synchronized boolean tcpConnect() {
@@ -79,13 +104,16 @@ public class TCPClient {
             about.log(TAG, "关闭之前的旧连接");
         }
 
-        List<InetAddress> addresses = dohResolve(tcpServerAddress.trim());
+        // ---- 优先用缓存，过期才重新DOH ----
+        String hostname = tcpServerAddress.trim();
+        List<InetAddress> addresses = resolveWithCache(hostname);
+
         if (addresses.isEmpty()) {
             about.log(TAG, "DOH 解析失败，无可用地址");
             return false;
         }
 
-        about.log(TAG, "DOH 解析到 " + addresses.size() + " 个地址，开始尝试连接");
+        about.log(TAG, "共 " + addresses.size() + " 个地址，开始尝试连接");
 
         for (InetAddress address : addresses) {
             try {
@@ -102,27 +130,51 @@ public class TCPClient {
 
                 about.log(TAG, "创建到设备的连接成功 -> " + address.getHostAddress());
                 return true;
-
             } catch (IOException e) {
                 about.log(TAG, "创建到设备的连接异常: " + e.getMessage());
                 close();
             }
         }
 
-        about.log(TAG, "所有地址连接失败");
+        // 所有地址都失败 → 清除缓存，下次重新DOH
+        about.log(TAG, "所有地址连接失败，清除 DNS 缓存");
+        invalidateDnsCache(hostname);
+
         return false;
     }
 
     // =================================================
-    // DOH 解析（纯解析，无缓存逻辑）
+    // DOH 解析（带 TTL 缓存）
     // =================================================
 
     /**
-     * DOH 解析，返回所有 AAAA 记录
+     * 优先从缓存取，缓存过期或不存在才走 DOH
+     */
+    private List<InetAddress> resolveWithCache(String hostname) {
+        DnsCacheEntry entry = dnsCache.get(hostname);
+
+        if (entry != null && !entry.isExpired()) {
+            long remain = (entry.cacheTime + entry.ttl * 1000 - System.currentTimeMillis()) / 1000;
+            about.log(TAG, "使用 DNS 缓存（TTL剩余 " + remain + "s）");
+            return new ArrayList<>(entry.addresses);
+        }
+
+        if (entry != null && entry.isExpired()) {
+            about.log(TAG, "DNS 缓存已过期，重新解析");
+            dnsCache.remove(hostname);
+        }
+
+        // 缓存没有或已过期 → 走 DOH
+        return dohResolve(hostname);
+    }
+
+    /**
+     * DOH 解析，返回所有 AAAA 记录，并写入缓存
      * 不缓存、不管 TTL、不做兜底
      */
     private List<InetAddress> dohResolve(String hostname) {
         List<InetAddress> results = new ArrayList<>();
+        long minTtl = Long.MAX_VALUE;
 
         for (String dohTemplate : DOH_URLS) {
             String url = String.format(dohTemplate, hostname);
@@ -151,10 +203,18 @@ public class TCPClient {
                         InetAddress addr = InetAddress.getByName(ipv6);
                         results.add(addr);
                         about.log(TAG, "DOH 解析到 IPv6: " + ipv6);
+
+                        // 取所有 AAAA 记录中最小的 TTL
+                        long ttl = ans.optLong("TTL", 60);
+                        minTtl = Math.min(minTtl, ttl);
                     }
                 }
 
                 if (!results.isEmpty()) {
+                    // TTL 至少 60 秒，防止 DNS 返回 0 或极小值
+                    long cacheTtl = (minTtl == Long.MAX_VALUE) ? 60 : Math.max(minTtl, 60);
+                    dnsCache.put(hostname, new DnsCacheEntry(results, cacheTtl));
+                    about.log(TAG, "DNS 缓存写入，TTL=" + cacheTtl + "s");
                     return results;
                 }
 
@@ -166,6 +226,18 @@ public class TCPClient {
         }
 
         return results;
+    }
+
+    // =================================================
+    // 对外接口：清除 DNS 缓存（新增）
+    // =================================================
+
+    /**
+     * 清除指定 hostname 的 DNS 缓存
+     */
+    public void invalidateDnsCache(String hostname) {
+        dnsCache.remove(hostname);
+        about.log(TAG, "DNS 缓存已清除: " + hostname);
     }
 
     // =================================================
@@ -212,9 +284,11 @@ public class TCPClient {
                     break;
                 }
             }
-        } catch (SocketTimeoutException ignored) {
+        } catch (SocketTimeoutException e) {
+            about.log(TAG, "接收超时，关闭连接");
+            close();
         } catch (IOException e) {
-            about.log(TAG, "读取异常: " + e.getMessage());
+            about.log(TAG, "读取异常: " + e.getMessage()+ "关闭连接");
             close();
         }
 
@@ -231,9 +305,13 @@ public class TCPClient {
                 return receiveMessage();
             }
             return null;
+        } catch (SocketTimeoutException e) {
+            about.log(TAG, "读超时 - 可能连接已断或被系统限制: " + e.getMessage());
+            close(); // 主动关闭僵尸连接
+            return null;
         } catch (IOException e) {
-            about.log(TAG, "通信异常，关闭连接");
-            close();
+            about.log(TAG, "通信异常，关闭连接: " + e.getMessage());
+            close(); // 主动关闭连接
             return null;
         }
     }
