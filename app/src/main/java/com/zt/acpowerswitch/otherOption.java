@@ -241,8 +241,8 @@ public class otherOption extends AppCompatActivity {
                     deleteData("peakToPeakDiff");
                     deleteData("SYSTEM_R");
                     deleteData("request_calibration");
-                    if (!MainActivity.isPaused){MainActivity.isPaused=true;}
                     tcpClient.close();
+                    about.log(TAG, "关闭当前连接");
                     finish();
                 })
                 .show();

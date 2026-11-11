@@ -8,12 +8,10 @@ import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -77,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public static final TCPClient tcpClient = TCPClient.getInstance();
     public static String tcpServerAddress;
     public static int tcpServerPort;
-    public static boolean data_rec_finish, stop_send,Thread_Run,isPaused;
+    public static boolean data_rec_finish, stop_send,Thread_Run,isExit;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -195,9 +193,10 @@ public class MainActivity extends AppCompatActivity{
     private String last_useTimeStr;
     private String last_bat_health_text;
     private String last_bat_health_detail;
-    private TCPClient.NetworkChangeReceiver networkReceiver;
     // 逆变器自身功耗
     private final float invSelfConsumption = 30f;
+    private boolean moduleInitialized;
+
     private void resetLastValues() {
         last_AcVoltage = null;
         last_ac_current = null;
@@ -397,6 +396,10 @@ public class MainActivity extends AppCompatActivity{
         }
     };
     private void init_module(){
+        if (moduleInitialized) {
+            return;
+        }
+        moduleInitialized = true;
         Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);       // 年
         month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
@@ -597,21 +600,13 @@ public class MainActivity extends AppCompatActivity{
         });
     }
     public void start_Thread(){
-        new Thread(() -> {
-            while (!Thread_Run) {
-                if (tcpClient.tcpConnect() && !Thread_Run) {
-                    about.log(TAG, "开始调用数据刷新线程");
-                    mData_pro_thread();
-                    break;
-                }
-                if (Thread_Run) {
-                    about.log(TAG, "数据刷新线程调用完成");
-                }
-            }
-        }).start();
+        if (!Thread_Run) {
+            about.log(TAG, "开始调用数据刷新线程");
+            mData_pro_thread();
+        }
         new Thread(() -> {
             while (true) {
-                if (!request_homepage_run && !data_rec_finish && tcpClient.isConnected()) {
+                if (tcpClient.isConnected() && !request_homepage_run && !data_rec_finish) {
                     request_homepage_date();
                     about.log(TAG,"获取首页图表数据");
                 }
@@ -644,6 +639,7 @@ public class MainActivity extends AppCompatActivity{
                                         deleteData("SYSTEM_R");
                                         deleteData("request_calibration");
                                         tcpClient.close();
+                                        about.log(TAG, "关闭当前连接");
                                     }).show();
                         } else {
                             new AlertDialog.Builder(this)
@@ -698,8 +694,9 @@ public class MainActivity extends AppCompatActivity{
     private void mData_pro_thread() {
         new Thread(() -> {
             Thread_Run = true;
-            while (!isPaused) {
+            while (!isExit) {
                 if (!stop_send){
+                    if (!tcpClient.isConnected()) tcpClient.tcpConnect();
                     String udp_response = tcpClient.sendAndReceive("get_info");
                     sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("AC_voltage")) {
@@ -934,7 +931,7 @@ public class MainActivity extends AppCompatActivity{
                         message.obj = uiData;  // 将计算结果放入Message
                         messageProHandler.sendMessage(message);
                     }
-                    if (checkScreenStatus() && udp_response != null && udp_response.startsWith("live>") && udp_response.contains("mark3")){
+                    if (udp_response != null && udp_response.startsWith("live>") && udp_response.contains("mark3")){
                         about.log(TAG, "收到实时分时数据,更新分时图表");
                         String[] str = udp_response.split("#");
                         String[] min = str[0].split(">");
@@ -960,15 +957,8 @@ public class MainActivity extends AppCompatActivity{
                             }
                         }
                     }
-                    if (!checkScreenStatus()) {
-                        about.log(TAG, "屏幕关闭");
-                        tcpClient.close();
-                        isPaused=true;
-                    }
                 }
             }
-            isPaused=false;
-            Thread_Run = false;
         }).start();
     }
     @SuppressLint("HandlerLeak")
@@ -1172,7 +1162,7 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
     private void display_data() {
-        if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+        if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m)  && data_rec_finish) {
             if (layout_mode == 0 && originBatLineChart != null) {
                 originBatLineChart.clear();//清空图表
                 originBatLineChart.notifyDataSetChanged();//通知数据巳改变
@@ -1195,7 +1185,7 @@ public class MainActivity extends AppCompatActivity{
                 cardBatLineChart.setNoDataText("暂无分时数据");
             }
         }
-        if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus() && data_rec_finish) {
+        if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && data_rec_finish) {
             if (layout_mode == 0 && originPowerChart != null) {
                 originPowerChart.clear();//清空图表
                 originPowerChart.notifyDataSetChanged();//通知数据巳改变
@@ -1976,27 +1966,21 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         check_request_permissions();
-        if (networkReceiver == null) {
-            networkReceiver = new TCPClient.NetworkChangeReceiver();
-        }
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(networkReceiver, filter);
     }
     protected void onPause() {
         super.onPause();
-        if (networkReceiver != null) {
-            try {
-                unregisterReceiver(networkReceiver);
-            } catch (IllegalArgumentException ignored) {
-            }
-            networkReceiver = null;
-        }
+    }
+    protected void onStop(){
+        super.onStop();
     }
     protected void onDestroy() {
         super.onDestroy();
         if (wifilist != null) {
             wifilist.clear();
         }
+        Thread_Run = false;
+        isExit = true;
+        tcpClient.close();
     }
     public static void goAnim(Context context, int millisecond) {
         Vibrator vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
