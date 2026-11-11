@@ -61,6 +61,4 @@ dependencies {
     implementation  ("io.github.scwang90:refresh-header-material:2.1.0") //谷歌刷新头
     //noinspection UseTomlInstead
     implementation  ("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
-    //noinspection UseTomlInstead
-    implementation  ("com.squareup.okhttp3:okhttp:4.12.0")               //DNS解析
 }

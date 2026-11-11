@@ -8,10 +8,12 @@ import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -72,7 +74,7 @@ public class MainActivity extends AppCompatActivity{
     public static SharedPreferences.Editor editor;
     public ImageView origin_menu_bt,card_menu_bt;
     public long lastBack = 0;
-    public static final TCPClient tcpClient = new TCPClient();
+    public static final TCPClient tcpClient = TCPClient.getInstance();
     public static String tcpServerAddress;
     public static int tcpServerPort;
     public static boolean data_rec_finish, stop_send,Thread_Run,isPaused;
@@ -193,6 +195,7 @@ public class MainActivity extends AppCompatActivity{
     private String last_useTimeStr;
     private String last_bat_health_text;
     private String last_bat_health_detail;
+    private TCPClient.NetworkChangeReceiver networkReceiver;
     // 逆变器自身功耗
     private final float invSelfConsumption = 30f;
     private void resetLastValues() {
@@ -1973,9 +1976,21 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         check_request_permissions();
+        if (networkReceiver == null) {
+            networkReceiver = new TCPClient.NetworkChangeReceiver();
+        }
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkReceiver, filter);
     }
     protected void onPause() {
         super.onPause();
+        if (networkReceiver != null) {
+            try {
+                unregisterReceiver(networkReceiver);
+            } catch (IllegalArgumentException ignored) {
+            }
+            networkReceiver = null;
+        }
     }
     protected void onDestroy() {
         super.onDestroy();

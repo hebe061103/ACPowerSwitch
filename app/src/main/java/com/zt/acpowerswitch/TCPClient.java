@@ -4,9 +4,11 @@ import static com.zt.acpowerswitch.MainActivity.tcpServerAddress;
 import static com.zt.acpowerswitch.MainActivity.tcpServerPort;
 
 import android.annotation.SuppressLint;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,11 +19,6 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class TCPClient {
 
@@ -29,99 +26,32 @@ public class TCPClient {
     private static final int CONNECT_TIMEOUT = 3000;
     private static final int READ_TIMEOUT = 1000;
 
+    // ============ 单例 ============
+    private static volatile TCPClient instance;
+
+    public static TCPClient getInstance() {
+        if (instance == null) {
+            synchronized (TCPClient.class) {
+                if (instance == null) {
+                    instance = new TCPClient();
+                }
+            }
+        }
+        return instance;
+    }
+
+    private TCPClient() {}
+
+    // ==============================
+
     private volatile Socket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
 
-    // ============ DNS over HTTPS（AAAA，国内双备援） ============
-    private static final String[] DOH_URLS = {
-            "https://dns.alidns.com/resolve?name=%s&type=28",  // 阿里 JSON API
-            "https://doh.pub/dns-query?name=%s&type=28"         // 腾讯 DoH
-    };
-
-    private static final OkHttpClient DOH_CLIENT = new OkHttpClient.Builder()
-            .connectTimeout(3, TimeUnit.SECONDS)
-            .readTimeout(3, TimeUnit.SECONDS)
-            .writeTimeout(3, TimeUnit.SECONDS)
-            .build();
-
-    // ============ DNS 缓存（TTL 驱动） ============
-    private static volatile InetAddress dnsCache = null;
-    private static volatile long dnsCacheExpireTime = 0; // 过期时刻（毫秒）
-
-    private static boolean isDnsCacheValid() {
-        if (dnsCache == null) return false;
-        return System.currentTimeMillis() < dnsCacheExpireTime;
-    }
-
-    /**
-     * 双备援 DoH 解析 IPv6（AAAA）
-     * 顺序：阿里 → 腾讯 → 失败抛 IOException
-     * 成功后更新 dnsCache + dnsCacheExpireTime
-     */
-    private static InetAddress resolveViaDoh(String host) throws IOException {
-        Exception lastException = null;
-
-        for (String dohTemplate : DOH_URLS) {
-            String url = String.format(dohTemplate, host);
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header("Accept", "application/dns-json")
-                    .build();
-
-            try (Response response = DOH_CLIENT.newCall(request).execute()) {
-                if (!response.isSuccessful() || response.body() == null) {
-                    about.log(TAG, "DoH 服务返回异常 HTTP " + response.code() + "，尝试下一个...");
-                    lastException = new IOException("DoH HTTP " + response.code());
-                    continue;
-                }
-
-                JSONObject json = new JSONObject(response.body().string());
-                JSONArray answers = json.optJSONArray("Answer");
-                if (answers == null) {
-                    about.log(TAG, "DoH 无 Answer 段，尝试下一个...");
-                    lastException = new UnknownHostException("No AAAA record: " + host);
-                    continue;
-                }
-
-                for (int i = 0; i < answers.length(); i++) {
-                    JSONObject ans = answers.getJSONObject(i);
-                    if (ans.optInt("type") == 28) {          // 28 = AAAA
-                        String ipv6 = ans.getString("data").trim();
-                        long ttl = ans.optLong("TTL", 300);  // 默认 300s 兜底
-
-                        dnsCache = InetAddress.getByAddress(
-                                host,
-                                InetAddress.getByName(ipv6).getAddress()
-                        );
-                        dnsCacheExpireTime = System.currentTimeMillis() + ttl * 1000;
-
-                        about.log(TAG, "DoH 解析到 IPv6: " + ipv6 + "，TTL=" + ttl + "s");
-                        return dnsCache;
-                    }
-                }
-                about.log(TAG, "DoH 无 AAAA 记录，尝试下一个...");
-                lastException = new UnknownHostException("AAAA empty: " + host);
-
-            } catch (Exception e) {
-                about.log(TAG, "DoH 请求异常: " + e.getMessage() + "，尝试下一个...");
-                lastException = e;
-            }
-        }
-
-        // 两个都失败了
-        if (lastException instanceof IOException) {
-            throw (IOException) lastException;
-        }
-        throw new IOException("所有 DoH 服务均失败", lastException);
-    }
-
     // =================================================
 
     /**
-     * ✅ 只负责建立 TCP 连接
-     * ✅ synchronized 防止并发重连
-     * ✅ DoH 解析 → 成功写缓存（TTL 驱动）；失败 → 用有效缓存；过期 → 立即失败
+     * ✅ 建立/重建 TCP 连接（系统 DNS 解析）
      */
     @SuppressLint("DefaultLocale")
     public synchronized boolean tcpConnect() {
@@ -132,37 +62,26 @@ public class TCPClient {
         close();
 
         InetAddress address;
-
-        // ===== DNS（DoH AAAA）=====
         try {
-            about.log(TAG, "开始 DoH 解析 IPv6...");
-            address = resolveViaDoh(tcpServerAddress.trim());
-            about.log(TAG, "DoH 解析成功并缓存: " + address.getHostAddress());
-
-        } catch (Exception e) {
-            about.log(TAG, "DoH 解析失败: " + e.getMessage());
-
-            if (isDnsCacheValid()) {
-                address = dnsCache;
-                about.log(TAG, "使用有效缓存 DNS: " + address.getHostAddress());
-            } else {
-                about.log(TAG, "缓存已过期且无可用解析，连接失败");
-                dnsCache = null;
-                dnsCacheExpireTime = 0;
-                return false;
-            }
+            about.log(TAG, "开始 DNS 解析: " + tcpServerAddress);
+            address = InetAddress.getByName(tcpServerAddress.trim());
+            about.log(TAG, "解析结果: " + address.getHostAddress());
+        } catch (UnknownHostException e) {
+            about.log(TAG, "DNS 解析失败: " + e.getMessage());
+            return false;
         }
 
-        // ===== TCP 连接 =====
         try {
             socket = new Socket();
             socket.connect(new InetSocketAddress(address, tcpServerPort), CONNECT_TIMEOUT);
             socket.setSoTimeout(READ_TIMEOUT);
+            socket.setKeepAlive(true);
+            socket.setTcpNoDelay(true);
 
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
 
-            about.log(TAG, "创建连接成功");
+            about.log(TAG, "创建连接成功 -> " + address.getHostAddress());
             return true;
 
         } catch (IOException e) {
@@ -172,10 +91,8 @@ public class TCPClient {
         }
     }
 
-    // ========== 以下代码完全未改动 ==========
-
     /**
-     * ✅ 只发送数据，不负责重连
+     * ✅ 发送数据
      */
     public void sendMessage(String message) throws IOException {
         if (!isConnected() || outputStream == null) {
@@ -215,7 +132,6 @@ public class TCPClient {
                 }
             }
         } catch (SocketTimeoutException ignored) {
-            // 正常超时
         } catch (IOException e) {
             about.log(TAG, "读取异常: " + e.getMessage());
             close();
@@ -225,48 +141,60 @@ public class TCPClient {
     }
 
     /**
-     * ✅ 对外统一入口
-     * ✅ 负责重连策略
+     * ✅ 对外统一入口（复用 Socket）
      */
     public String sendAndReceive(String message) {
-        int retryCount = 0;
-        int maxRetry = 3;
-
-        while (retryCount < maxRetry) {
-            try {
-                if (!isConnected()) {
-                    about.log(TAG, "尝试连接 (" + (retryCount + 1) + "/" + maxRetry + ")");
-                    if (!tcpConnect()) {
-                        retryCount++;
-                        continue;
-                    }
-                }
-
+        try {
+            if (isConnected()) {
                 sendMessage(message);
                 return receiveMessage();
-
-            } catch (IOException e) {
-                about.log(TAG, "通信异常，准备重连...");
-                close();
-                retryCount++;
             }
-        }
 
-        about.log(TAG, "多次重连失败，放弃本次请求");
-        return null;
+            // 未连接 → 尝试重连（最多 3 次）
+            int retryCount = 0;
+            while (retryCount < 3) {
+                about.log(TAG, "尝试连接 (" + (retryCount + 1) + "/3)");
+                if (tcpConnect()) {
+                    sendMessage(message);
+                    return receiveMessage();
+                }
+                retryCount++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            about.log(TAG, "连接失败，放弃本次请求");
+            return null;
+
+        } catch (IOException e) {
+            about.log(TAG, "通信异常，关闭连接");
+            close();
+            return null;
+        }
     }
 
     /**
-     * ✅ 连接状态判断
+     * ✅ 连接状态
      */
     public boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     /**
-     * ✅ 关闭资源
+     * ✅ 网络切换时调用
      */
-    public void close() {
+    public synchronized void onNetworkChanged() {
+        about.log(TAG, "网络切换，清理连接");
+        close();
+    }
+
+    /**
+     * ✅ 主动关闭
+     */
+    public synchronized void close() {
         try {
             if (inputStream != null) inputStream.close();
         } catch (IOException ignored) {
@@ -285,5 +213,29 @@ public class TCPClient {
         inputStream = null;
         outputStream = null;
         socket = null;
+    }
+
+    // ============ 网络切换广播（内部类） ============
+    public static class NetworkChangeReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
+
+                ConnectivityManager cm =
+                        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+                if (activeNetwork != null && activeNetwork.isConnected()) {
+                    about.log("NetworkChangeReceiver",
+                            "网络已连接: " + activeNetwork.getTypeName());
+                } else {
+                    about.log("NetworkChangeReceiver", "网络已断开");
+                }
+
+                // 无论连接还是断开，都清理旧连接
+                TCPClient.getInstance().onNetworkChanged();
+            }
+        }
     }
 }
