@@ -604,15 +604,14 @@ public class MainActivity extends AppCompatActivity{
             about.log(TAG, "开始调用数据刷新线程");
             mData_pro_thread();
         }
-        new Thread(() -> {
-            while (true) {
-                if (tcpClient.isConnected() && !request_homepage_run && !data_rec_finish) {
-                    request_homepage_date();
-                    about.log(TAG,"获取首页图表数据");
-                }
-                sleep(500);
+        while (true) {
+            if (tcpClient.isConnected() && !request_homepage_run && !data_rec_finish) {
+                request_homepage_date();
+                about.log(TAG,"获取首页图表数据");
+                break;
             }
-        }).start();
+            sleep(500);
+        }
     }
     public void proEsp32Text(TextView Dev) {
         Dev.setOnLongClickListener(view -> {
@@ -1267,9 +1266,9 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         }
-        if (!data_rec_finish && retryCount < MAX_RETRY ){
+        if (!data_rec_finish && retryCount < MAX_RETRY && tcpClient.isConnected() ){
             retryCount++;
-            about.log(TAG, "数据有误,重试"+retryCount+"次");
+            about.log(TAG, "图表数据异常,执行第"+retryCount+"次重试");
             _min_bat_list.clear();
             _H_Total_power.clear();
             _D_Total_power.clear();

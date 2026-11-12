@@ -29,7 +29,7 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient:";
     private static final int CONNECT_TIMEOUT = 3000;
-    private static final int READ_TIMEOUT = 1000;
+    private static final int READ_TIMEOUT = 3000;
 
     // ============ DOH 配置 ============
     private static final String[] DOH_URLS = {
@@ -284,9 +284,6 @@ public class TCPClient {
                     break;
                 }
             }
-        } catch (SocketTimeoutException e) {
-            about.log(TAG, "接收超时，关闭连接");
-            close();
         } catch (IOException e) {
             about.log(TAG, "读取异常: " + e.getMessage()+ "关闭连接");
             close();
