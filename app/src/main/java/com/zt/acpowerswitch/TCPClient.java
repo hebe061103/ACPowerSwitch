@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +61,8 @@ public class TCPClient {
     // ==============================
 
     private volatile Socket socket;
-    private InputStream inputStream;
-    private OutputStream outputStream;
+    public InputStream inputStream;
+    public OutputStream outputStream;
 
     // ============ DOH 缓存（新增） ============
     /**
@@ -284,8 +283,7 @@ public class TCPClient {
                     break;
                 }
             }
-        } catch (IOException e) {
-            about.log(TAG, "读取异常: " + e.getMessage()+ "关闭连接");
+        }catch (IOException e) {
             close();
         }
 
@@ -302,13 +300,8 @@ public class TCPClient {
                 return receiveMessage();
             }
             return null;
-        } catch (SocketTimeoutException e) {
-            about.log(TAG, "读超时 - 可能连接已断或被系统限制: " + e.getMessage());
-            close(); // 主动关闭僵尸连接
-            return null;
         } catch (IOException e) {
-            about.log(TAG, "通信异常，关闭连接: " + e.getMessage());
-            close(); // 主动关闭连接
+            close();
             return null;
         }
     }

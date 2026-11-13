@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public static final TCPClient tcpClient = TCPClient.getInstance();
     public static String tcpServerAddress;
     public static int tcpServerPort;
-    public static boolean data_rec_finish, stop_send,Thread_Run,isExit;
+    public static boolean stop_send,Thread_Run,isExit;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -98,8 +98,6 @@ public class MainActivity extends AppCompatActivity{
     private float startX = 0f;
     private float startY = 0f;
     private ViewSwitcher viewSwitcher;
-    private static final int MAX_RETRY = 10;
-    private static int retryCount = 0;
     // ===== 交流输出 =====
     private TextView originOutVoltage, cardOutVoltage;
     private TextView originOutCurrent, cardOutCurrent;
@@ -410,7 +408,7 @@ public class MainActivity extends AppCompatActivity{
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
             if (!request_homepage_run && tcpClient.isConnected()) {
                 request_homepage_date();
-                about.log(TAG,"下拉刷新首页图表数据");
+                about.log(TAG,"刷新首页图表数据");
             } else {
                 refreshLayout.finishRefresh();
             }
@@ -599,19 +597,21 @@ public class MainActivity extends AppCompatActivity{
             }
         });
     }
-    public void start_Thread(){
-        if (!Thread_Run) {
-            about.log(TAG, "开始调用数据刷新线程");
-            mData_pro_thread();
-        }
-        while (true) {
-            if (tcpClient.isConnected() && !request_homepage_run && !data_rec_finish) {
-                request_homepage_date();
-                about.log(TAG,"获取首页图表数据");
-                break;
+    public void start_Thread() {
+        if (Thread_Run) return;
+        Thread_Run = true;
+        about.log(TAG, "开始调用数据刷新线程");
+        mData_pro_thread();  // 如果这个方法本身就是开线程，确认一下
+
+        new Thread(() -> {
+            while (uiData == null || uiData.isEmpty()) {
+                try { Thread.sleep(500); } catch (InterruptedException e) { break; }
             }
-            sleep(500);
-        }
+            if (!request_homepage_run) {
+                about.log(TAG, "获取首页图表数据");
+                request_homepage_date();
+            }
+        }).start();
     }
     public void proEsp32Text(TextView Dev) {
         Dev.setOnLongClickListener(view -> {
@@ -692,7 +692,6 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint("DefaultLocale")
     private void mData_pro_thread() {
         new Thread(() -> {
-            Thread_Run = true;
             while (!isExit) {
                 if (!stop_send){
                     if (!tcpClient.isConnected()) tcpClient.tcpConnect();
@@ -1150,18 +1149,19 @@ public class MainActivity extends AppCompatActivity{
         }
     };
     private void request_homepage_date() {
-        if (request_homepage_run) {
-            return;
-        }
+        if (request_homepage_run) return;
         request_homepage_run = true;
+
         new Thread(() -> {
-            pro_data_request();//请求数据
-            display_data(); //显示数据
-            request_homepage_run = false;
+            pro_data_request();
+            runOnUiThread(() -> {
+                display_data();
+                request_homepage_run = false;
+            });
         }).start();
     }
     private void display_data() {
-        if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m)  && data_rec_finish) {
+        if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m)) {
             if (layout_mode == 0 && originBatLineChart != null) {
                 originBatLineChart.clear();//清空图表
                 originBatLineChart.notifyDataSetChanged();//通知数据巳改变
@@ -1184,7 +1184,7 @@ public class MainActivity extends AppCompatActivity{
                 cardBatLineChart.setNoDataText("暂无分时数据");
             }
         }
-        if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m) && data_rec_finish) {
+        if (!_H_Total_power.isEmpty() && getTopActivity().toString().equals(top_m)) {
             if (layout_mode == 0 && originPowerChart != null) {
                 originPowerChart.clear();//清空图表
                 originPowerChart.notifyDataSetChanged();//通知数据巳改变
@@ -1209,16 +1209,14 @@ public class MainActivity extends AppCompatActivity{
         }
     }
     public void pro_data_request(){
+        stop_send = true;
         _min_bat_list.clear();
         _H_Total_power.clear();
         _D_Total_power.clear();
         _M_Total_power.clear();
         _Y_Total_power.clear();
         debugList.clear();
-        stop_send = true;
-        data_rec_finish=false;
         String result = tcpClient.sendAndReceive("get_all_file");
-        // 如果结果不为 null，则拆分并赋值；否则给一个空数组或 null
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
         for (String line : all_data) {
             if (line != null && line.contains("f>")) {
@@ -1262,23 +1260,9 @@ public class MainActivity extends AppCompatActivity{
                 //Log.d(TAG, "发现包含结尾的数据: " + line);
                 if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
                     about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
-                    data_rec_finish = true;
                 }
             }
         }
-        if (!data_rec_finish && retryCount < MAX_RETRY && tcpClient.isConnected() ){
-            retryCount++;
-            about.log(TAG, "图表数据异常,执行第"+retryCount+"次重试");
-            _min_bat_list.clear();
-            _H_Total_power.clear();
-            _D_Total_power.clear();
-            _M_Total_power.clear();
-            _Y_Total_power.clear();
-            debugList.clear();
-            sleep(3000);
-            pro_data_request();
-        }
-        retryCount = 0;
         stop_send = false;
         smartRefreshLayout.finishRefresh();
     }
