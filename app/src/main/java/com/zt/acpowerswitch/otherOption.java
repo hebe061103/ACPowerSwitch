@@ -1,7 +1,6 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.zt.acpowerswitch.MainActivity.deleteData;
 import static com.zt.acpowerswitch.MainActivity.goAnim;
 import static com.zt.acpowerswitch.MainActivity.page_refresh_time;
 import static com.zt.acpowerswitch.MainActivity.readDate;
@@ -13,6 +12,8 @@ import static com.zt.acpowerswitch.set_tcp_page.isValidDomain;
 import static com.zt.acpowerswitch.set_tcp_page.isValidIPv4;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -225,27 +226,35 @@ public class otherOption extends AppCompatActivity {
         // 重置网络及参数处理
         TextView reset_network = findViewById(R.id.reset_network);
         reset_network.setOnClickListener(view -> {
-            goAnim(otherOption.this, 50);
-            new AlertDialog.Builder(otherOption.this)
-                .setTitle("提 示")
-                .setMessage("该操作会清空巳保存的本地连接信息!!!")
-                .setPositiveButton("取消", null)
-                .setNegativeButton("确定", (dialog, which) -> {
-                    goAnim(otherOption.this, 50);
-                    deleteData("power");
-                    deleteData("lowvoltage");
-                    deleteData("work_mode");
-                    deleteData("mos_temp_value");
-                    deleteData("on_inv_value");
-                    deleteData("hardware_offset_us");
-                    deleteData("peakToPeakDiff");
-                    deleteData("SYSTEM_R");
-                    deleteData("request_calibration");
-                    tcpClient.close();
-                    about.log(TAG, "关闭当前连接");
-                    finish();
-                })
-                .show();
+            goAnim(this, 50);
+            new AlertDialog.Builder(this)
+            .setTitle("📛 注意:📢 📢 📢")
+            .setMessage("该操作将彻底重置逆变器网络,如果你不在逆变器旁边,请慬慎执行!!!")
+            .setPositiveButton("取消", null)
+            .setNegativeButton("重置", (dialogInterface, i) -> {
+                goAnim(this, 50);
+                if (send_command_to_server("del_wifi_config")) {
+                    new AlertDialog.Builder(this)
+                        .setTitle("🔔 提 示")
+                        .setMessage("重置成功!即将清除APP缓存,并退出.")
+                        .setNegativeButton("完成", (dialogInterface1, i1) -> {
+                            goAnim(this, 50);
+                            // 先关闭 TCP 连接并打印日志，否则清理数据后进程会直接被杀死
+                            if (tcpClient != null) tcpClient.close();
+                            about.log(TAG, "关闭当前连接");
+                            // 使用 Java 语法清除 App 数据（执行后 App 会自动关闭）
+                            ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                            if (activityManager != null) {
+                                activityManager.clearApplicationUserData();
+                            }
+                        }).show();
+                } else {
+                    new AlertDialog.Builder(this)
+                        .setTitle("提 示")
+                        .setMessage("设备正忙,请稍后再试!")
+                        .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(this, 50)).show();
+                }
+            }).show();
         });
     }
     private void refresh_calibration_display() {
@@ -362,21 +371,21 @@ public class otherOption extends AppCompatActivity {
                     case "开启逆变阈值(高于此电压则开启逆变,默认值:27.2)":
                         if (!editText.getText().toString().isEmpty()) {
                             open_pv_value.setText(editText.getText());
-                            send_edit_arg(open_pv_value,"open_pv_value","开启逆变阈值巳改变,发送参数到服务端",
+                            send_edit_arg(open_pv_value,"on_inv_value","开启逆变阈值巳改变,发送参数到服务端",
                                     "set_open_pv_value:","逆变阈值请输入整数或小数类型");
                         }
                         break;
                     case "低于此电压则关闭逆变器(截止电压默认值:24)":
                         if (!editText.getText().toString().isEmpty()) {
                             low_voltage_set.setText(editText.getText());
-                            send_edit_arg(low_voltage_set,"low_voltage","最低电压值巳改变,发送参数到服务端",
+                            send_edit_arg(low_voltage_set,"lowvoltage","最低电压值巳改变,发送参数到服务端",
                                     "low_voltage:","最低电压值项请输入整数或小数类型");
                         }
                         break;
                     case "设置极致锁相峰值误差范围(默认值:200us)":
                         if (!editText.getText().toString().isEmpty()) {
                             lock_us_diff.setText(editText.getText());
-                            send_edit_arg(lock_us_diff,"lock_us_diff","最低极致锁相峰值微秒值改变,发送参数到服务端",
+                            send_edit_arg(lock_us_diff,"peakToPeakDiff","最低极致锁相峰值微秒值改变,发送参数到服务端",
                                     "lock_us_diff:","极致锁相峰值微秒值差请输入整数类型");
                         }
                         break;
@@ -390,7 +399,7 @@ public class otherOption extends AppCompatActivity {
                     case "主功率板MOS温度风扇触发值(默认值:28度)":
                         if (!editText.getText().toString().isEmpty()) {
                             mos_trigger_value.setText(editText.getText());
-                            send_edit_arg(mos_trigger_value,"mos_temp","mos温度触发值巳改变,发送参数到服务端",
+                            send_edit_arg(mos_trigger_value,"mos_temp_value","mos温度触发值巳改变,发送参数到服务端",
                                     "mos_temp:","主功率板风扇温度触发值请输入整数或小数类型");
                         }
                         break;

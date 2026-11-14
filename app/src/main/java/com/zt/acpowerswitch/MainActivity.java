@@ -32,7 +32,6 @@ import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -146,7 +145,6 @@ public class MainActivity extends AppCompatActivity{
 
     // ===== 系统信息 =====
     private TextView originMmUse, cardMmUse;
-    private TextView originDevIpPort, cardDevIpPort;
 
     // ===== MarkerView =====
     private FrameLayout originmarkerContainer,cardmarkerContainer;
@@ -284,7 +282,6 @@ public class MainActivity extends AppCompatActivity{
 
         // 系统信息
         originMmUse = originalView.findViewById(R.id.mm_use);
-        originDevIpPort = originalView.findViewById(R.id.dev_ip_port);
 
         // Marker（✅ 已修复）
         originmarkerContainer = originalView.findViewById(R.id.marker_container);
@@ -355,7 +352,6 @@ public class MainActivity extends AppCompatActivity{
 
         // 系统信息
         cardMmUse = cardView.findViewById(R.id.mm_use);
-        cardDevIpPort = cardView.findViewById(R.id.dev_ip_port);
 
         // Marker（✅ 已修复）
         cardmarkerContainer = cardView.findViewById(R.id.marker_container);
@@ -420,8 +416,6 @@ public class MainActivity extends AppCompatActivity{
         tcpServerAddress = readDate(this, "wifi_ip");
         tcpServerPort = Integer.parseInt(readDate(this, "tcpServerPort"));
         page_refresh_time = request_delay_ms();
-        proEsp32Text(originDevIpPort);
-        proEsp32Text(cardDevIpPort);
         origin_menu_bt.setOnClickListener(view -> {
             goAnim(this, 50);
             MainActivity.this.showPopupMenu(origin_menu_bt);
@@ -615,43 +609,6 @@ public class MainActivity extends AppCompatActivity{
                 request_homepage_date();
             }
         }).start();
-    }
-    public void proEsp32Text(TextView Dev) {
-        Dev.setOnLongClickListener(view -> {
-            goAnim(MainActivity.this, 50);
-            new AlertDialog.Builder(this)
-                    .setTitle("注意:")
-                    .setMessage("该操作将重置逆变器的网络,如果你不在逆变器旁边,请慬慎执行!!!")
-                    .setPositiveButton("取消", null)
-                    .setNegativeButton("执行", (dialogInterface, i) -> {
-                        goAnim(MainActivity.this, 50);
-                        if (send_command_to_server("del_wifi_config")) {
-                            new AlertDialog.Builder(this)
-                                    .setTitle("提 示")
-                                    .setMessage("重置成功")
-                                    .setNegativeButton("完成", (dialogInterface1, i1) -> {
-                                        goAnim(MainActivity.this, 50);
-                                        deleteData("power");
-                                        deleteData("lowvoltage");
-                                        deleteData("work_mode");
-                                        deleteData("mos_temp_value");
-                                        deleteData("on_inv_value");
-                                        deleteData("hardware_offset_us");
-                                        deleteData("peakToPeakDiff");
-                                        deleteData("SYSTEM_R");
-                                        deleteData("request_calibration");
-                                        tcpClient.close();
-                                        about.log(TAG, "关闭当前连接");
-                                    }).show();
-                        } else {
-                            new AlertDialog.Builder(this)
-                                    .setTitle("提 示")
-                                    .setMessage("设备正忙,请稍后再试!")
-                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(MainActivity.this, 50)).show();
-                        }
-                    }).show();
-            return false;
-        });
     }
     //安全保存硬件参数（带 Flash 写入保护：仅当数据改变且有效时才擦写）
     private void safeSaveFlash(Map<String, String> infoMap, String key) {
