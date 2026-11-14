@@ -293,7 +293,7 @@ public class TCPClient {
     /**
      * ✅ 对外统一入口（复用 Socket）
      */
-    public String sendAndReceive(String message) {
+    public synchronized String sendAndReceive(String message) {
         try {
             if (isConnected()) {
                 sendMessage(message);

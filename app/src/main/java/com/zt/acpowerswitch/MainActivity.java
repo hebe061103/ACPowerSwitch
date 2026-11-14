@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     public static final TCPClient tcpClient = TCPClient.getInstance();
     public static String tcpServerAddress;
     public static int tcpServerPort;
-    public static boolean stop_send,Thread_Run,isExit;
+    public static volatile boolean stop_send,Thread_Run,isExit;
     public static ArrayList<String> _min_bat_list = new ArrayList<>();
     public static ArrayList<String> _H_Total_power = new ArrayList<>();
     public static ArrayList<String> _D_Total_power = new ArrayList<>();
@@ -194,6 +194,7 @@ public class MainActivity extends AppCompatActivity{
     // 逆变器自身功耗
     private final float invSelfConsumption = 30f;
     private boolean moduleInitialized;
+    private Thread dataFetchThread;
 
     private void resetLastValues() {
         last_AcVoltage = null;
@@ -398,6 +399,8 @@ public class MainActivity extends AppCompatActivity{
             return;
         }
         moduleInitialized = true;
+        Thread_Run = false;
+        isExit = false;
         Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);       // 年
         month = calendar.get(Calendar.MONTH) + 1; // 月 (注意要+1)
@@ -691,12 +694,11 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     private void mData_pro_thread() {
-        new Thread(() -> {
+        dataFetchThread = new Thread(() -> {
             while (!isExit) {
                 if (!stop_send){
                     if (!tcpClient.isConnected()) tcpClient.tcpConnect();
                     String udp_response = tcpClient.sendAndReceive("get_info");
-                    sleep(page_refresh_time);
                     if (udp_response != null && udp_response.startsWith("AC_voltage")) {
                         Log.d(TAG, "数据内容: " + udp_response );
                         for (String pair : udp_response.trim().replace("mark1", "").split(",")) {
@@ -938,26 +940,31 @@ public class MainActivity extends AppCompatActivity{
                         String h = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[0]));
                         String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[1]));
                         String _min = h+":"+m+" "+_f[1];
-                        _min_bat_list.add(_min);
-                        if (layout_mode == 0) {
-                            pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);
-                        }else {
-                            pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);
-                        }
-                        if (!h.equals("00") && !str[1].contains("none")) {
-                            String[] h_ = str[1].split(">");
-                            String[] hour = h_[1].split(",");
-                            _H_Total_power.add(hour[0]);
+                        // 切回主线程更新列表和 UI 图表
+                        runOnUiThread(() -> {
+                            _min_bat_list.add(_min);
                             if (layout_mode == 0) {
-                                pro_day_chart_data(_H_Total_power, "小时柱状图表", originPowerChart);
-                            }else {
-                                pro_day_chart_data(_H_Total_power, "小时柱状图表", cardPowerChart);
+                                pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);
+                            } else {
+                                pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);
                             }
-                        }
+                            if (!h.equals("00") && !str[1].contains("none")) {
+                                String[] h_ = str[1].split(">");
+                                String[] hour = h_[1].split(",");
+                                _H_Total_power.add(hour[0]);
+                                if (layout_mode == 0) {
+                                    pro_day_chart_data(_H_Total_power, "小时柱状图表", originPowerChart);
+                                } else {
+                                    pro_day_chart_data(_H_Total_power, "小时柱状图表", cardPowerChart);
+                                }
+                            }
+                        });
                     }
+                    sleep(page_refresh_time);
                 }
             }
-        }).start();
+        });
+        dataFetchThread.start();
     }
     @SuppressLint("HandlerLeak")
     Handler messageProHandler = new Handler(Looper.getMainLooper()) {
@@ -1141,9 +1148,13 @@ public class MainActivity extends AppCompatActivity{
                 }
                 //充电动画刷新（这个每次都调，因为粒子动画需要持续驱动）
                 if (layout_mode == 0) {
-                    originFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus()) {
+                        originFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    }
                 } else {
-                    cardFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus()) {
+                        cardFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
+                    }
                 }
             }
         }
@@ -1157,6 +1168,7 @@ public class MainActivity extends AppCompatActivity{
             runOnUiThread(() -> {
                 display_data();
                 request_homepage_run = false;
+                about.log(TAG, "图表数据更新完成");
             });
         }).start();
     }
@@ -1216,8 +1228,10 @@ public class MainActivity extends AppCompatActivity{
         _M_Total_power.clear();
         _Y_Total_power.clear();
         debugList.clear();
+        if (!tcpClient.isConnected()) tcpClient.tcpConnect();
         String result = tcpClient.sendAndReceive("get_all_file");
         String[] all_data = (result != null) ? result.split("\n") : new String[0];
+        about.log(TAG, "正在解码图表数据");
         for (String line : all_data) {
             if (line != null && line.contains("f>")) {
                 //Log.d(TAG, "发现包含分时的数据: " + line);
@@ -1225,9 +1239,9 @@ public class MainActivity extends AppCompatActivity{
                 String[] _f = _l[1].split(" ");
 
                 String[] _s = _f[0].split(":");
-                String h = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[0]));
-                String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_s[1]));
-                String min = h+":"+m+" "+_f[1];
+                String h = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[0]));
+                String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[1]));
+                String min = h + ":" + m + " " + _f[1];
                 _min_bat_list.add(min);
             } else if (line != null && line.contains("h>")) {
                 //Log.d(TAG, "发现包含小时的数据: " + line);
@@ -1236,11 +1250,11 @@ public class MainActivity extends AppCompatActivity{
             } else if (line != null && line.contains("d>")) {
                 //Log.d(TAG, "发现包含每天的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _D_Total_power.add(year+"-"+_l[1]);
+                _D_Total_power.add(year + "-" + _l[1]);
             } else if (line != null && line.contains("m>")) {
                 //Log.d(TAG, "发现包含每月的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
-                _M_Total_power.add(year+"-"+_l[1]);
+                _M_Total_power.add(year + "-" + _l[1]);
             } else if (line != null && line.contains("y>")) {
                 //Log.d(TAG, "发现包含每年的数据: " + line);
                 String[] _l = line.split(">"); //按>进行分隔
@@ -1248,9 +1262,9 @@ public class MainActivity extends AppCompatActivity{
 
                 String[] _n = _j[0].split("-");
                 int y = 2000 + Integer.parseInt(_n[0]);
-                String m = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_n[1]));
-                String d = String.format(Locale.getDefault(),"%02d", Integer.parseInt(_n[2]));
-                String _y = y+"-"+m+"-"+d+" "+ _j[1];
+                String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[1]));
+                String d = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[2]));
+                String _y = y + "-" + m + "-" + d + " " + _j[1];
                 _Y_Total_power.add(_y);
             } else if (line != null && line.contains("log>")) {
                 //Log.d(TAG, "发现包含调试的数据: " + line);
@@ -1429,13 +1443,19 @@ public class MainActivity extends AppCompatActivity{
     private void updateMemoryChart(float memValue) {
         // 如果图表未初始化，先进行初始化
         if (!isMemChartInitialized) {
-            initMemoryChart(originMemUseChart);
-            initMemoryChart(cardMemUseChart);
+            if (layout_mode == 0) {
+                initMemoryChart(originMemUseChart);
+            }else {
+                initMemoryChart(cardMemUseChart);
+            }
         }
         // 添加新数据点
         if (mem_lineDataSet != null) {
-            addMemDataPoint(originMemUseChart,memValue);
-            addMemDataPoint(cardMemUseChart,memValue);
+            if (layout_mode == 0) {
+                addMemDataPoint(originMemUseChart, memValue);
+            }else {
+                addMemDataPoint(cardMemUseChart, memValue);
+            }
         }
     }
 
@@ -1475,8 +1495,6 @@ public class MainActivity extends AppCompatActivity{
         chart.getAxisLeft().setAxisMaximum(126f);
         chart.getAxisRight().setAxisMinimum(0f);
         chart.getAxisRight().setAxisMaximum(126f);
-        // 设置动画
-        chart.animateY(1000);
         LineData data = new LineData(mem_lineDataSet);
         chart.setData(data);
         isMemChartInitialized = true;
@@ -1963,6 +1981,10 @@ public class MainActivity extends AppCompatActivity{
         }
         Thread_Run = false;
         isExit = true;
+        if (dataFetchThread != null) {
+            dataFetchThread.interrupt(); // 立刻打断 sleep，让旧线程瞬间结束
+            dataFetchThread = null;
+        }
         tcpClient.close();
     }
     public static void goAnim(Context context, int millisecond) {
