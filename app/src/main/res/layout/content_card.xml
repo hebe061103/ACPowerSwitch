@@ -791,7 +791,7 @@
 
                 <GridLayout
                     android:layout_width="match_parent"
-                    android:layout_height="300dp"
+                    android:layout_height="280dp"
                     android:columnCount="4"
                     android:rowCount="2"
                     android:alignmentMode="alignBounds"
@@ -818,7 +818,7 @@
                             android:orientation="vertical"
                             android:background="@drawable/bg_transparent"
                             android:layout_marginStart="23dp"
-                            android:layout_marginBottom="32dp"
+                            android:layout_marginBottom="20dp"
                             tools:ignore="TooManyViews">
 
                             <TextView
@@ -876,7 +876,7 @@
                             android:layout_height="80dp"
                             android:layout_gravity="bottom|end"
                             android:layout_marginEnd="2dp"
-                            android:layout_marginBottom="30dp"
+                            android:layout_marginBottom="18dp"
                             android:src="@drawable/house"
                             tools:ignore="ContentDescription,ImageContrastCheck" />
 
@@ -886,13 +886,13 @@
                             android:layout_height="match_parent"
                             android:layout_gravity="top|end"
                             android:layout_marginEnd="2dp"
-                            android:layout_marginBottom="30dp">
+                            android:layout_marginBottom="18dp">
 
                             <com.zt.acpowerswitch.FluidBubbleView
                                 android:id="@+id/fluidView"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_marginTop="5dp"/>
+                                android:layout_marginTop="5dp" />
                         </FrameLayout>
                         <FrameLayout
                             android:id="@+id/marker_container"

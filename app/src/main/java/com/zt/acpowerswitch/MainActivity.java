@@ -585,8 +585,8 @@ public class MainActivity extends AppCompatActivity{
     public void bt_listen(TextView bt,BarChart chart,ArrayList<String> data, String text, String data_null){
         bt.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
-            chart.clear();//清除origin图表
-            chart.invalidate(); // 使origin改变生效
+            chart.clear();
+            chart.invalidate();
             if (!data.isEmpty()) {
                 pro_day_chart_data(data,text,chart);//把数据放到柱状图上
             }else{
@@ -901,9 +901,9 @@ public class MainActivity extends AppCompatActivity{
                         runOnUiThread(() -> {
                             _min_bat_list.add(_min);
                             if (layout_mode == 0) {
-                                pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);
+                                pro_min_chart_data(_min_bat_list, "每5分钟电压", originBatLineChart);
                             } else {
-                                pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);
+                                pro_min_chart_data(_min_bat_list, "每5分钟电压", cardBatLineChart);
                             }
                             if (!h.equals("00") && !str[1].contains("none")) {
                                 String[] h_ = str[1].split(">");
@@ -1141,11 +1141,11 @@ public class MainActivity extends AppCompatActivity{
                 cardBatLineChart.invalidate();//清理无效数据,用于动态刷新
             }
             if (layout_mode == 0) {
-                pro_min_chart_data(_min_bat_list, "每15分钟电压", originBatLineChart);//把数据放到折线图上
+                pro_min_chart_data(_min_bat_list, "每5分钟电压", originBatLineChart);//把数据放到折线图上
             }else {
-                pro_min_chart_data(_min_bat_list, "每15分钟电压", cardBatLineChart);//把数据放到折线图上
+                pro_min_chart_data(_min_bat_list, "每5分钟电压", cardBatLineChart);//把数据放到折线图上
             }
-            about.log(TAG, "15分钟刷新完成");
+            about.log(TAG, "5分钟刷新完成");
         }else{
             if (layout_mode == 0) {
                 originBatLineChart.setNoDataText("暂无分时数据");
@@ -1239,7 +1239,7 @@ public class MainActivity extends AppCompatActivity{
     }
     @SuppressLint("DefaultLocale")
     public void pro_min_chart_data(List<String> _sd, String label, LineChart Chart) {
-        if (label.equals("每15分钟电压")) {
+        if (label.equals("每5分钟电压")) {
             String minute_des = "";
             _time_value.clear();
             _value_list.clear();
@@ -1530,8 +1530,9 @@ public class MainActivity extends AppCompatActivity{
         // 这里不为false的话,网格线设置不起作用
         chart.getAxisRight().setDrawGridLines(false);// 右 Y 轴（通常关掉）
         chart.getAxisRight().setEnabled(false);// 直接禁用右侧 Y 轴
+        chart.getXAxis().setDrawLabels(false);// 隐藏分时图下方的时间刻度
         chart.getXAxis().setAxisMinimum(0f);
-        chart.getXAxis().setAxisMaximum(95f);
+        chart.getXAxis().setAxisMaximum(287f);
         chart.getXAxis().setSpaceMax(1.5f); //额外给 X 轴右侧虚设 1.5 个单位的空白缓冲区
         chart.getAxisLeft().setAxisMinimum(20f);//左侧Y轴最小值
         chart.getAxisLeft().setAxisMaximum(32f);//左侧Y轴最大值
