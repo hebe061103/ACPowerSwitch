@@ -405,9 +405,24 @@ public class MainActivity extends AppCompatActivity{
         //设置 Header 为 贝塞尔雷达 样式
         smartRefreshLayout.setRefreshHeader(new MaterialHeader(this));
         smartRefreshLayout.setOnRefreshListener(refreshLayout -> {
-            if (!request_homepage_run && tcpClient.isConnected()) {
-                request_homepage_date();
-                about.log(TAG,"刷新首页图表数据");
+            if (!request_homepage_run) {
+                stop_send = true; // 立即暂停后台轮询线程，防止抢占 Socket
+                new Thread(() -> {
+                    sleep(200);
+                    about.log(TAG, "刷新首页图表数据");
+                    if (!tcpClient.isConnected()) {
+                        tcpClient.tcpConnect();
+                    }
+                    if (tcpClient.isConnected()) {
+                        request_homepage_date();
+                    } else {
+                        stop_send = false;
+                        runOnUiThread(() -> {
+                            refreshLayout.finishRefresh(false);
+                            about.log(TAG, "设备未连接，刷新失败");
+                        });
+                    }
+                }).start();
             } else {
                 refreshLayout.finishRefresh();
             }
@@ -942,9 +957,21 @@ public class MainActivity extends AppCompatActivity{
                     last_ac_current = newVal;
                 }
                 //交流有功功率
+                //交流有功功率
                 newVal = uiData.get("ac_power");
                 if (!Objects.equals(newVal, last_ac_power)) {
-                    ((layout_mode == 0) ? originPowerKw : cardPowerKw).setText(newVal);
+                    TextView powerView = (layout_mode == 0) ? originPowerKw : cardPowerKw;
+                    powerView.setText(newVal);
+                    if (newVal != null && powerView == cardPowerKw) {
+                        float power = Float.parseFloat(newVal);
+                        if (power < 500f) {
+                            powerView.setTextColor(COLOR_GREEN);
+                        } else if (power < 1500f) {
+                            powerView.setTextColor(COLOR_ORANGE);
+                        } else {
+                            powerView.setTextColor(COLOR_RED);
+                        }
+                    }
                     last_ac_power = newVal;
                 }
                 //交流视在功率
@@ -1119,16 +1146,94 @@ public class MainActivity extends AppCompatActivity{
     private void request_homepage_date() {
         if (request_homepage_run) return;
         request_homepage_run = true;
-
         new Thread(() -> {
-            pro_data_request();
-            runOnUiThread(() -> {
-                display_data();
+            try {
+                pro_data_request();
+                runOnUiThread(() -> {
+                    display_data();
+                    about.log(TAG, "图表数据更新完成");
+                });
+            } catch (Exception e) {
+                about.log(TAG, "图表请求或更新崩溃: " + e.getMessage());
+            } finally {
                 request_homepage_run = false;
-                about.log(TAG, "图表数据更新完成");
-            });
+                runOnUiThread(() -> {
+                    if (smartRefreshLayout != null) {
+                        smartRefreshLayout.finishRefresh();
+                    }
+                });
+            }
         }).start();
     }
+
+    public void pro_data_request(){
+        stop_send = true;
+        try {
+            _min_bat_list.clear();
+            _H_Total_power.clear();
+            _D_Total_power.clear();
+            _M_Total_power.clear();
+            _Y_Total_power.clear();
+            debugList.clear();
+            String result = tcpClient.sendAndReceive("get_all_file");
+            String[] all_data = (result != null) ? result.split("\n") : new String[0];
+            about.log(TAG, "正在解码图表数据");
+            for (String line : all_data) {
+                if (line != null && line.contains("f>")) {
+                    //Log.d(TAG, "发现包含分时的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    String[] _f = _l[1].split(" ");
+
+                    String[] _s = _f[0].split(":");
+                    String h = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[0]));
+                    String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[1]));
+                    String min = h + ":" + m + " " + _f[1];
+                    _min_bat_list.add(min);
+                } else if (line != null && line.contains("h>")) {
+                    //Log.d(TAG, "发现包含小时的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    _H_Total_power.add(_l[1]);
+                } else if (line != null && line.contains("d>")) {
+                    //Log.d(TAG, "发现包含每天的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    _D_Total_power.add(year + "-" + _l[1]);
+                } else if (line != null && line.contains("m>")) {
+                    //Log.d(TAG, "发现包含每月的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    _M_Total_power.add(year + "-" + _l[1]);
+                } else if (line != null && line.contains("y>")) {
+                    //Log.d(TAG, "发现包含每年的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    String[] _j = _l[1].split(" ");
+                    String[] _n = _j[0].split("-");
+                    int y = 2000 + Integer.parseInt(_n[0]);
+                    String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[1]));
+                    String d = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[2]));
+                    String _y = y + "-" + m + "-" + d + " " + _j[1];
+                    _Y_Total_power.add(_y);
+                } else if (line != null && line.contains("log>")) {
+                    //Log.d(TAG, "发现包含调试的数据: " + line);
+                    String[] _l = line.split(">"); //按>进行分隔
+                    debugList.add(_l[1]);
+                } else if (line != null && line.contains("mark2")) {
+                    //Log.d(TAG, "发现包含结尾的数据: " + line);
+                    if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
+                        about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            about.log(TAG, "解码图表数据异常: " + e.getMessage());
+        } finally {
+            stop_send = false; // 确保任何异常情况下都能恢复后台轮询
+            runOnUiThread(() -> {
+                if (smartRefreshLayout != null) {
+                    smartRefreshLayout.finishRefresh();
+                }
+            });
+        }
+    }
+
     private void display_data() {
         if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m)) {
             if (layout_mode == 0 && originBatLineChart != null) {
@@ -1176,66 +1281,6 @@ public class MainActivity extends AppCompatActivity{
                 cardPowerChart.setNoDataText("暂无小时数据");
             }
         }
-    }
-    public void pro_data_request(){
-        stop_send = true;
-        _min_bat_list.clear();
-        _H_Total_power.clear();
-        _D_Total_power.clear();
-        _M_Total_power.clear();
-        _Y_Total_power.clear();
-        debugList.clear();
-        if (!tcpClient.isConnected()) tcpClient.tcpConnect();
-        String result = tcpClient.sendAndReceive("get_all_file");
-        String[] all_data = (result != null) ? result.split("\n") : new String[0];
-        about.log(TAG, "正在解码图表数据");
-        for (String line : all_data) {
-            if (line != null && line.contains("f>")) {
-                //Log.d(TAG, "发现包含分时的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                String[] _f = _l[1].split(" ");
-
-                String[] _s = _f[0].split(":");
-                String h = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[0]));
-                String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[1]));
-                String min = h + ":" + m + " " + _f[1];
-                _min_bat_list.add(min);
-            } else if (line != null && line.contains("h>")) {
-                //Log.d(TAG, "发现包含小时的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                _H_Total_power.add(_l[1]);
-            } else if (line != null && line.contains("d>")) {
-                //Log.d(TAG, "发现包含每天的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                _D_Total_power.add(year + "-" + _l[1]);
-            } else if (line != null && line.contains("m>")) {
-                //Log.d(TAG, "发现包含每月的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                _M_Total_power.add(year + "-" + _l[1]);
-            } else if (line != null && line.contains("y>")) {
-                //Log.d(TAG, "发现包含每年的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                String[] _j = _l[1].split(" ");
-
-                String[] _n = _j[0].split("-");
-                int y = 2000 + Integer.parseInt(_n[0]);
-                String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[1]));
-                String d = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[2]));
-                String _y = y + "-" + m + "-" + d + " " + _j[1];
-                _Y_Total_power.add(_y);
-            } else if (line != null && line.contains("log>")) {
-                //Log.d(TAG, "发现包含调试的数据: " + line);
-                String[] _l = line.split(">"); //按>进行分隔
-                debugList.add(_l[1]);
-            } else if (line != null && line.contains("mark2")) {
-                //Log.d(TAG, "发现包含结尾的数据: " + line);
-                if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
-                    about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
-                }
-            }
-        }
-        stop_send = false;
-        smartRefreshLayout.finishRefresh();
     }
     @SuppressLint("DefaultLocale")
     public void pro_min_chart_data(List<String> _sd, String label, LineChart Chart) {

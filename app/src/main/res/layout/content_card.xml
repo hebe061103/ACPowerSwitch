@@ -103,7 +103,7 @@
                             android:id="@+id/out_Voltage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#85E91B"
+                            android:textColor="#39FF14"
                             android:textSize="16sp"
                             android:hint="0.0"
                             tools:ignore="HardcodedText" />
@@ -271,7 +271,7 @@
                             android:id="@+id/out_mode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#60EB66"
+                            android:textColor="#39FF14"
                             android:textSize="16sp"
                             android:hint="none"
                             tools:ignore="HardcodedText" />
@@ -698,7 +698,7 @@
                             android:id="@+id/temp0_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#60EB66"
+                            android:textColor="#39FF14"
                             android:textSize="14sp"
                             android:hint="0.0"
                             tools:ignore="HardcodedText" />
@@ -726,7 +726,7 @@
                             android:id="@+id/temp1_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#60EB66"
+                            android:textColor="#39FF14"
                             android:textSize="14sp"
                             android:hint="0.0"
                             tools:ignore="HardcodedText" />
@@ -754,7 +754,7 @@
                             android:id="@+id/fan_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="#60EB66"
+                            android:textColor="#39FF14"
                             android:textSize="14sp"
                             android:hint="0.0"
                             tools:ignore="HardcodedText" />
