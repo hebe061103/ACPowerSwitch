@@ -408,7 +408,6 @@ public class MainActivity extends AppCompatActivity{
             if (!request_homepage_run) {
                 stop_send = true; // 立即暂停后台轮询线程，防止抢占 Socket
                 new Thread(() -> {
-                    sleep(200);
                     about.log(TAG, "刷新首页图表数据");
                     if (!tcpClient.isConnected()) {
                         tcpClient.tcpConnect();
@@ -957,7 +956,6 @@ public class MainActivity extends AppCompatActivity{
                     last_ac_current = newVal;
                 }
                 //交流有功功率
-                //交流有功功率
                 newVal = uiData.get("ac_power");
                 if (!Objects.equals(newVal, last_ac_power)) {
                     TextView powerView = (layout_mode == 0) ? originPowerKw : cardPowerKw;
@@ -1166,66 +1164,93 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
 
-    public void pro_data_request(){
+    public void pro_data_request() {
         stop_send = true;
         try {
+            String result = null;
+            // 最多尝试 3 次获取完整数据（包含 mark2 才算真正接收完整）
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                if (!tcpClient.isConnected()) {
+                    about.log(TAG, "第 " + attempt + " 次尝试：连接未建立，正在重连...");
+                    tcpClient.tcpConnect();
+                }
+                if (tcpClient.isConnected()) {
+                    result = tcpClient.sendAndReceive("get_all_file");
+                    if (result != null && result.contains("mark2")) {
+                        about.log(TAG, "第 " + attempt + " 次获取图表数据成功，长度: " + result.length());
+                        break; // 收到完整数据，跳出重试循环
+                    } else {
+                        about.log(TAG, "第 " + attempt + " 次数据不完整或为空，准备重建连接重试...");
+                        tcpClient.close(); // 强制关闭可能半死不活的旧 Socket
+                        sleep(300);        // 给硬件端 300ms 喘息时间
+                    }
+                } else {
+                    sleep(300);
+                }
+            }
+
+            // 如果 3 次都没拿到包含 mark2 的完整数据，直接提示并保留旧图表，不要清空！
+            if (result == null || !result.contains("mark2")) {
+                about.log(TAG, "3次尝试均未获取到完整图表数据");
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "设备响应超时，请稍后再试", LENGTH_SHORT).show());
+                return;
+            }
+
+            // 确认拿到完整新数据后，再清空旧列表！
             _min_bat_list.clear();
             _H_Total_power.clear();
             _D_Total_power.clear();
             _M_Total_power.clear();
             _Y_Total_power.clear();
             debugList.clear();
-            String result = tcpClient.sendAndReceive("get_all_file");
-            String[] all_data = (result != null) ? result.split("\n") : new String[0];
+
+            String[] all_data = result.split("\n");
             about.log(TAG, "正在解码图表数据");
             for (String line : all_data) {
-                if (line != null && line.contains("f>")) {
-                    //Log.d(TAG, "发现包含分时的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    String[] _f = _l[1].split(" ");
-
-                    String[] _s = _f[0].split(":");
-                    String h = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[0]));
-                    String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[1]));
-                    String min = h + ":" + m + " " + _f[1];
-                    _min_bat_list.add(min);
-                } else if (line != null && line.contains("h>")) {
-                    //Log.d(TAG, "发现包含小时的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _H_Total_power.add(_l[1]);
-                } else if (line != null && line.contains("d>")) {
-                    //Log.d(TAG, "发现包含每天的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _D_Total_power.add(year + "-" + _l[1]);
-                } else if (line != null && line.contains("m>")) {
-                    //Log.d(TAG, "发现包含每月的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    _M_Total_power.add(year + "-" + _l[1]);
-                } else if (line != null && line.contains("y>")) {
-                    //Log.d(TAG, "发现包含每年的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    String[] _j = _l[1].split(" ");
-                    String[] _n = _j[0].split("-");
-                    int y = 2000 + Integer.parseInt(_n[0]);
-                    String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[1]));
-                    String d = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[2]));
-                    String _y = y + "-" + m + "-" + d + " " + _j[1];
-                    _Y_Total_power.add(_y);
-                } else if (line != null && line.contains("log>")) {
-                    //Log.d(TAG, "发现包含调试的数据: " + line);
-                    String[] _l = line.split(">"); //按>进行分隔
-                    debugList.add(_l[1]);
-                } else if (line != null && line.contains("mark2")) {
-                    //Log.d(TAG, "发现包含结尾的数据: " + line);
-                    if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
-                        about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
+                if (line == null || line.trim().isEmpty()) continue;
+                try {
+                    if (line.contains("f>")) {
+                        String[] _l = line.split(">");
+                        String[] _f = _l[1].split(" ");
+                        String[] _s = _f[0].split(":");
+                        String h = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[0]));
+                        String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_s[1]));
+                        String min = h + ":" + m + " " + _f[1];
+                        _min_bat_list.add(min);
+                    } else if (line.contains("h>")) {
+                        String[] _l = line.split(">");
+                        _H_Total_power.add(_l[1]);
+                    } else if (line.contains("d>")) {
+                        String[] _l = line.split(">");
+                        _D_Total_power.add(year + "-" + _l[1]);
+                    } else if (line.contains("m>")) {
+                        String[] _l = line.split(">");
+                        _M_Total_power.add(year + "-" + _l[1]);
+                    } else if (line.contains("y>")) {
+                        String[] _l = line.split(">");
+                        String[] _j = _l[1].split(" ");
+                        String[] _n = _j[0].split("-");
+                        int y = 2000 + Integer.parseInt(_n[0]);
+                        String m = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[1]));
+                        String d = String.format(Locale.getDefault(), "%02d", Integer.parseInt(_n[2]));
+                        String _y = y + "-" + m + "-" + d + " " + _j[1];
+                        _Y_Total_power.add(_y);
+                    } else if (line.contains("log>")) {
+                        String[] _l = line.split(">");
+                        debugList.add(_l[1]);
+                    } else if (line.contains("mark2")) {
+                        if (_min_bat_list.size() + _H_Total_power.size() + _D_Total_power.size() + _M_Total_power.size() + _Y_Total_power.size() + debugList.size() > 0) {
+                            about.log(TAG, "所有数据接收完成,分时数据数量:" + _min_bat_list.size() + " 小时平均功率数据数量:" + _H_Total_power.size() + " 日功率数据数量:" + _D_Total_power.size() + " 月功率数据数量:" + _M_Total_power.size() + " 年功率数据数量:" + _Y_Total_power.size() + " 调试数据数量:" + debugList.size());
+                        }
                     }
+                } catch (Exception lineEx) {
+                    about.log(TAG, "跳过异常数据行: " + line);
                 }
             }
         } catch (Exception e) {
             about.log(TAG, "解码图表数据异常: " + e.getMessage());
         } finally {
-            stop_send = false; // 确保任何异常情况下都能恢复后台轮询
+            stop_send = false;
             runOnUiThread(() -> {
                 if (smartRefreshLayout != null) {
                     smartRefreshLayout.finishRefresh();
