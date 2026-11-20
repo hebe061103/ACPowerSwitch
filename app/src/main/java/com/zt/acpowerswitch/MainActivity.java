@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView originBatVoltage, cardBatVoltage ,card_one_bat_Voltage;
     private TextView originBatOutCurrent, cardBatOutCurrent;
     private TextView originBatHealthCap, cardBatHealthCap, card_bat_3;
+    private TextView originBat_chongfang_time, cardBat_chongfang_time;
     private TextView originBat_use_time, cardBat_use_time;
     private TextView card_switch_point;
 
@@ -155,7 +156,7 @@ public class MainActivity extends AppCompatActivity{
     private ImageView origin_solarIcon,origin_houseIcon,card_solarIcon,card_houseIcon;
     private final Map<String, String> info = new HashMap<>();
     private Float max_chargerCurrent,chargeCurrent,dischargeCurrent,bat_healthy_value,switch_point_voltage,bat_energy_ball;
-    private String p_charged,charged, discharged,total_cap,available_cap,useTimeStr;
+    private String p_charged,charged, discharged,total_cap,available_cap,useTimeStr,t_charge_dischg_time;
     private int layout_mode,fluidColor,date_num;
     private static final int COLOR_GREEN = Color.parseColor("#39FF14");
     private static final int COLOR_RED = Color.parseColor("#F44336");
@@ -187,6 +188,7 @@ public class MainActivity extends AppCompatActivity{
     private String last_available_cap;
     private String last_switch_point_voltage;
     private String last_useTimeStr;
+    private String last_t_charge_dischg_time;
     private String last_bat_health_text;
     private String last_bat_health_detail;
     // 逆变器自身功耗
@@ -257,6 +259,7 @@ public class MainActivity extends AppCompatActivity{
         originBatVoltage = originalView.findViewById(R.id.bat_Voltage);
         originBatOutCurrent = originalView.findViewById(R.id.bat_out_current);
         originBatHealthCap = originalView.findViewById(R.id.bat_health_cap);
+        originBat_chongfang_time = originalView.findViewById(R.id.Bat_chongfang_time);
         originBat_use_time = originalView.findViewById(R.id.bat_use_time);
 
         // 温度 & 风扇
@@ -325,6 +328,7 @@ public class MainActivity extends AppCompatActivity{
         card_one_bat_Voltage = cardView.findViewById(R.id.one_bat_Voltage);
         cardBatOutCurrent = cardView.findViewById(R.id.bat_out_current);
         cardBatHealthCap = cardView.findViewById(R.id.bat_health_cap);
+        cardBat_chongfang_time = cardView.findViewById(R.id.Bat_chongfang_time);
         cardBat_use_time = cardView.findViewById(R.id.bat_use_time);
         card_switch_point = cardView.findViewById(R.id.switch_point);
         card_bat_3 = cardView.findViewById(R.id.bat_3);
@@ -833,15 +837,24 @@ public class MainActivity extends AppCompatActivity{
                         // 电池可用电量（Wh）
                         float availableCapWh = Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last"))) * 1000f;
                         if (pw >= totalAcLoad) {
-                            // 光伏够用，电池不放电
-                            useTimeStr = "充电中";
+                            // 光伏够用，电池不放电,计算电池充满预计需要多长时间
+                            float E_ren = Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))) - Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last")));
+                            float t_full = E_ren / ((bat_voltage * ((pw - totalAcLoad) / bat_voltage)) / 1000);
+                            long totalMinutes = (long) (t_full * 60); // 偏保守
+                            long d = totalMinutes / 1440;
+                            long h = (totalMinutes % 1440) / 60;
+                            long m = totalMinutes % 60;
+                            useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                            t_charge_dischg_time = "预计充满时长";
                         } else {
                             // 光伏不足，电池需要放电,交流缺口折算到直流侧
                             float dcDischargePower = totalAcLoad - pw;
                             // 防止极小放电功率导致“天文数字”
                             if (dcDischargePower < 10f) {
+                                t_charge_dischg_time = "电池无需放电";
                                 useTimeStr = "无需放电";
                             } else {
+                                // 光伏不够用或夜间，电池在放电,计算电池可用时间
                                 if ( Objects.requireNonNull(info.get("out_mode")).contains("逆变")) {
                                     double hours = availableCapWh / dcDischargePower;
                                     long totalMinutes = (long) (hours * 60); // 偏保守
@@ -849,7 +862,9 @@ public class MainActivity extends AppCompatActivity{
                                     long h = (totalMinutes % 1440) / 60;
                                     long m = totalMinutes % 60;
                                     useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                                    t_charge_dischg_time = "电池预计可用";
                                 }else{
+                                    t_charge_dischg_time = "电池无需放电";
                                     useTimeStr = "任意时长";
                                 }
                             }
@@ -1110,6 +1125,11 @@ public class MainActivity extends AppCompatActivity{
                 if (!Objects.equals(newVal, last_switch_point_voltage)) {
                     card_switch_point.setText(newVal);
                     last_switch_point_voltage = newVal;
+                }
+                //电池充放电状态
+                if (!Objects.equals(t_charge_dischg_time, last_t_charge_dischg_time)) {
+                    ((layout_mode == 0) ? originBat_chongfang_time : cardBat_chongfang_time).setText(t_charge_dischg_time);
+                    last_t_charge_dischg_time = t_charge_dischg_time;
                 }
                 //电池可用时长
                 if (!Objects.equals(useTimeStr, last_useTimeStr)) {

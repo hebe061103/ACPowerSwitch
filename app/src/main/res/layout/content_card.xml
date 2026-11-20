@@ -592,10 +592,10 @@
                         android:paddingVertical="6dp">
 
                         <TextView
-                            android:id="@+id/textView20"
+                            android:id="@+id/Bat_chongfang_time"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="预计可用时长"
+                            android:text="电池充放电时长"
                             android:textColor="#78909C"
                             android:textSize="12sp"
                             tools:ignore="HardcodedText" />

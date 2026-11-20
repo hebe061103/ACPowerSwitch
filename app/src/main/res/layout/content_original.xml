@@ -522,11 +522,11 @@
                 tools:ignore="HardcodedText,VisualLintOverlap" />
 
             <TextView
-                android:id="@+id/textView20"
+                android:id="@+id/Bat_chongfang_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:text="🕡️ 可用时长(h):"
+                android:text="🕡️ 电池充放电时长(h):"
                 android:textColor="#40E951"
                 android:textSize="16sp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -582,7 +582,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textView20"
+                app:layout_constraintTop_toBottomOf="@+id/Bat_chongfang_time"
                 tools:ignore="HardcodedText,TextContrastCheck" />
 
             <FrameLayout
