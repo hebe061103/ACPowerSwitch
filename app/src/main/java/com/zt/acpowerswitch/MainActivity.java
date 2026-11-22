@@ -841,7 +841,7 @@ public class MainActivity extends AppCompatActivity{
                                 if (pw >= totalAcLoad) {
                                     // 光伏够用，电池不放电,计算电池充满预计需要多长时间
                                     float E_ren = Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))) - Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last")));
-                                    float t_full = E_ren / ((bat_voltage * ((pw - totalAcLoad) / bat_voltage)) / 1000);
+                                    float t_full = Objects.requireNonNull(info.get("out_mode")).contains("逆变") ? E_ren / ((bat_voltage * ((pw - totalAcLoad) / bat_voltage)) / 1000) : E_ren / ((bat_voltage * ((pw - 3) / bat_voltage)) / 1000);
                                     long totalMinutes = (long) (t_full * 60); // 偏保守
                                     long d = totalMinutes / 1440;
                                     long h = (totalMinutes % 1440) / 60;
