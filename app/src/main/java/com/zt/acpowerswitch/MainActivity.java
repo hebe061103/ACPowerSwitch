@@ -1,6 +1,7 @@
 package com.zt.acpowerswitch;
 
 import static android.widget.Toast.LENGTH_SHORT;
+import static com.zt.acpowerswitch.WeatherUpdater.parseTimeToMinute;
 import static com.zt.acpowerswitch.WifiListActivity.wifilist;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity{
     public static SharedPreferences.Editor editor;
     public ImageView origin_menu_bt,card_menu_bt;
     public long lastBack = 0;
+    private WeatherUpdater weatherUpdater;
     public static final TCPClient tcpClient = TCPClient.getInstance();
     public static String tcpServerAddress;
     public static int tcpServerPort;
@@ -93,6 +95,18 @@ public class MainActivity extends AppCompatActivity{
     private final DecimalFormat df = new DecimalFormat("#.##");
     private float startX = 0f;
     private float startY = 0f;
+    private float cloudCover = 0f;
+    private int weatherCode = 0;
+    private int sunrise;
+    private int sunset;
+    private float uv;
+    private final long weatherSunrise = 0L;
+    private final long weatherSunset = 0L;
+    private float lastCloudCover = -1f;
+    private int lastWeatherCode = -1;
+    private long lastSunrise = -1;
+    private long lastSunset = -1;
+    private float lastUv;
     private ViewSwitcher viewSwitcher;
     // ===== 交流输出 =====
     private TextView originOutVoltage, cardOutVoltage;
@@ -227,6 +241,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        weatherUpdater = new WeatherUpdater(this);
         // ===== ViewSwitcher =====
         viewSwitcher = findViewById(R.id.viewSwitcher);
         // 恢复显示模式
@@ -283,7 +298,7 @@ public class MainActivity extends AppCompatActivity{
         // 系统信息
         originMmUse = originalView.findViewById(R.id.mm_use);
 
-        // Marker（✅ 已修复）
+        // Marker
         originmarkerContainer = originalView.findViewById(R.id.marker_container);
         origincustomMarker = originalView.findViewById(R.id.custom_marker);
         origin_m_year = originalView.findViewById(R.id.m_year);
@@ -354,7 +369,7 @@ public class MainActivity extends AppCompatActivity{
         // 系统信息
         cardMmUse = cardView.findViewById(R.id.mm_use);
 
-        // Marker（✅ 已修复）
+        // Marker
         cardmarkerContainer = cardView.findViewById(R.id.marker_container);
         cardcustomMarker = cardView.findViewById(R.id.custom_marker);
         card_m_year = cardView.findViewById(R.id.m_year);
@@ -843,11 +858,16 @@ public class MainActivity extends AppCompatActivity{
                                     float E_ren = Float.parseFloat(Objects.requireNonNull(info.get("bat_cap_data"))) - Float.parseFloat(Objects.requireNonNull(info.get("bat_energy_last")));
                                     float t_full = Objects.requireNonNull(info.get("out_mode")).contains("逆变") ? E_ren / ((bat_voltage * ((pw - totalAcLoad) / bat_voltage)) / 1000) : E_ren / ((bat_voltage * ((pw - 3) / bat_voltage)) / 1000);
                                     long totalMinutes = (long) (t_full * 60); // 偏保守
-                                    long d = totalMinutes / 1440;
-                                    long h = (totalMinutes % 1440) / 60;
-                                    long m = totalMinutes % 60;
-                                    useTimeStr = String.format("%d天%d时%02d分", d, h, m);
-                                    t_charge_dischg_time = "预计充满时长";
+                                    if (totalMinutes<4320) {
+                                        long d = totalMinutes / 1440;
+                                        long h = (totalMinutes % 1440) / 60;
+                                        long m = totalMinutes % 60;
+                                        useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                                        t_charge_dischg_time = "预计充满时长";
+                                    }else{
+                                        t_charge_dischg_time = "预计充满时长";
+                                        useTimeStr = "超过三天";
+                                    }
                                 } else {
                                     // 光伏不足，电池需要放电,交流缺口折算到直流侧
                                     float dcDischargePower = totalAcLoad - pw;
@@ -920,85 +940,85 @@ public class MainActivity extends AppCompatActivity{
                                 messageProHandler.sendMessage(message);
                             }
                         }
-                    }
-                    int searchFrom = 0;
-                    while (true) {
-                        int liveStart = Objects.requireNonNull(response).indexOf("live>", searchFrom);
-                        if (liveStart < 0) break;
+                        int searchFrom = 0;
+                        while (true) {
+                            int liveStart = Objects.requireNonNull(response).indexOf("live>", searchFrom);
+                            if (liveStart < 0) break;
 
-                        int mark3End = response.indexOf("mark3", liveStart);
-                        if (mark3End < 0) break; // 半包，等下次
+                            int mark3End = response.indexOf("mark3", liveStart);
+                            if (mark3End < 0) break; // 半包，等下次
 
-                        String liveBlock = response.substring(liveStart, mark3End + 5);
-                        searchFrom = mark3End + 5;
+                            String liveBlock = response.substring(liveStart, mark3End + 5);
+                            searchFrom = mark3End + 5;
 
-                        Log.d(TAG, "实时数据: " + liveBlock);
-                        try {
-                            String[] str = liveBlock.split("#");
-                            String[] min = str[0].split(">");
-                            if (min.length < 2) {
-                                continue;
-                            }
-                            String[] _f = min[1].split(" ");
-                            if (_f.length < 2) {
-                                continue;
-                            }
-                            String[] _s = _f[0].split(":");
-                            if (_s.length < 2) {
-                                continue;
-                            }
-                            int hourInt, minInt;
+                            Log.d(TAG, "实时数据: " + liveBlock);
                             try {
-                                hourInt = Integer.parseInt(_s[0].trim());
-                                minInt = Integer.parseInt(_s[1].trim());
-                            } catch (NumberFormatException e) {
-                                continue;
-                            }
-                            String h = String.format(Locale.getDefault(), "%02d", hourInt);
-                            String m = String.format(Locale.getDefault(), "%02d", minInt);
-                            String _min = h + ":" + m + " " + _f[1];
-
-                            final boolean hasHourData = m.equals("00") && str.length > 1 && !str[1].contains("none");
-                            final String hourValue;
-
-                            if (hasHourData) {
-                                String[] h_ = str[1].split(">");
-                                if (h_.length < 2) {
+                                String[] str = liveBlock.split("#");
+                                String[] min = str[0].split(">");
+                                if (min.length < 2) {
                                     continue;
                                 }
-                                String[] hour = h_[1].split(",");
-                                if (hour.length < 1) {
+                                String[] _f = min[1].split(" ");
+                                if (_f.length < 2) {
                                     continue;
                                 }
-                                hourValue = hour[0];
-                            } else {
-                                hourValue = null;
-                            }
-                            runOnUiThread(() -> {
-                                synchronized (chartDataLock) {
-                                    _min_bat_list.add(_min);
-                                    if (_min_bat_list.size() > 288) _min_bat_list.remove(0);
-                                    ArrayList<String> batCopy = new ArrayList<>(_min_bat_list);
-                                    if (layout_mode == 0) {
-                                        pro_min_chart_data(batCopy, "每5分钟电压", originBatLineChart);
-                                    } else {
-                                        pro_min_chart_data(batCopy, "每5分钟电压", cardBatLineChart);
+                                String[] _s = _f[0].split(":");
+                                if (_s.length < 2) {
+                                    continue;
+                                }
+                                int hourInt, minInt;
+                                try {
+                                    hourInt = Integer.parseInt(_s[0].trim());
+                                    minInt = Integer.parseInt(_s[1].trim());
+                                } catch (NumberFormatException e) {
+                                    continue;
+                                }
+                                String h = String.format(Locale.getDefault(), "%02d", hourInt);
+                                String m = String.format(Locale.getDefault(), "%02d", minInt);
+                                String _min = h + ":" + m + " " + _f[1];
+
+                                final boolean hasHourData = m.equals("00") && str.length > 1 && !str[1].contains("none");
+                                final String hourValue;
+
+                                if (hasHourData) {
+                                    String[] h_ = str[1].split(">");
+                                    if (h_.length < 2) {
+                                        continue;
                                     }
-
-                                    if (hasHourData) {
-                                        _H_Total_power.add(hourValue);
-                                        ArrayList<String> hourCopy = new ArrayList<>(_H_Total_power);
+                                    String[] hour = h_[1].split(",");
+                                    if (hour.length < 1) {
+                                        continue;
+                                    }
+                                    hourValue = hour[0];
+                                } else {
+                                    hourValue = null;
+                                }
+                                runOnUiThread(() -> {
+                                    synchronized (chartDataLock) {
+                                        _min_bat_list.add(_min);
+                                        if (_min_bat_list.size() > 288) _min_bat_list.remove(0);
+                                        ArrayList<String> batCopy = new ArrayList<>(_min_bat_list);
                                         if (layout_mode == 0) {
-                                            pro_day_chart_data(hourCopy, "小时柱状图表", originPowerChart);
+                                            pro_min_chart_data(batCopy, "每5分钟电压", originBatLineChart);
                                         } else {
-                                            pro_day_chart_data(hourCopy, "小时柱状图表", cardPowerChart);
+                                            pro_min_chart_data(batCopy, "每5分钟电压", cardBatLineChart);
+                                        }
+
+                                        if (hasHourData) {
+                                            _H_Total_power.add(hourValue);
+                                            ArrayList<String> hourCopy = new ArrayList<>(_H_Total_power);
+                                            if (layout_mode == 0) {
+                                                pro_day_chart_data(hourCopy, "小时柱状图表", originPowerChart);
+                                            } else {
+                                                pro_day_chart_data(hourCopy, "小时柱状图表", cardPowerChart);
+                                            }
                                         }
                                     }
-                                }
-                            });
+                                });
 
-                        } catch (Exception e) {
-                            Log.d(TAG, "解析 live> 异常: " + e.getMessage() + " | 原始: " + liveBlock);
+                            } catch (Exception e) {
+                                Log.d(TAG, "解析 live> 异常: " + e.getMessage() + " | 原始: " + liveBlock);
+                            }
                         }
                     }
                     sleep(page_refresh_time);
@@ -1212,6 +1232,9 @@ public class MainActivity extends AppCompatActivity{
                     if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus()) {
                         cardFluidView.updateConfig(bat_energy_ball, fluidColor, chargeCurrent, dischargeCurrent, max_chargerCurrent);
                     }
+                }
+                if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m) && checkScreenStatus()) {
+                    updateWeather();
                 }
             }
         }
@@ -1947,6 +1970,43 @@ public class MainActivity extends AppCompatActivity{
         return new BarData(dataSet);
     }
 
+    public void updateWeather() {
+        weatherUpdater.check(false, (data, fromCache) -> {
+            if (data == null) return;
+
+            // 解析日出日落
+            sunrise = parseTimeToMinute(data.sunrise); // "2026-11-24T06:42" → 6 * 60+42 = 402
+            sunset = parseTimeToMinute(data.sunset);
+            cloudCover = data.cloudCover;
+            weatherCode = data.weatherCode;
+            uv = data.uvIndex;
+
+            // 只有任一值变化才更新
+            if (cloudCover == lastCloudCover
+                    && weatherCode == lastWeatherCode
+                    && sunrise == lastSunrise
+                    && sunset == lastSunset
+                    && uv == lastUv) {
+                return;
+            }
+            lastSunrise = sunrise;
+            lastSunset = sunset;
+            lastCloudCover = cloudCover;
+            lastWeatherCode = weatherCode;
+            lastUv = uv;
+            Log.d("Weather", "云量=" + cloudCover + " 紫外线强度=" + uv + " 日出="+ sunrise + " 日落=" + sunset + " code=" + weatherCode + " cache=" + fromCache);
+            runOnUiThread(() -> {
+                if (layout_mode == 0) {
+                    originFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                    originFluidView.updateSunTimes(sunrise, sunset);
+                } else {
+                    cardFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                    cardFluidView.updateSunTimes(sunrise, 840);
+                }
+            });
+        });
+    }
+
     /* 获取屏幕状态通过PowerManager */
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkScreenStatus() {
@@ -2010,12 +2070,16 @@ public class MainActivity extends AppCompatActivity{
                             display_data(); //显示数据
                             pro_button_listen(); //重新处理按键监听
                             originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
+                            originFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                            originFluidView.updateSunTimes(sunrise, sunset);
                         } else {
                             // 切到了卡片布局（child 1）
                             resetLastValues();
                             display_data(); //显示数据
                             pro_button_listen(); //重新处理按键监听
                             cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
+                            cardFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                            cardFluidView.updateSunTimes(sunrise, sunset);
                         }
                     });
                 }
@@ -2062,6 +2126,7 @@ public class MainActivity extends AppCompatActivity{
             e.printStackTrace();
         }
     }
+    @Override
     protected void onResume() {
         super.onResume();
         check_request_permissions();

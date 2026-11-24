@@ -885,14 +885,14 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_gravity="top|end"
-                            android:layout_marginEnd="2dp"
+                            android:layout_marginEnd="0dp"
                             android:layout_marginBottom="18dp">
 
                             <com.zt.acpowerswitch.FluidBubbleView
                                 android:id="@+id/fluidView"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_marginTop="5dp" />
+                                android:layout_marginTop="0dp" />
                         </FrameLayout>
                         <FrameLayout
                             android:id="@+id/marker_container"

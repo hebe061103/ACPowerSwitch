@@ -63,4 +63,6 @@ dependencies {
     implementation  ("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
     //noinspection UseTomlInstead
     implementation  ("com.squareup.okhttp3:okhttp:4.12.0")               //DNS解析
+    //noinspection UseTomlInstead
+    implementation ("com.google.android.gms:play-services-location:21.4.0") //精确定位
 }
