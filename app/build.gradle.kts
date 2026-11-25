@@ -48,21 +48,27 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     //noinspection UseTomlInstead
-    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     //noinspection UseTomlInstead
-    implementation ("androidx.appcompat:appcompat:1.8.0")                 //必须 1.0.0 以上
+    implementation("androidx.appcompat:appcompat:1.8.0")                 //必须 1.0.0 以上
     //noinspection UseTomlInstead
-    implementation  ("io.github.scwang90:refresh-layout-kernel:2.1.0")    //核心必须依赖
+    implementation("io.github.scwang90:refresh-layout-kernel:2.1.0")    //核心必须依赖
     //noinspection UseTomlInstead
-    implementation  ("io.github.scwang90:refresh-header-radar:2.1.0")   //雷达刷新头
+    implementation("io.github.scwang90:refresh-header-radar:2.1.0")   //雷达刷新头
     //noinspection UseTomlInstead
-    implementation  ("io.github.scwang90:refresh-footer-ball:2.1.0")    //球脉冲加载
+    implementation("io.github.scwang90:refresh-footer-ball:2.1.0")    //球脉冲加载
     //noinspection UseTomlInstead
-    implementation  ("io.github.scwang90:refresh-header-material:2.1.0") //谷歌刷新头
+    implementation("io.github.scwang90:refresh-header-material:2.1.0") //谷歌刷新头
     //noinspection UseTomlInstead
-    implementation  ("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
+    implementation("com.google.android.flexbox:flexbox:3.0.0")         //弹性盒子
     //noinspection UseTomlInstead
-    implementation  ("com.squareup.okhttp3:okhttp:4.12.0")               //DNS解析
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")               //DNS解析
     //noinspection UseTomlInstead
-    implementation ("com.google.android.gms:play-services-location:21.4.0") //精确定位
+    implementation("com.google.android.gms:play-services-location:21.4.0") //精确定位
+    //noinspection UseTomlInstead
+    implementation("com.amap.api:3dmap:8.1.0")   // 3D 地图（含隐私合规方法）
+    //noinspection GradleDependency,UseTomlInstead
+    implementation("com.amap.api:search:8.1.0")  // 逆地理编码
+    //noinspection UseTomlInstead
+    implementation ("com.amap.api:location:6.4.9") // 定位SDK，与地图8.1.0/9.x均兼容
 }

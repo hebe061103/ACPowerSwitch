@@ -24,6 +24,30 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:ignore="HardcodedText" />
 
+        <!-- 光伏安装地理位置 -->
+        <TextView
+            android:id="@+id/textView24"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="光伏地理位置:"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textView25"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/pv_locale"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:hint="点击定位"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/textView24"
+            app:layout_constraintTop_toTopOf="@id/textView24"
+            tools:ignore="HardcodedText" />
+
         <!-- 远程控制器IP -->
         <TextView
             android:id="@+id/textView21"
@@ -31,7 +55,7 @@
             android:layout_height="wrap_content"
             android:text="远程控制器IP:"
             android:textSize="16sp"
-            app:layout_constraintTop_toBottomOf="@id/textView25"
+            app:layout_constraintTop_toBottomOf="@id/textView24"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/target_ip"
             android:layout_marginTop="15dp"

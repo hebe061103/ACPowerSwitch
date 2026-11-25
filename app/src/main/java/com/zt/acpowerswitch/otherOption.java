@@ -14,6 +14,7 @@ import static com.zt.acpowerswitch.set_tcp_page.isValidIPv4;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -49,6 +50,7 @@ public class otherOption extends AppCompatActivity {
     private TextView lock_us_diff;
     private TextView system_r;
     private TextView request_calibration;
+    private TextView pv_locale;
 
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,6 +137,15 @@ public class otherOption extends AppCompatActivity {
             };
             // 延时3秒没有再次点击则执行
             handler.postDelayed(saveRunnable, 3000);
+        });
+        //光伏安装地理位置设置
+        pv_locale = findViewById(R.id.pv_locale);
+        String saved_pv_locale = readDate(otherOption.this, "pv_locale");
+        pv_locale.setText(saved_pv_locale != null ? saved_pv_locale : "点击定位");
+        pv_locale.setOnClickListener(view -> {
+            goAnim(otherOption.this, 50);
+            Intent intent = new Intent(otherOption.this, PickLocationActivity.class);
+            startActivityForResult(intent, 1001);
         });
         //逆变器IP设置
         target_ip = findViewById(R.id.target_ip);
@@ -527,6 +538,26 @@ public class otherOption extends AppCompatActivity {
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+            double lat = data.getDoubleExtra("lat", 0);
+            double lng = data.getDoubleExtra("lng", 0);
+            String city = data.getStringExtra("city");
+            String address = data.getStringExtra("address");
+
+            Log.d(TAG,"纬度:"+ lat +" 经度:" + lng +" 城市:"+ city + " 地址:"+ address);
+
+            if (lat != 0 && lng != 0 && city != null && address != null){
+                saveData("lat", String.valueOf(lat));
+                saveData("lng", String.valueOf(lng));
+                saveData("city", city);
+                saveData("pv_locale", address);
+            }
+            runOnUiThread(() -> pv_locale.setText(address));
         }
     }
     @Override

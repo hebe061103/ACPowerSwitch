@@ -1980,44 +1980,51 @@ public class MainActivity extends AppCompatActivity{
 
     @SuppressLint("SetTextI18n")
     public void updateWeather() {
-        weatherUpdater.check(false, (data, fromCache) -> {
-            if (data == null) return;
+        try {
+            Double lat = Double.parseDouble(readDate(this, "lat"));
+            Double lng = Double.parseDouble(readDate(this, "lng"));
+            weatherUpdater.check(false, (data, fromCache) -> {
+                if (data == null) return;
 
-            // 解析日出日落
-            sunrise = parseTimeToMinute(data.sunrise); // "2026-11-24T06:42" → 6 * 60+42 = 402
-            sunset = parseTimeToMinute(data.sunset);
-            cloudCover = data.cloudCover;
-            weatherCode = data.weatherCode;
-            uv = data.uvIndex;
+                // 解析日出日落
+                sunrise = parseTimeToMinute(data.sunrise); // "2026-11-24T06:42" → 6 * 60+42 = 402
+                sunset = parseTimeToMinute(data.sunset);
+                cloudCover = data.cloudCover;
+                weatherCode = data.weatherCode;
+                uv = data.uvIndex;
 
-            // 只有任一值变化才更新
-            if (cloudCover == lastCloudCover
-                    && weatherCode == lastWeatherCode
-                    && sunrise == lastSunrise
-                    && sunset == lastSunset
-                    && uv == lastUv) {
-                return;
-            }
-            lastSunrise = sunrise;
-            lastSunset = sunset;
-            lastCloudCover = cloudCover;
-            lastWeatherCode = weatherCode;
-            lastUv = uv;
-            String weather_str = getString();
-            cardweacher_code_value.setText(weather_str);
-            cardcloudCover_value.setText(Float.toString(cloudCover));
-            carduv_value.setText(Float.toString(uv));
-            Log.d("Weather", "云量=" + cloudCover + " 紫外线强度=" + uv + " 日出="+ sunrise + " 日落=" + sunset + " code=" + weatherCode + " cache=" + fromCache);
-            runOnUiThread(() -> {
-                if (layout_mode == 0) {
-                    originFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
-                    originFluidView.updateSunTimes(sunrise, sunset);
-                } else {
-                    cardFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
-                    cardFluidView.updateSunTimes(sunrise, 840);
+                // 只有任一值变化才更新
+                if (cloudCover == lastCloudCover
+                        && weatherCode == lastWeatherCode
+                        && sunrise == lastSunrise
+                        && sunset == lastSunset
+                        && uv == lastUv) {
+                    return;
                 }
-            });
-        });
+                lastSunrise = sunrise;
+                lastSunset = sunset;
+                lastCloudCover = cloudCover;
+                lastWeatherCode = weatherCode;
+                lastUv = uv;
+                String weather_str = getString();
+                cardweacher_code_value.setText(weather_str);
+                cardcloudCover_value.setText(Float.toString(cloudCover));
+                carduv_value.setText(Float.toString(uv));
+                Log.d("Weather", "云量=" + cloudCover + " 紫外线强度=" + uv + " 日出="+ sunrise + " 日落=" + sunset + " code=" + weatherCode + " cache=" + fromCache);
+                runOnUiThread(() -> {
+                    if (layout_mode == 0) {
+                        originFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                        originFluidView.updateSunTimes(sunrise, sunset);
+                    } else {
+                        cardFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
+                        cardFluidView.updateSunTimes(sunrise, 840);
+                    }
+                });
+            },lat,lng);
+        } catch (Exception e) {
+            Log.d(TAG,"坐标获取失败");
+            e.printStackTrace();
+        }
     }
 
     @NonNull

@@ -29,8 +29,8 @@ public class WeatherUpdater {
     private static final long CACHE_VALID_MS = 2 * 60 * 60 * 1000L;
 
     // 固定坐标：光伏安装位置坐标
-    private static final double FIXED_LAT = 27.12;
-    private static final double FIXED_LON = 111.05;
+    private static double FIXED_LAT = 0;
+    private static double FIXED_LNG = 0;
     private final ExecutorService executor;
     private final Handler mainHandler;
     private final SharedPreferences cache;
@@ -54,8 +54,9 @@ public class WeatherUpdater {
     public interface Callback {
         void onResult(WeatherData data, boolean fromCache);
     }
-
-    public void check(boolean force, Callback callback) {
+    public void check(boolean force, Callback callback, Double lat, Double lng ) {
+        FIXED_LAT = lat;
+        FIXED_LNG = lng;
         long now = System.currentTimeMillis();
         long last = cache.getLong(KEY_TIME, 0);
         if (!force && now - last < CACHE_VALID_MS) {
@@ -65,7 +66,7 @@ public class WeatherUpdater {
         }
 
         executor.execute(() -> {
-            Log.d(TAG, "使用固定坐标 lat=" + FIXED_LAT + " lon=" + FIXED_LON);
+            Log.d(TAG, "使用坐标 纬度=" + FIXED_LAT + " 经度=" + FIXED_LNG);
             WeatherData data = fetchFromApi();
             if (data != null) {
                 saveCache(data);
@@ -80,7 +81,7 @@ public class WeatherUpdater {
     private WeatherData fetchFromApi() {
         HttpURLConnection conn = null;
         try {
-            URL url = new URL(API_URL + "&latitude=" + WeatherUpdater.FIXED_LAT + "&longitude=" + WeatherUpdater.FIXED_LON);
+            URL url = new URL(API_URL + "&latitude=" + WeatherUpdater.FIXED_LAT + "&longitude=" + WeatherUpdater.FIXED_LNG);
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(8000);
             conn.setReadTimeout(8000);
