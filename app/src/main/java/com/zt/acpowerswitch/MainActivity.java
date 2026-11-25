@@ -137,6 +137,9 @@ public class MainActivity extends AppCompatActivity{
     private TextView originTemp1Value, cardTemp1Value;
     private TextView originFanValue, cardFanValue;
 
+    // ===== 天气 & 实时 =====
+    private TextView cardweacher_code_value,cardcloudCover_value,carduv_value;
+
     // ===== 电量统计 =====
     private TextView originPvCharged, cardPvCharged;
     private TextView originTvRollover, cardTvRollover;
@@ -349,6 +352,11 @@ public class MainActivity extends AppCompatActivity{
         cardTemp0Value = cardView.findViewById(R.id.temp0_value);
         cardTemp1Value = cardView.findViewById(R.id.temp1_value);
         cardFanValue = cardView.findViewById(R.id.fan_value);
+
+        // 实时天气
+        cardweacher_code_value = cardView.findViewById(R.id.weacher_code_value);
+        cardcloudCover_value = cardView.findViewById(R.id.cloudCover_value);
+        carduv_value = cardView.findViewById(R.id.uv_value);
 
         // 电池统计
         cardPvCharged = cardView.findViewById(R.id.pv_charged);
@@ -862,10 +870,10 @@ public class MainActivity extends AppCompatActivity{
                                         long d = totalMinutes / 1440;
                                         long h = (totalMinutes % 1440) / 60;
                                         long m = totalMinutes % 60;
+                                        t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 预计充满时长" : "预计充满时长");
                                         useTimeStr = String.format("%d天%d时%02d分", d, h, m);
-                                        t_charge_dischg_time = "预计充满时长";
                                     }else{
-                                        t_charge_dischg_time = "预计充满时长";
+                                        t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 预计充满时长" : "预计充满时长");
                                         useTimeStr = "超过三天";
                                     }
                                 } else {
@@ -873,7 +881,7 @@ public class MainActivity extends AppCompatActivity{
                                     float dcDischargePower = totalAcLoad - pw;
                                     // 防止极小放电功率导致“天文数字”
                                     if (dcDischargePower < 10f) {
-                                        t_charge_dischg_time = "电池无需放电";
+                                        t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 电池无需放电" : "电池无需放电");
                                         useTimeStr = "无需放电";
                                     } else {
                                         // 光伏不够用或夜间，电池在放电,计算电池可用时间
@@ -883,10 +891,10 @@ public class MainActivity extends AppCompatActivity{
                                             long d = totalMinutes / 1440;
                                             long h = (totalMinutes % 1440) / 60;
                                             long m = totalMinutes % 60;
+                                            t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 电池预计可用" : "电池预计可用");
                                             useTimeStr = String.format("%d天%d时%02d分", d, h, m);
-                                            t_charge_dischg_time = "电池预计可用";
                                         } else {
-                                            t_charge_dischg_time = "电池无需放电";
+                                            t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 电池无需放电" : "电池无需放电");
                                             useTimeStr = "任意时长";
                                         }
                                     }
@@ -1970,6 +1978,7 @@ public class MainActivity extends AppCompatActivity{
         return new BarData(dataSet);
     }
 
+    @SuppressLint("SetTextI18n")
     public void updateWeather() {
         weatherUpdater.check(false, (data, fromCache) -> {
             if (data == null) return;
@@ -1994,6 +2003,10 @@ public class MainActivity extends AppCompatActivity{
             lastCloudCover = cloudCover;
             lastWeatherCode = weatherCode;
             lastUv = uv;
+            String weather_str = getString();
+            cardweacher_code_value.setText(weather_str);
+            cardcloudCover_value.setText(Float.toString(cloudCover));
+            carduv_value.setText(Float.toString(uv));
             Log.d("Weather", "云量=" + cloudCover + " 紫外线强度=" + uv + " 日出="+ sunrise + " 日落=" + sunset + " code=" + weatherCode + " cache=" + fromCache);
             runOnUiThread(() -> {
                 if (layout_mode == 0) {
@@ -2005,6 +2018,41 @@ public class MainActivity extends AppCompatActivity{
                 }
             });
         });
+    }
+
+    @NonNull
+    private String getString() {
+        String weather_str = "";
+        if (weatherCode == 0) weather_str = "晴";
+        else if (weatherCode == 1) weather_str = "少云";
+        else if (weatherCode == 2) weather_str = "多云";
+        else if (weatherCode == 3) weather_str = "阴";
+        else if (weatherCode == 45) weather_str = "雾";
+        else if (weatherCode == 48) weather_str = "冻雾 / 雾凇";
+        else if (weatherCode == 51) weather_str = "小毛毛雨";
+        else if (weatherCode == 53) weather_str = "中毛毛雨";
+        else if (weatherCode == 55) weather_str = "大毛毛雨";
+        else if (weatherCode == 56) weather_str = "小冻毛毛雨";
+        else if (weatherCode == 57) weather_str = "大冻毛毛雨";
+        else if (weatherCode == 61) weather_str = "小雨";
+        else if (weatherCode == 63) weather_str = "中雨";
+        else if (weatherCode == 65) weather_str = "大雨";
+        else if (weatherCode == 66) weather_str = "小冻雨";
+        else if (weatherCode == 67) weather_str = "大冻雨";
+        else if (weatherCode == 71) weather_str = "小雪";
+        else if (weatherCode == 73) weather_str = "中雪";
+        else if (weatherCode == 75) weather_str = "大雪";
+        else if (weatherCode == 77) weather_str = "雪粒 / 米雪";
+        else if (weatherCode == 80) weather_str = "小阵雨";
+        else if (weatherCode == 81) weather_str = "中阵雨";
+        else if (weatherCode == 82) weather_str = "暴雨级阵雨";
+        else if (weatherCode == 85) weather_str = "小阵雪";
+        else if (weatherCode == 86) weather_str = "大阵雪";
+        else if (weatherCode == 95) weather_str = "雷暴";
+        else if (weatherCode == 96) weather_str = "雷暴伴小冰雹";
+        else if (weatherCode == 97) weather_str = "强雷暴";
+        else if (weatherCode == 99) weather_str = "雷暴伴大冰雹";
+        return weather_str;
     }
 
     /* 获取屏幕状态通过PowerManager */

@@ -28,7 +28,8 @@ public class FluidBubbleView extends View {
     // ==================== 云海粒子 ====================
     private final List<FogParticle> fogParticles = new ArrayList<>();
     private final Random fogRand = new Random();
-
+    private float fogLightRadiusDp = 26f;
+    private float fogLightTransmittance = 0.85f; // 0=不透，1=完全透明，默认0.7
     // ==================== 雨粒子 ====================
     private final List<RainParticle> rainParticles = new ArrayList<>();
     private final Random rainRand = new Random();
@@ -103,7 +104,20 @@ public class FluidBubbleView extends View {
     private final float fogBandTopRatio = 0.05f;
     private final float fogBandHeightRatio = 0.22f;
     private float lastW = -1f, lastH = -1f;
+    // 雨滴飞溅变量
+    private final List<SplashParticle> splashParticles = new ArrayList<>();
+    private final Random splashRand = new Random();
 
+    // ===== 云层在接近太阳或月亮时的透明度设置 =====
+    public void setFogLightRadiusDp(float dp) {
+        this.fogLightRadiusDp = Math.max(10f, Math.min(60f, dp));
+        invalidate();
+    }
+
+    public void setFogLightTransmittance(float transmittance) {
+        this.fogLightTransmittance = Math.max(0f, Math.min(1f, transmittance));
+        invalidate();
+    }
     // ===== 云海粒子系统 =====
     private static class FogParticle {
         float x, y, r;
@@ -112,13 +126,21 @@ public class FluidBubbleView extends View {
         float phase;
         int layer;
         float densityWeight;
+        float densityWeightBase;
         float stretchX;
         float stretchY;
     }
     private static class RainParticle {
         float x, y, speed, length, alpha;
     }
-
+    private static class SplashParticle {
+        float x, y;
+        float vx, vy;
+        float gravity;
+        float radius;
+        float alpha;
+        boolean dead = true;
+    }
     private static class SnowParticle {
         float x, y, speed, size, alpha, swingPhase, swingAmp;
     }
@@ -286,6 +308,7 @@ public class FluidBubbleView extends View {
             p.alphaBase = (p.layer == 0 ? 80 : p.layer == 1 ? 120 : 160);
             p.phase = fogRand.nextFloat() * (float) (Math.PI * 2);
             p.densityWeight = 0.3f + fogRand.nextFloat() * 1.2f; // 厚薄随机
+            p.densityWeightBase = p.densityWeight;
             p.stretchX = 1.4f + fogRand.nextFloat() * 1.2f; // 横向拉伸
             p.stretchY = 0.55f + fogRand.nextFloat() * 0.35f; // 纵向压扁
             fogParticles.add(p);
@@ -660,6 +683,10 @@ public class FluidBubbleView extends View {
         float uvFactor = 1.0f - Math.min(uvIndex, 11f) / 11f * 0.8f;
         float coverAlpha = 0.35f + cloudCover * 0.65f;
 
+        // 光源位置（太阳或月亮）
+        float lightX = sunX;
+        float lightY = sunY;
+
         for (int layer = 0; layer < 3; layer++) {
             for (FogParticle p : fogParticles) {
                 if (p.layer != layer) continue;
@@ -669,6 +696,8 @@ public class FluidBubbleView extends View {
                     p.y += (fogRand.nextFloat() - 0.5f) * dp2px(3f);
                     if (p.y < bandTop) p.y = bandTop + fogRand.nextFloat() * bandH * 0.3f;
                     if (p.y > bandTop + bandH) p.y = bandTop + bandH * 0.7f + fogRand.nextFloat() * bandH * 0.3f;
+                    // 重生时重置密度，确保恢复
+                    p.densityWeight = p.densityWeightBase;
                 }
 
                 float cloudClump = 0.85f + 0.15f * (float) Math.sin(p.x * 0.002f + p.phase * 0.5f);
@@ -678,8 +707,22 @@ public class FluidBubbleView extends View {
 
                 float breath = 0.92f + 0.08f * (float) Math.sin(
                         System.currentTimeMillis() * 0.0002f + p.phase * 0.3f);
+
+                // 光源透射：实时计算，不修改成员变量
+                float distToLight = (float) Math.hypot(cx2 - lightX, cy2 - lightY);
+                float effectRadius = dp2px(fogLightRadiusDp) * (0.8f + fogLightTransmittance * 0.6f);
+                float transmittance = 1f;
+                float currentDensity = p.densityWeightBase; // 用原始值，不修改
+
+                if (distToLight < effectRadius && effectRadius > 0) {
+                    float t = 1f - distToLight / effectRadius;
+                    t = t * t * (3f - 2f * t);
+                    transmittance = 1f - t * fogLightTransmittance * 0.88f;
+                    currentDensity = p.densityWeightBase * (1f - t * fogLightTransmittance * 0.7f);
+                }
+
                 int a = (int) Math.max(0, Math.min(255,
-                        p.alphaBase * uvFactor * coverAlpha * p.densityWeight * cloudClump * breath
+                        p.alphaBase * uvFactor * coverAlpha * currentDensity * cloudClump * breath * transmittance
                 ));
 
                 RadialGradient rg = new RadialGradient(
@@ -736,12 +779,19 @@ public class FluidBubbleView extends View {
         lastW = w; lastH = h;
         rainParticles.clear();
         snowParticles.clear();
+        splashParticles.clear();
+        // 预分配 40 个雨滴飞溅粒子，足够同时显示
+        for (int i = 0; i < 40; i++) {
+            splashParticles.add(new SplashParticle());
+        }
     }
     // 更新和画雨
     private void updateAndDrawRain(Canvas canvas, float w, float h, int weatherCode) {
         float bandTop = h * fogBandTopRatio;
         float bandH   = h * fogBandHeightRatio;
         float rainStartY = bandTop + bandH * 0.6f;
+        float rainGroundY = h - dp2px(8f); // 如果你原来是别的线，就换成原来的值
+        // 底部地面
 
         // ===== 按 weatherCode 分级 =====
         boolean isDrizzle = weatherCode >= 51 && weatherCode <= 57;
@@ -797,21 +847,70 @@ public class FluidBubbleView extends View {
         }
 
         rainPaint.setStrokeWidth(strokeW);
+        rainPaint.setAntiAlias(true);
+
+        // 更新和绘制飞溅粒子
+        for (SplashParticle sp : splashParticles) {
+            if (sp.dead) continue;
+            sp.x += sp.vx;
+            sp.y += sp.vy;
+            sp.vy += sp.gravity;
+            sp.alpha -= 8f;
+            if (sp.alpha <= 0 || sp.y > rainGroundY + dp2px(10f)) {
+                sp.dead = true;
+            }
+        }
+        // 雨滴循环
         for (int i = rainParticles.size() - 1; i >= 0; i--) {
             RainParticle p = rainParticles.get(i);
             p.y += p.speed;
-            if (p.y > h) {
+
+            // 到真正消失的地面才砸
+            if (p.y >= rainGroundY && p.alpha > 10) {
+                if (splashRand.nextFloat() < 0.4f) {
+                    spawnSplash(p.x, rainGroundY, strokeW);
+                }
                 p.y = rainStartY - dp2px(rainRand.nextFloat() * h * 0.8f);
                 p.x = rainRand.nextFloat() * w;
                 p.alpha = 0;
+                continue;
             }
-            if (p.y >= rainStartY) {
-                // 淡入
+
+            if (p.y >= rainStartY && p.y < rainGroundY) {
                 p.alpha = Math.min(p.alpha + 8f, alphaMax);
                 if (p.alpha < alphaMin) p.alpha = alphaMin;
-                rainPaint.setColor(Color.argb((int) p.alpha, 174, 194, 224));
+                rainPaint.setColor(Color.argb((int) p.alpha, 200, 220, 245));
                 canvas.drawLine(p.x, p.y, p.x, p.y + p.length, rainPaint);
             }
+        }
+        // 飞溅最后画，保证不被雨滴和遮罩吃掉
+        for (SplashParticle sp : splashParticles) {
+            if (sp.dead) continue;
+            rainPaint.setColor(Color.argb((int) sp.alpha, 200, 220, 245));
+            canvas.drawCircle(sp.x, sp.y, sp.radius, rainPaint);
+        }
+    }
+    private void spawnSplash(float x, float y, float rainStrokeWidth) {
+        int count = rainStrokeWidth > dp2px(1f) ? 3 + splashRand.nextInt(2) : 2;
+        int spawned = 0;
+        float g = dp2px(0.28f); // 重力加大，快速落回地面
+
+        for (SplashParticle sp : splashParticles) {
+            if (!sp.dead) continue;
+            sp.dead = false;
+            sp.x = x;
+            sp.y = y;
+
+            // 半径保持大，肉眼可见
+            sp.radius = rainStrokeWidth * (1.6f + splashRand.nextFloat() * 1.2f);
+            // 向上速度大幅降低：只跳 1.2~1.5dp/帧
+            sp.vy = -rainStrokeWidth * (1.2f + splashRand.nextFloat() * 0.7f);
+            // 水平散开保留一点，像水花炸开
+            sp.vx = (splashRand.nextFloat() - 0.5f) * rainStrokeWidth * 2.0f;
+            sp.gravity = g;
+            sp.alpha = 170f + splashRand.nextFloat() * 85f;
+
+            if (++spawned >= count) break;
         }
     }
     // 更新和画雪
@@ -829,30 +928,30 @@ public class FluidBubbleView extends View {
 
         if (isLight) {
             // 小雪：稀疏、小、慢、半透明
-            density   = 0.4f;
-            sizeMin   = dp2px(0.8f);  sizeMax   = dp2px(1.5f);
-            speedMin  = 0.4f;         speedMax  = 0.9f;
+            density   = 1.2f;
+            sizeMin   = dp2px(1.2f);  sizeMax   = dp2px(1.8f);
+            speedMin  = 0.4f;         speedMax  = 1.5f;
             alphaMin  = 70;           alphaMax  = 120;
             swingMin  = 0.3f;         swingMax  = 0.6f;
         } else if (isHeavy) {
             // 大雪：密集、大、快
-            density   = 1.5f;
-            sizeMin   = dp2px(2.0f);  sizeMax   = dp2px(4.5f);
-            speedMin  = 0.8f;         speedMax  = 3.0f;
+            density   = 2.2f;
+            sizeMin   = dp2px(1.5f);  sizeMax   = dp2px(3.5f);
+            speedMin  = 1.2f;         speedMax  = 2.5f;
             alphaMin  = 180;          alphaMax  = 255;
             swingMin  = 0.8f;         swingMax  = 1.5f;
         } else if (isGrains) {
             // 雪粒：小、快、几乎不飘
-            density   = 0.6f;
+            density   = 1.0f;
             sizeMin   = dp2px(0.6f);  sizeMax   = dp2px(1.2f);
-            speedMin  = 1.2f;         speedMax  = 2.5f;
+            speedMin  = 2.5f;         speedMax  = 4.5f;
             alphaMin  = 100;          alphaMax  = 160;
             swingMin  = 0.1f;         swingMax  = 0.3f;
         } else {
             // 中雪 73：中等
-            density   = 1.0f;
-            sizeMin   = dp2px(1.5f);  sizeMax   = dp2px(3.5f);
-            speedMin  = 1.0f;         speedMax  = 2.0f;
+            density   = 1.8f;
+            sizeMin   = dp2px(1.2f);  sizeMax   = dp2px(2.8f);
+            speedMin  = 0.8f;         speedMax  = 2.0f;
             alphaMin  = 150;           alphaMax  = 200;
             swingMin  = 0.6f;         swingMax  = 1.2f;
         }
@@ -889,10 +988,54 @@ public class FluidBubbleView extends View {
             if (p.y >= snowStartY) {
                 p.alpha = Math.min(p.alpha + 6f, alphaMax);
                 if (p.alpha < alphaMin) p.alpha = alphaMin;
-                snowPaint.setColor(Color.argb((int) p.alpha, 255, 255, 255));
-                canvas.drawCircle(p.x, p.y, p.size, snowPaint);
+                snowPaint.setColor(Color.argb((int) p.alpha, 208, 228, 245));
+                int seed = snowParticles.indexOf(p);
+                if (seed < 0) seed = 0;
+                drawSnowFluff(canvas, p.x, p.y, p.size, seed, snowPaint);
             }
         }
+    }
+    /**
+     * 绘制棉絮状雪片
+     * 用多个随机变形的半透明椭圆叠加，模拟蓬松感
+     */
+    private void drawSnowFluff(Canvas canvas, float cx, float cy, float radius, int seed, Paint paint) {
+        canvas.save();
+        canvas.translate(cx, cy);
+
+        Random r = new Random(seed); // 固定种子，形状稳定不闪烁
+
+        int layers = 3 + r.nextInt(2); // 3~4层叠加
+
+        for (int i = 0; i < layers; i++) {
+            canvas.save();
+
+            // 每层随机旋转和偏移
+            canvas.rotate(r.nextFloat() * 360f);
+            float offsetX = (r.nextFloat() - 0.5f) * radius * 0.4f;
+            float offsetY = (r.nextFloat() - 0.5f) * radius * 0.4f;
+            canvas.translate(offsetX, offsetY);
+
+            // 随机缩放，模拟不规则
+            float scaleX = 0.6f + r.nextFloat() * 0.8f;
+            float scaleY = 0.4f + r.nextFloat() * 0.7f;
+            canvas.scale(scaleX, scaleY);
+
+            // 用椭圆模拟棉絮的一簇
+            float layerRadius = radius * (0.7f + r.nextFloat() * 0.5f);
+
+            // 降低不透明度，多层叠加出蓬松感
+            int originalAlpha = paint.getAlpha();
+            paint.setAlpha((int) (originalAlpha * (0.3f + r.nextFloat() * 0.3f)));
+            paint.setStyle(Paint.Style.FILL);
+
+            canvas.drawOval(-layerRadius, -layerRadius, layerRadius, layerRadius, paint);
+
+            paint.setAlpha(originalAlpha);
+            canvas.restore();
+        }
+
+        canvas.restore();
     }
     // 更新和画闪电
     private void updateAndDrawLightning(Canvas canvas, float w, float h, float cloudCover) {
