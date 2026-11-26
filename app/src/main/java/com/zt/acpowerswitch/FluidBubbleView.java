@@ -26,7 +26,11 @@ public class FluidBubbleView extends View {
     // ==================== 基础状态 ====================
     private float progress = 0f;
     private int fluidColor = Color.parseColor("#39FF14");
-
+    private LinearGradient cachedSkyGradient;
+    private int cachedSkyHeight = -1;
+    private LinearGradient cachedTopMask;
+    private int cachedTopMaskHeight = -1;
+    private int cachedTopMaskColor = -1;
     private float chargeCurrent = 0f;
     private float dischargeCurrent = 0f;
     private float maxchargerCurrent = 0f;
@@ -39,6 +43,19 @@ public class FluidBubbleView extends View {
     private int sunsetMinute = -1;
     private boolean isNight = false;
     private boolean coords_Bound = false;
+
+    // ==================== 太阳 Shader 缓存 ====================
+    private RadialGradient sunHeatGradient;
+    private RadialGradient sunHotGlowGradient;
+    private final Paint sunHeatPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint sunHotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private int cachedHeatColor = -1;
+    private float cachedHeatRadius = -1f;
+    private int cachedHotColor = -1;
+    private float cachedHotRadius = -1f;
+
+    // ==================== 月亮 Shader 缓存 ====================
+    private final Paint craterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // ==================== 坐标绑定 ====================
     private float solarX = -1f, solarY = -1f;
@@ -101,6 +118,9 @@ public class FluidBubbleView extends View {
     private final RectF bubbleRect = new RectF();
 
     // ==================== 云海粒子系统 ====================
+    private final android.util.SparseArray<RadialGradient> fogGradientCache
+            = new android.util.SparseArray<>();
+    private int fogCacheFogColor = -1;
     private final List<FogParticle> fogParticles = new ArrayList<>();
     private float fogLightRadiusDp = 26f;
     private float fogLightTransmittance = 0.85f;
@@ -186,6 +206,10 @@ public class FluidBubbleView extends View {
         moonPaint.setStyle(Paint.Style.FILL);
         moonPaint.setColor(Color.parseColor("#E8E8E0"));
         moonGlowPaint.setStyle(Paint.Style.FILL);
+
+        craterPaint.setStyle(Paint.Style.FILL);
+        craterPaint.setColor(Color.parseColor("#E8E0C8"));
+        craterPaint.setAlpha(90);
 
         ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(2200);
@@ -290,7 +314,7 @@ public class FluidBubbleView extends View {
     }
     // ==================== 晴天时绘制天空：在云海下层，中间凹进的椭圆弧模拟地面视角 ====================
     void drawSky(Canvas canvas, float w, float h) {
-        if (weatherCode != 0) return; // 仅晴天
+        if (weatherCode != 0) return; // 仅晴天和白天
 
         skyPath.reset();
 
@@ -316,14 +340,17 @@ public class FluidBubbleView extends View {
         skyPath.quadTo(w * 0.5f, ctrlY, leftX, leftY);
         skyPath.close();
 
-        LinearGradient skyGradient = new LinearGradient(
-                0, skyTop,
-                0, baseY + dp2px(14f),
-                Color.parseColor("#4FC3F7"), // 顶部天蓝
-                Color.parseColor("#E1F5FE"), // 靠近云海淡蓝白
-                Shader.TileMode.CLAMP
-        );
-        skyPaint.setShader(skyGradient);
+        if (cachedSkyGradient == null || (int) h != cachedSkyHeight) {
+            cachedSkyGradient = new LinearGradient(
+                    0, skyTop,
+                    0, baseY + dp2px(14f),
+                    Color.parseColor("#4FC3F7"),
+                    Color.parseColor("#E1F5FE"),
+                    Shader.TileMode.CLAMP
+            );
+            cachedSkyHeight = (int) h;
+        }
+        skyPaint.setShader(cachedSkyGradient);
         canvas.drawPath(skyPath, skyPaint);
         skyPaint.setShader(null);
     }
@@ -358,7 +385,7 @@ public class FluidBubbleView extends View {
             p.phase = fogRand.nextFloat() * (float) (Math.PI * 2);
             p.densityWeight = 0.3f + fogRand.nextFloat() * 1.2f; // 厚薄随机
             p.densityWeightBase = p.densityWeight;
-            p.stretchX = 1.4f + fogRand.nextFloat() * 1.2f; // 横向拉伸
+            p.stretchX = 1.4f + fogRand.nextFloat() * 0.12f; // 横向拉伸
             p.stretchY = 0.55f + fogRand.nextFloat() * 0.35f; // 纵向压扁
             fogParticles.add(p);
         }
@@ -372,8 +399,35 @@ public class FluidBubbleView extends View {
         if (weatherCode <= 1) return Color.rgb(205, 215, 228);       // 晴：白
         return Color.rgb(180, 190, 200);                             // 多云/阴：浅灰
     }
+    // 云海粒子缓存方法
+    private RadialGradient getFogGradient(int fogColor, float radius, int alpha) {
+        // alpha 合法范围检查
+        alpha = Math.max(0, Math.min(255, alpha));
+        if (alpha == 0) return null;
 
-    // ==================== 粒子逻辑 ====================
+        int key = (alpha << 24) | (fogColor & 0x00FFFFFF);
+
+        RadialGradient cached = fogGradientCache.get(key);
+        if (cached != null) {
+            return cached; // 命中缓存，直接返回
+        }
+        // fogColor 变了（天气切换），旧缓存全部失效
+        if (fogColor != fogCacheFogColor) {
+            fogGradientCache.clear();
+            fogCacheFogColor = fogColor;
+        }
+        // 创建一个标准半径的 Shader，绘制时用 canvas.scale() 适配实际大小
+        float standardR = dp2px(20f); // 选一个中间值，缩放后质量够用
+        RadialGradient rg = new RadialGradient(
+                0, 0, standardR,
+                Color.argb(alpha, Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
+                Color.argb(0, Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
+                Shader.TileMode.CLAMP
+        );
+        fogGradientCache.put(key, rg);
+        return rg;
+    }
+    // ==================== 充放电粒子逻辑 ====================
     private void updateParticles() {
         long now = System.currentTimeMillis();
         int width = getWidth();
@@ -764,7 +818,7 @@ public class FluidBubbleView extends View {
                 float distToLight = (float) Math.hypot(cx2 - lightX, cy2 - lightY);
                 float effectRadius = dp2px(fogLightRadiusDp) * (0.8f + fogLightTransmittance * 0.6f);
                 float transmittance = 1f;
-                float currentDensity = p.densityWeightBase; // 用原始值，不修改
+                float currentDensity = p.densityWeightBase;
 
                 if (distToLight < effectRadius && effectRadius > 0) {
                     float t = 1f - distToLight / effectRadius;
@@ -777,30 +831,36 @@ public class FluidBubbleView extends View {
                         p.alphaBase * uvFactor * coverAlpha * currentDensity * cloudClump * breath * transmittance
                 ));
 
-                RadialGradient rg = new RadialGradient(
-                        0, 0, p.r,
-                        Color.argb(a, Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
-                        Color.argb(0, Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
-                        Shader.TileMode.CLAMP
-                );
-                fogPaint.setShader(rg);
-                canvas.save();
-                canvas.translate(cx2, cy2);
-                canvas.scale(p.stretchX, p.stretchY);
-                canvas.drawCircle(0, 0, p.r, fogPaint);
-                canvas.restore();
+                if (a > 0) {
+                    // 获取缓存的 Shader
+                    RadialGradient rg = getFogGradient(fogColor, p.r, a);
+                    if (rg != null) {
+                        fogPaint.setShader(rg);
+                        canvas.save();
+                        canvas.translate(cx2, cy2);
+                        float standardR = dp2px(20f);
+                        float scaleFactor = p.r / standardR;
+                        canvas.scale(p.stretchX * scaleFactor, p.stretchY * scaleFactor);
+                        canvas.drawCircle(0, 0, standardR, fogPaint);
+                        canvas.restore();
+                    }
+                }
             }
         }
         fogPaint.setShader(null);
 
         // 顶部遮罩
-        LinearGradient topMask = new LinearGradient(
-                0, 0, 0, bandTop + bandH,
-                Color.argb((int) (200 * uvFactor), Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
-                Color.TRANSPARENT,
-                Shader.TileMode.CLAMP
-        );
-        fogPaint.setShader(topMask);
+        if (cachedTopMask == null || (int)h != cachedTopMaskHeight || fogColor != cachedTopMaskColor) {
+            cachedTopMask = new LinearGradient(
+                    0, 0, 0, bandTop + bandH,
+                    Color.argb((int)(200 * uvFactor), Color.red(fogColor), Color.green(fogColor), Color.blue(fogColor)),
+                    Color.TRANSPARENT,
+                    Shader.TileMode.CLAMP
+            );
+            cachedTopMaskHeight = (int)h;
+            cachedTopMaskColor = fogColor;
+        }
+        fogPaint.setShader(cachedTopMask);
         canvas.drawRect(0, 0, w, bandTop + bandH, fogPaint);
         fogPaint.setShader(null);
 
@@ -1166,21 +1226,31 @@ public class FluidBubbleView extends View {
     private void drawMoon(Canvas canvas) {
         if (moonX < 0 || moonY < 0) return;
         float moonR = dp2px(12f);
-        float glowAlpha = 40 + (int) (20 * Math.sin(animationPhase * Math.PI * 2));
-        moonGlowPaint.setColor(Color.parseColor("#FFF8DC"));
-        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha)));
-        canvas.drawCircle(moonX, moonY, moonR * 1.6f, moonGlowPaint);
-        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha / 2)));
-        canvas.drawCircle(moonX, moonY, moonR * 2.2f, moonGlowPaint);
+
+        // 1. 月亮本体（暖灰）
+        moonPaint.setColor(Color.parseColor("#E8E8E0"));
         canvas.drawCircle(moonX, moonY, moonR, moonPaint);
 
-        Paint craterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        craterPaint.setStyle(Paint.Style.FILL);
-        craterPaint.setColor(Color.parseColor("#D0D0C8"));
-        craterPaint.setAlpha(120);
+        // 2. 光晕叠在上方
+        float glowAlpha = 80 + (int) (30 * Math.sin(animationPhase * Math.PI * 2));
+        moonGlowPaint.setColor(Color.parseColor("#E8F0F8"));
+        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha)));
+        canvas.drawCircle(moonX, moonY, moonR * 1.8f, moonGlowPaint);
+
+        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha / 2)));
+        canvas.drawCircle(moonX, moonY, moonR * 2.6f, moonGlowPaint);
+
+        // 3. 环形山（用成员 craterPaint，不每帧 new）
         canvas.drawCircle(moonX - moonR * 0.3f, moonY - moonR * 0.2f, moonR * 0.25f, craterPaint);
         canvas.drawCircle(moonX + moonR * 0.25f, moonY + moonR * 0.1f, moonR * 0.2f, craterPaint);
         canvas.drawCircle(moonX - moonR * 0.1f, moonY + moonR * 0.3f, moonR * 0.18f, craterPaint);
+
+        // 4. 高光点（纯白，让月亮"亮"起来）
+        Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        highlightPaint.setColor(Color.WHITE);
+        highlightPaint.setAlpha(200);
+        canvas.drawCircle(moonX - moonR * 0.35f, moonY - moonR * 0.35f, moonR * 0.12f, highlightPaint);
+
         moonGlowPaint.setAlpha(255);
     }
     // ==================== 太阳 ====================
@@ -1207,34 +1277,43 @@ public class FluidBubbleView extends View {
             alpha = Math.max(0, Math.min(255, alpha));
             if (alpha < 8) continue;
 
-            RadialGradient heatGrad = new RadialGradient(
-                    sunX, sunY, radius,
-                    Color.argb((int) alpha, 255, 140, 20),   // 橙红热核
-                    Color.argb(0, 255, 190, 40),              // 外缘淡金
-                    Shader.TileMode.CLAMP
-            );
-            Paint heatPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            heatPaint.setShader(heatGrad);
+            // 缓存 key：alpha + radius 取整
+            int cacheKey = ((int) alpha << 16) | ((int) (radius * 10) & 0xFFFF);
+            if (sunHeatGradient == null || cachedHeatColor != (int) alpha || Math.abs(cachedHeatRadius - radius) > 0.5f) {
+                sunHeatGradient = new RadialGradient(
+                        sunX, sunY, radius,
+                        Color.argb((int) alpha, 255, 140, 20),
+                        Color.argb(0, 255, 190, 40),
+                        Shader.TileMode.CLAMP
+                );
+                cachedHeatColor = (int) alpha;
+                cachedHeatRadius = radius;
+            }
 
+            sunHeatPaint.setShader(sunHeatGradient);
             canvas.save();
             float wobbleX = (float) Math.sin(phase + i * 2.1f) * dp2px(3f);
             float wobbleY = (float) Math.cos(phase + i * 1.3f) * dp2px(2f);
             canvas.translate(wobbleX, wobbleY);
-            canvas.drawCircle(sunX, sunY, radius, heatPaint);
+            canvas.drawCircle(sunX, sunY, radius, sunHeatPaint);
             canvas.restore();
         }
 
-        // ===== 紧贴太阳的强热晕：不让它被天空吃掉 =====
+        // ===== 紧贴太阳的强热晕 =====
         float hotR = sunR * (1.8f + currentUv * 1.5f);
-        RadialGradient hotGlow = new RadialGradient(
-                sunX, sunY, hotR,
-                Color.argb((int) (120 + currentUv * 90), 255, 170, 30),
-                Color.argb(0, 255, 210, 70),
-                Shader.TileMode.CLAMP
-        );
-        Paint hotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        hotPaint.setShader(hotGlow);
-        canvas.drawCircle(sunX, sunY, hotR, hotPaint);
+        int hotAlpha = (int) (120 + currentUv * 90);
+        if (sunHotGlowGradient == null || cachedHotColor != hotAlpha || Math.abs(cachedHotRadius - hotR) > 0.5f) {
+            sunHotGlowGradient = new RadialGradient(
+                    sunX, sunY, hotR,
+                    Color.argb(hotAlpha, 255, 170, 30),
+                    Color.argb(0, 255, 210, 70),
+                    Shader.TileMode.CLAMP
+            );
+            cachedHotColor = hotAlpha;
+            cachedHotRadius = hotR;
+        }
+        sunHotPaint.setShader(sunHotGlowGradient);
+        canvas.drawCircle(sunX, sunY, hotR, sunHotPaint);
 
         // ===== 表面纹理 =====
         Paint texturePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
