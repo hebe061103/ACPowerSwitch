@@ -552,6 +552,7 @@ public class otherOption extends AppCompatActivity {
             Log.d(TAG,"纬度:"+ lat +" 经度:" + lng +" 城市:"+ city + " 地址:"+ address);
 
             if (lat != 0 && lng != 0 && city != null && address != null){
+                Log.d(TAG,"正在保存位置坐标");
                 saveData("lat", String.valueOf(lat));
                 saveData("lng", String.valueOf(lng));
                 saveData("city", city);

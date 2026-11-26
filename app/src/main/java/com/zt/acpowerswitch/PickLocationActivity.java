@@ -94,7 +94,7 @@ public class PickLocationActivity extends AppCompatActivity
         findViewById(R.id.btnConfirm).setOnClickListener(v -> {
             Intent data = new Intent();
             data.putExtra("lat", pickLat);
-            data.putExtra("lon", pickLng);
+            data.putExtra("lng", pickLng);
             data.putExtra("city", pickCity);
             data.putExtra("address", pickAddress);
             setResult(RESULT_OK, data);

@@ -2030,7 +2030,7 @@ public class MainActivity extends AppCompatActivity{
     @NonNull
     private String getString() {
         String weather_str = "";
-        if (weatherCode == 0) weather_str = "晴";
+        if (weatherCode == 0) weather_str = "晴天";
         else if (weatherCode == 1) weather_str = "少云";
         else if (weatherCode == 2) weather_str = "多云";
         else if (weatherCode == 3) weather_str = "阴";
