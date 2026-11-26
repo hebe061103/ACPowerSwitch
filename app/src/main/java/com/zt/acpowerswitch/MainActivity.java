@@ -398,8 +398,6 @@ public class MainActivity extends AppCompatActivity{
         // 一行绑定坐标（必须在 setContentView 之后）
         originFluidView.bindIconCoords(origin_solarIcon, origin_houseIcon);
         cardFluidView.bindIconCoords(card_solarIcon, card_houseIcon);
-        originFluidView.setSolarSize(80f); // 跟布局里 80dp 一致
-        cardFluidView.setSolarSize(80f);
     }
     private final Handler markerHandler = new Handler(Looper.getMainLooper());
     private final Runnable markerHideRunnable = new Runnable() {
@@ -1986,8 +1984,8 @@ public class MainActivity extends AppCompatActivity{
             weatherUpdater.check(false, (data, fromCache) -> {
                 if (data == null) return;
 
-                // 解析日出日落
-                sunrise = parseTimeToMinute(data.sunrise); // "2026-11-24T06:42" → 6 * 60+42 = 402
+                // 解析日出日落"2026-11-24T06:42" → 6 * 60+42 = 402
+                sunrise = parseTimeToMinute(data.sunrise);
                 sunset = parseTimeToMinute(data.sunset);
                 cloudCover = data.cloudCover;
                 weatherCode = data.weatherCode;
@@ -2017,7 +2015,7 @@ public class MainActivity extends AppCompatActivity{
                         originFluidView.updateSunTimes(sunrise, sunset);
                     } else {
                         cardFluidView.updateWeather(cloudCover / 100f, weatherCode, uv);
-                        cardFluidView.updateSunTimes(sunrise, 840);
+                        cardFluidView.updateSunTimes(sunrise, sunset);
                     }
                 });
             },lat,lng);

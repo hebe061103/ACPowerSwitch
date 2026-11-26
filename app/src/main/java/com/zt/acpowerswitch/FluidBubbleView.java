@@ -15,9 +15,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
-
 import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -25,74 +23,13 @@ import java.util.List;
 import java.util.Random;
 
 public class FluidBubbleView extends View {
-    // ==================== 云海粒子 ====================
-    private final List<FogParticle> fogParticles = new ArrayList<>();
-    private final Random fogRand = new Random();
-    private float fogLightRadiusDp = 26f;
-    private float fogLightTransmittance = 0.85f; // 0=不透，1=完全透明，默认0.7
-    // ==================== 雨粒子 ====================
-    private final List<RainParticle> rainParticles = new ArrayList<>();
-    private final Random rainRand = new Random();
-
-    // ==================== 雪粒子 ====================
-    private final List<SnowParticle> snowParticles = new ArrayList<>();
-    private final Random snowRand = new Random();
-
-    // ==================== 闪电 ====================
-    private float lightningTimer = 0f;
-    private float lightningAlpha = 0f;
-    // 闪电成员变量
-    private float lightningX = -1.0f;
-    private float lightningSx = -1.0f;
-    private final Random lightningRand = new Random();
-
-    // ==================== Paint ====================
-    private final Paint fogPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint rainPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint snowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint lightningPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Paint ringPaint;
-    private Paint fluidPaint;
-    private Paint textPaint;
-    private Paint glowPaint;
-    private static final int SUN_COLOR = Color.parseColor("#FFD700");
-
+    // ==================== 基础状态 ====================
     private float progress = 0f;
     private int fluidColor = Color.parseColor("#39FF14");
-
-    private float animationPhase = 0f;
-    private final List<ChargeParticle> chargeParticles = new ArrayList<>();
-    private final List<DischargeDrop> dischargeDrops = new ArrayList<>();
-    private final Random random = new Random();
-    private long lastChargeSpawn = 0;
-    private long lastDischargeSpawn = 0;
 
     private float chargeCurrent = 0f;
     private float dischargeCurrent = 0f;
     private float maxchargerCurrent = 0f;
-
-    private float smoothPhase1 = 0f;
-    private float smoothPhase2 = 0f;
-    private float smoothPhase3 = 0f;
-    private float smoothAmp = 1.0f;
-    private final Random noiseRandom = new Random();
-
-    private final Path circleClipPath = new Path();
-    private final Path lightWavePath = new Path();
-    private final Path fluidRingPath = new Path();
-    private final Path wavePath = new Path();
-    private final Path dropPath = new Path();
-    private final RectF bubbleRect = new RectF();
-
-    private float solarX = -1f, solarY = -1f;
-    private float sunX = -1f, sunY = -1f;
-    private float houseX = -1f, houseY = -1f;
-    private float solarIconSizeDp = 80f;
-    private boolean coords_Bound = false;
-
-    private float sunPhase = 0f;
-    private float sunWobblePhase = 0f;
-    private final Random sunRandom = new Random();
 
     private float cloudCover = 0f;
     private int weatherCode = 0;
@@ -101,12 +38,86 @@ public class FluidBubbleView extends View {
     private int sunriseMinute = -1;
     private int sunsetMinute = -1;
     private boolean isNight = false;
+    private boolean coords_Bound = false;
+
+    // ==================== 坐标绑定 ====================
+    private float solarX = -1f, solarY = -1f;
+    private float sunX = -1f, sunY = -1f;
+    private float moonX = -1f, moonY = -1f;
+    private float houseX = -1f, houseY = -1f;
+
+    // ==================== 动画 ====================
+    private float animationPhase = 0f;
+    private long lastChargeSpawn = 0;
+    private long lastDischargeSpawn = 0;
+
+    private float smoothPhase1 = 0f;
+    private float smoothPhase2 = 0f;
+    private float smoothPhase3 = 0f;
+    private float smoothAmp = 1.0f;
+
+    private float sunPhase = 0f;
+    private float sunWobblePhase = 0f;
+    private final Paint sunBody = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private float lightningTimer = 0f;
+    private float lightningAlpha = 0f;
+    private float lightningX = -1.0f;
+    private float lightningSx = -1.0f;
+
+    // ==================== 随机器 ====================
+    private final Random random = new Random();
+    private final Random noiseRandom = new Random();
+    private final Random sunRandom = new Random();
+    private final Random fogRand = new Random();
+    private final Random rainRand = new Random();
+    private final Random snowRand = new Random();
+    private final Random lightningRand = new Random();
+    private final Random splashRand = new Random();
+
+    // ==================== Paint ====================
+    private Paint ringPaint;
+    private Paint fluidPaint;
+    private Paint textPaint;
+    private Paint glowPaint;
+
+    private final Paint fogPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint rainPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint snowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint lightningPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint moonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint moonGlowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint sunGlowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint skyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    private static final int SUN_COLOR = Color.parseColor("#FFD700");
+
+    // ==================== Path / 几何 ====================
+    private final Path circleClipPath = new Path();
+    private final Path lightWavePath = new Path();
+    private final Path fluidRingPath = new Path();
+    private final Path wavePath = new Path();
+    private final Path dropPath = new Path();
+    private final Path skyPath = new Path();
+    private final RectF bubbleRect = new RectF();
+
+    // ==================== 云海粒子系统 ====================
+    private final List<FogParticle> fogParticles = new ArrayList<>();
+    private float fogLightRadiusDp = 26f;
+    private float fogLightTransmittance = 0.85f;
     private final float fogBandTopRatio = 0.05f;
     private final float fogBandHeightRatio = 0.22f;
     private float lastW = -1f, lastH = -1f;
-    // 雨滴飞溅变量
+
+    // ==================== 雨粒子系统 ====================
+    private final List<RainParticle> rainParticles = new ArrayList<>();
     private final List<SplashParticle> splashParticles = new ArrayList<>();
-    private final Random splashRand = new Random();
+
+    // ==================== 雪粒子系统 ====================
+    private final List<SnowParticle> snowParticles = new ArrayList<>();
+
+    // ==================== 充放电粒子系统 ====================
+    private final List<ChargeParticle> chargeParticles = new ArrayList<>();
+    private final List<DischargeDrop> dischargeDrops = new ArrayList<>();
 
     // ===== 云层在接近太阳或月亮时的透明度设置 =====
     public void setFogLightRadiusDp(float dp) {
@@ -144,10 +155,6 @@ public class FluidBubbleView extends View {
     private static class SnowParticle {
         float x, y, speed, size, alpha, swingPhase, swingAmp;
     }
-    // ===== 月亮 =====
-    private final Paint moonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint moonGlowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
     public FluidBubbleView(Context context) { super(context); init(); }
     public FluidBubbleView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
     public FluidBubbleView(Context context, AttributeSet attrs, int defStyleAttr) { super(context, attrs, defStyleAttr); init(); }
@@ -190,12 +197,21 @@ public class FluidBubbleView extends View {
             invalidate();
         });
         animator.start();
+        skyPaint.setStyle(Paint.Style.FILL);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         if (w > 0 && h > 0) {
+            // 太阳的位置
+            sunX = w * 0.22f;
+            sunY = h * 0.1f;
+
+            // 月亮的位置
+            moonX = w * 0.22f;
+            moonY = h * 0.1f;
+
             buildFog(cloudCover, weatherCode);
             initWeatherParticles(w, h);
         }
@@ -253,8 +269,6 @@ public class FluidBubbleView extends View {
                         float sh = solarIcon.getHeight();
                         solarX = (iconLoc[0] - myLoc[0]) + sw / 2f;
                         solarY = (iconLoc[1] - myLoc[1]) + sh / 2f;
-                        sunX = (iconLoc[0] - myLoc[0]) + sw * 0.8f;
-                        sunY = (iconLoc[1] - myLoc[1]) + sh * 0.25f;
 
                         houseIcon.getLocationInWindow(iconLoc);
                         float hw = houseIcon.getWidth();
@@ -267,9 +281,6 @@ public class FluidBubbleView extends View {
                     }
                 });
     }
-
-    public void setSolarSize(float dp) { this.solarIconSizeDp = dp; }
-
     private float chargeRatio() {
         return (float) Math.pow(Math.min(1.0f, chargeCurrent / 50f), 0.5f);
     }
@@ -277,7 +288,45 @@ public class FluidBubbleView extends View {
     private float dischargeRatio() {
         return (float) Math.pow(Math.min(1.0f, dischargeCurrent / maxchargerCurrent), 0.5f);
     }
+    // ==================== 晴天时绘制天空：在云海下层，中间凹进的椭圆弧模拟地面视角 ====================
+    void drawSky(Canvas canvas, float w, float h) {
+        if (weatherCode != 0) return; // 仅晴天
 
+        skyPath.reset();
+
+        // 顶部区域：只取图表上方一段，不铺满整个图表
+        float skyTop = 0f;
+        float baseY = h * 0.01f;      // 云海大致所在的高度，按你图里比例调
+        float bandH = h * 0.05f;      // 天空可见厚度
+        float dipDepth = bandH * 0.45f; // 中间凹进去的深度
+
+        float leftX = 0f;
+
+        // 两头向图表下方延伸一点
+        float leftY = baseY + dipDepth + dp2px(25f);
+        float rightY = baseY + dipDepth + dp2px(25f);
+
+        // 路径：上边缘贴图表顶，下边缘为中间凹的椭圆弧
+        skyPath.moveTo(leftX, skyTop);
+        skyPath.lineTo(w, skyTop);
+        skyPath.lineTo(w, rightY);
+
+        // 控制点在弧线上方，形成向下凹的椭圆感
+        float ctrlY = baseY - dipDepth * 0.8f;
+        skyPath.quadTo(w * 0.5f, ctrlY, leftX, leftY);
+        skyPath.close();
+
+        LinearGradient skyGradient = new LinearGradient(
+                0, skyTop,
+                0, baseY + dp2px(14f),
+                Color.parseColor("#4FC3F7"), // 顶部天蓝
+                Color.parseColor("#E1F5FE"), // 靠近云海淡蓝白
+                Shader.TileMode.CLAMP
+        );
+        skyPaint.setShader(skyGradient);
+        canvas.drawPath(skyPath, skyPaint);
+        skyPaint.setShader(null);
+    }
     // ==================== 云海粒子构建 ====================
     private void buildFog(float cloudCover, int weatherCode) {
         fogParticles.clear();
@@ -488,14 +537,17 @@ public class FluidBubbleView extends View {
         float ringRadius = (ringWidthPx - dp2px(12f)) / 2f;
         float cy = ringRadius + dp2px(6f);
 
-        // 0. 太阳辐射或月亮（被云层遮挡）
-        if (isNight) drawMoon(canvas);
-        else drawSolarRadiation(canvas);
+        // 0. 晴天：先画天空（在云海下层）
+        drawSky(canvas, width, height);
 
-        // 1. 云海（在太阳/月亮之前，自然遮挡）
+        // 1. 太阳辐射或月亮（被云层遮挡）
+        if (isNight) drawMoon(canvas);
+        else drawSun(canvas);
+
+        // 2. 云海（在太阳/月亮之前，自然遮挡）
         drawFog(canvas, cloudCover, weatherCode);
 
-        // 2. 外圈流体环
+        // 3. 外圈流体环
         ringPaint.setColor(fluidColor);
         ringPaint.setAntiAlias(true);
         ringPaint.setStyle(Paint.Style.STROKE);
@@ -522,7 +574,7 @@ public class FluidBubbleView extends View {
         fluidRingPath.close();
         canvas.drawPath(fluidRingPath, ringPaint);
 
-        // 3. 内部液面
+        // 4. 内部液面
         canvas.save();
         circleClipPath.reset();
         circleClipPath.addPath(fluidRingPath);
@@ -556,7 +608,7 @@ public class FluidBubbleView extends View {
         }
         canvas.restore();
 
-        // 4. 充电粒子
+        // 5. 充电粒子
         for (ChargeParticle p : chargeParticles) {
             if (p.radius <= 0.3f || p.dead) continue;
             if (chargeCurrent > 0f && chargeCurrent < 10f) {
@@ -593,7 +645,7 @@ public class FluidBubbleView extends View {
             canvas.drawOval(bubbleRect, fluidPaint);
         }
 
-        // 5. 放电粒子
+        // 6. 放电粒子
         for (DischargeDrop p : dischargeDrops) {
             if (p.state == 3 || p.radius <= 0.3f) continue;
             if (p.state == 0) {
@@ -660,7 +712,7 @@ public class FluidBubbleView extends View {
             }
         }
 
-        // 6. 电量文字
+        // 7. 电量文字
         Paint.FontMetrics fm = textPaint.getFontMetrics();
         float textY = cy + (fm.bottom - fm.top) / 2f - fm.bottom;
         textPaint.setTextSize(dp2px(10f));
@@ -1112,44 +1164,89 @@ public class FluidBubbleView extends View {
 
     // ==================== 月亮 ====================
     private void drawMoon(Canvas canvas) {
-        if (!coords_Bound) return;
-        float moonR = dp2px(15f);
+        if (moonX < 0 || moonY < 0) return;
+        float moonR = dp2px(12f);
         float glowAlpha = 40 + (int) (20 * Math.sin(animationPhase * Math.PI * 2));
         moonGlowPaint.setColor(Color.parseColor("#FFF8DC"));
         moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha)));
-        canvas.drawCircle(sunX, sunY, moonR * 1.6f, moonGlowPaint);
+        canvas.drawCircle(moonX, moonY, moonR * 1.6f, moonGlowPaint);
         moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha / 2)));
-        canvas.drawCircle(sunX, sunY, moonR * 2.2f, moonGlowPaint);
-        canvas.drawCircle(sunX, sunY, moonR, moonPaint);
+        canvas.drawCircle(moonX, moonY, moonR * 2.2f, moonGlowPaint);
+        canvas.drawCircle(moonX, moonY, moonR, moonPaint);
 
         Paint craterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         craterPaint.setStyle(Paint.Style.FILL);
         craterPaint.setColor(Color.parseColor("#D0D0C8"));
         craterPaint.setAlpha(120);
-        canvas.drawCircle(sunX - moonR * 0.3f, sunY - moonR * 0.2f, moonR * 0.25f, craterPaint);
-        canvas.drawCircle(sunX + moonR * 0.25f, sunY + moonR * 0.1f, moonR * 0.2f, craterPaint);
-        canvas.drawCircle(sunX - moonR * 0.1f, sunY + moonR * 0.3f, moonR * 0.18f, craterPaint);
+        canvas.drawCircle(moonX - moonR * 0.3f, moonY - moonR * 0.2f, moonR * 0.25f, craterPaint);
+        canvas.drawCircle(moonX + moonR * 0.25f, moonY + moonR * 0.1f, moonR * 0.2f, craterPaint);
+        canvas.drawCircle(moonX - moonR * 0.1f, moonY + moonR * 0.3f, moonR * 0.18f, craterPaint);
         moonGlowPaint.setAlpha(255);
     }
+    // ==================== 太阳 ====================
+    private void drawSun(Canvas canvas) {
+        if (sunX < 0 || sunY < 0) return;
+        float sunR = dp2px(12f);
+        if (sunR < dp2px(6f)) sunR = dp2px(6f);
 
-    // ==================== 太阳辐射 ====================
-    private void drawSolarRadiation(Canvas canvas) {
-        if (!coords_Bound || chargeCurrent < 0.1f) return;
-        // ===== 充电流强度（0~1），电流越大光晕越强 =====
-        float cRatio = Math.min(chargeCurrent / 40f, 1f);
-        // ===== 太阳基础半径，solarIconSizeDp 是图标大小 =====
-        float sunR = dp2px(solarIconSizeDp) * 0.18f;
-        if (sunR < dp2px(6f)) sunR = dp2px(6f); // 最小半径兜底
-        // ===== 呼吸波动，0.85~1.0 之间随机抖动 =====
-        float breath = 0.85f + 0.15f * ((sunRandom.nextFloat() - 0.5f) * 2f);
-        // ===== 光晕基础透明度，50 是基数，乘 cRatio 和 breath =====
-        // 改 50 → 更大值让光晕更亮，更小值更暗
-        float glowAlpha = (50 * cRatio) * breath;
-        glowPaint.setColor(0xFFFFD700);  // 金黄色，改这里换色
-        glowPaint.setAlpha((int) Math.min(255, glowAlpha));
-        // ===== 光晕半径，2.5 是基础扩散，1.5 是电流加成 =====
-        // 改 2.5 → 更大光晕范围，改 1.5 → 电流对光晕的影响幅度
-        canvas.drawCircle(sunX, sunY, sunR * (1.2f + 1.2f * cRatio), glowPaint);
+        // 太阳主体
+        sunBody.setStyle(Paint.Style.FILL);
+        sunBody.setColor(SUN_COLOR);
+        canvas.drawCircle(sunX, sunY, sunR, sunBody);
+
+        float currentUv = Math.min(1f, uvIndex / 11f);
+        float phase = (float) (animationPhase * Math.PI * 2f);
+
+        // ===== 热浪扩散层：橙红→透明，错相膨胀 =====
+        int layers = 3;
+        for (int i = 0; i < layers; i++) {
+            float offset = (animationPhase + i * 0.33f) % 1f;
+            float radius = sunR * (1.15f + offset * (3.0f + currentUv * 4.5f));
+            float alpha = (1f - offset) * (110f + currentUv * 90f);
+            alpha *= (float) (0.8f + 0.2f * Math.sin(phase + i * 1.7f));
+            alpha = Math.max(0, Math.min(255, alpha));
+            if (alpha < 8) continue;
+
+            RadialGradient heatGrad = new RadialGradient(
+                    sunX, sunY, radius,
+                    Color.argb((int) alpha, 255, 140, 20),   // 橙红热核
+                    Color.argb(0, 255, 190, 40),              // 外缘淡金
+                    Shader.TileMode.CLAMP
+            );
+            Paint heatPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            heatPaint.setShader(heatGrad);
+
+            canvas.save();
+            float wobbleX = (float) Math.sin(phase + i * 2.1f) * dp2px(3f);
+            float wobbleY = (float) Math.cos(phase + i * 1.3f) * dp2px(2f);
+            canvas.translate(wobbleX, wobbleY);
+            canvas.drawCircle(sunX, sunY, radius, heatPaint);
+            canvas.restore();
+        }
+
+        // ===== 紧贴太阳的强热晕：不让它被天空吃掉 =====
+        float hotR = sunR * (1.8f + currentUv * 1.5f);
+        RadialGradient hotGlow = new RadialGradient(
+                sunX, sunY, hotR,
+                Color.argb((int) (120 + currentUv * 90), 255, 170, 30),
+                Color.argb(0, 255, 210, 70),
+                Shader.TileMode.CLAMP
+        );
+        Paint hotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        hotPaint.setShader(hotGlow);
+        canvas.drawCircle(sunX, sunY, hotR, hotPaint);
+
+        // ===== 表面纹理 =====
+        Paint texturePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        texturePaint.setStyle(Paint.Style.FILL);
+        texturePaint.setColor(Color.parseColor("#FF8C00"));
+        texturePaint.setAlpha(110);
+        float r = sunR;
+        canvas.drawCircle(sunX - r * 0.25f, sunY - r * 0.15f, r * 0.22f, texturePaint);
+        canvas.drawCircle(sunX + r * 0.2f, sunY + r * 0.1f, r * 0.18f, texturePaint);
+        canvas.drawCircle(sunX - r * 0.1f, sunY + r * 0.25f, r * 0.15f, texturePaint);
+        canvas.drawCircle(sunX + r * 0.3f, sunY - r * 0.2f, r * 0.12f, texturePaint);
+        texturePaint.setAlpha(255);
     }
 
     private static class ChargeParticle {
