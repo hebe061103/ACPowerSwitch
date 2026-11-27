@@ -193,6 +193,16 @@ public class MainActivity extends AppCompatActivity{
     private String last_mp_pt_temp;
     private String last_current_out_mode;
     private String last_mem_use_info;
+    private String last_power;
+    private String last_lowvoltage;
+    private String last_mos_temp_value;
+    private String last_on_inv_value;
+    private String last_peakToPeakDiff;
+    private String last_est_dead_zone_kwh;
+    private String last_hardware_offset_us;
+    private String last_SYSTEM_R;
+    private String last_request_calibration;
+    private String last_work_mode;
     private String last_mos_time_temp;
     private String last_fan_time_speed;
     private String last_p_charged;
@@ -209,7 +219,6 @@ public class MainActivity extends AppCompatActivity{
     private final float invSelfConsumption = 30f;
     private boolean moduleInitialized;
     private Thread dataFetchThread;
-
     private void resetLastValues() {
         last_AcVoltage = null;
         last_ac_current = null;
@@ -228,8 +237,18 @@ public class MainActivity extends AppCompatActivity{
         last_mp_pt_temp = null;
         last_current_out_mode = null;
         last_mem_use_info = null;
+        last_power = null;
+        last_lowvoltage = null;
+        last_mos_temp_value = null;
         last_mos_time_temp = null;
         last_fan_time_speed = null;
+        last_on_inv_value = null;
+        last_peakToPeakDiff = null;
+        last_est_dead_zone_kwh = null;
+        last_hardware_offset_us = null;
+        last_SYSTEM_R = null;
+        last_request_calibration = null;
+        last_work_mode = null;
         last_p_charged = null;
         last_charged = null;
         last_discharged = null;
@@ -595,7 +614,6 @@ public class MainActivity extends AppCompatActivity{
         pro_button_listen(); // 处理柱状图上的时.日.月,年按键监听
         start_Thread();
     }
-
     private void pro_button_listen() {
         if (layout_mode == 0) {
             //小时图表按键监听
@@ -617,7 +635,6 @@ public class MainActivity extends AppCompatActivity{
             bt_listen(card_year_power, cardPowerChart, _Y_Total_power, "年份柱状图表", "暂无年份数据");
         }
     }
-
     public void bt_listen(TextView bt,BarChart chart,ArrayList<String> data, String text, String data_null){
         bt.setOnClickListener(view -> {
             goAnim(MainActivity.this, 50);
@@ -645,18 +662,6 @@ public class MainActivity extends AppCompatActivity{
                 request_homepage_date();
             }
         }).start();
-    }
-    //安全保存硬件参数（带 Flash 写入保护：仅当数据改变且有效时才擦写）
-    private void safeSaveFlash(Map<String, String> infoMap, String key) {
-        if (infoMap == null) return;
-
-        String newValue = infoMap.get(key);
-        if (newValue == null || newValue.isEmpty()) return;
-
-        String oldValue = readDate(this, key);
-        if (!newValue.equals(oldValue)) {
-            saveData(key, newValue);
-        }
     }
     public static boolean send_command_to_server(String data) {
         CountDownLatch latch = new CountDownLatch(1); // 创建一个 CountDownLatch，初始计数为 1
@@ -811,29 +816,29 @@ public class MainActivity extends AppCompatActivity{
                                 //内存使用信息
                                 uiData.put("mem_use_info", info.get("mem_usage"));
                                 //市电切换阈值
-                                safeSaveFlash(info, "power");
+                                uiData.put("power", info.get("power"));
                                 //电池低于此值则市电常开
-                                safeSaveFlash(info, "lowvoltage");
+                                uiData.put("lowvoltage", info.get("lowvoltage"));
                                 //输出模式
-                                safeSaveFlash(info, "work_mode");
+                                uiData.put("work_mode", info.get("work_mode"));
                                 //主功率板散执片风扇开启温度阈值
-                                safeSaveFlash(info, "mos_temp_value");
+                                uiData.put("mos_temp_value", info.get("mos_temp_value"));
                                 //主功率板散热片实时温度
                                 uiData.put("mos_time_temp", info.get("sys_ntc_value"));
                                 //主功率板散热风扇转速值
                                 uiData.put("fan_time_speed", info.get("fan_speed_value"));
                                 //开启逆变的电压阈值
-                                safeSaveFlash(info, "on_inv_value");
+                                uiData.put("on_inv_value", info.get("on_inv_value"));
                                 // 光耦和电阻的物理硬件延迟误差
-                                safeSaveFlash(info, "hardware_offset_us");
+                                uiData.put("hardware_offset_us", info.get("hardware_offset_us"));
                                 // 极致锁相峰值微秒差
-                                safeSaveFlash(info, "peakToPeakDiff");
+                                uiData.put("peakToPeakDiff", info.get("peakToPeakDiff"));
                                 // 系统总内阻
-                                safeSaveFlash(info, "SYSTEM_R");
+                                uiData.put("SYSTEM_R", info.get("SYSTEM_R"));
                                 // 请求电池校准
-                                safeSaveFlash(info, "request_calibration");
+                                uiData.put("request_calibration", info.get("request_calibration"));
                                 // 电池死区容量
-                                safeSaveFlash(info, "est_dead_zone_kwh");
+                                uiData.put("est_dead_zone_kwh", info.get("est_dead_zone_kwh"));
                                 //电池充放电信息表
                                 p_charged = String.format("☀️ 今日光伏发电: %.3f kWh", Float.parseFloat(Objects.requireNonNull(info.get("pv_energy_today"))));
                                 charged = String.format("⛽️ 今日电池充电: %.3f kWh", Float.parseFloat(Objects.requireNonNull(info.get("bat_charged_today"))));
@@ -870,6 +875,10 @@ public class MainActivity extends AppCompatActivity{
                                         long m = totalMinutes % 60;
                                         t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 预计充满时长" : "预计充满时长");
                                         useTimeStr = String.format("%d天%d时%02d分", d, h, m);
+                                        if (totalMinutes==0){
+                                            t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 预计充满时长" : "预计充满时长");
+                                            useTimeStr = ((layout_mode == 0) ? "充满" : "完全充满");
+                                        }
                                     }else{
                                         t_charge_dischg_time = ((layout_mode == 0) ? "⏰ 预计充满时长" : "预计充满时长");
                                         useTimeStr = "超过三天";
@@ -1164,6 +1173,30 @@ public class MainActivity extends AppCompatActivity{
                     }
                     last_mem_use_info = newVal;
                 }
+                //市电切换阈值
+                newVal = uiData.get("power");
+                if (!Objects.equals(newVal, last_power)) {
+                    saveData("power",newVal);
+                    last_power = newVal;
+                }
+                //电池低于此值则市电常开
+                newVal = uiData.get("lowvoltage");
+                if (!Objects.equals(newVal, last_lowvoltage)) {
+                    saveData("lowvoltage",newVal);
+                    last_lowvoltage = newVal;
+                }
+                //工作模式
+                newVal = uiData.get("work_mode");
+                if (!Objects.equals(newVal, last_work_mode)) {
+                    saveData("work_mode",newVal);
+                    last_work_mode = newVal;
+                }
+                //主功率板散执片风扇开启温度阈值
+                newVal = uiData.get("mos_temp_value");
+                if (!Objects.equals(newVal, last_mos_temp_value)) {
+                    saveData("mos_temp_value",newVal);
+                    last_mos_temp_value = newVal;
+                }
                 //主功率板散热片实时温度
                 newVal = uiData.get("mos_time_temp");
                 if (!Objects.equals(newVal, last_mos_time_temp)) {
@@ -1175,6 +1208,42 @@ public class MainActivity extends AppCompatActivity{
                 if (!Objects.equals(newVal, last_fan_time_speed)) {
                     ((layout_mode == 0) ? originFanValue : cardFanValue).setText(newVal);
                     last_fan_time_speed = newVal;
+                }
+                //开启逆变的电压阈值
+                newVal = uiData.get("on_inv_value");
+                if (!Objects.equals(newVal, last_on_inv_value)) {
+                    saveData("on_inv_value",newVal);
+                    last_on_inv_value = newVal;
+                }
+                //光耦和电阻的物理硬件延迟误差
+                newVal = uiData.get("hardware_offset_us");
+                if (!Objects.equals(newVal, last_hardware_offset_us)) {
+                    saveData("hardware_offset_us",newVal);
+                    last_hardware_offset_us = newVal;
+                }
+                //极致锁相峰值微秒差
+                newVal = uiData.get("peakToPeakDiff");
+                if (!Objects.equals(newVal, last_peakToPeakDiff)) {
+                    saveData("peakToPeakDiff",newVal);
+                    last_peakToPeakDiff = newVal;
+                }
+                //系统总内阻
+                newVal = uiData.get("SYSTEM_R");
+                if (!Objects.equals(newVal, last_SYSTEM_R)) {
+                    saveData("SYSTEM_R",newVal);
+                    last_SYSTEM_R = newVal;
+                }
+                //请求电池校准
+                newVal = uiData.get("request_calibration");
+                if (!Objects.equals(newVal, last_request_calibration)) {
+                    saveData("request_calibration",newVal);
+                    last_request_calibration = newVal;
+                }
+                //电池死区容量
+                newVal = uiData.get("est_dead_zone_kwh");
+                if (!Objects.equals(newVal, last_est_dead_zone_kwh)) {
+                    saveData("est_dead_zone_kwh",newVal);
+                    last_est_dead_zone_kwh = newVal;
                 }
                 //今日光伏发电
                 if (!Objects.equals(p_charged, last_p_charged)) {
@@ -1267,7 +1336,6 @@ public class MainActivity extends AppCompatActivity{
             }
         }).start();
     }
-
     public void pro_data_request() {
         stop_send = true;
         try {
@@ -1292,14 +1360,12 @@ public class MainActivity extends AppCompatActivity{
                     sleep(300);
                 }
             }
-
             // 如果 3 次都没拿到包含 mark2 的完整数据，直接提示并保留旧图表，不要清空！
             if (result == null || !result.contains("mark2")) {
                 about.log(TAG, "3次尝试均未获取到完整图表数据");
                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "设备响应超时，请稍后再试", LENGTH_SHORT).show());
                 return;
             }
-
             // 确认拿到完整新数据后，再清空旧列表！
             synchronized (chartDataLock) {
                 _min_bat_list.clear();
@@ -1309,7 +1375,6 @@ public class MainActivity extends AppCompatActivity{
                 _Y_Total_power.clear();
                 debugList.clear();
             }
-
             String[] all_data = result.split("\n");
             about.log(TAG, "正在解码图表数据");
             for (String line : all_data) {
@@ -1364,7 +1429,6 @@ public class MainActivity extends AppCompatActivity{
             });
         }
     }
-
     private void display_data() {
         if (!_min_bat_list.isEmpty() && getTopActivity().toString().equals(top_m)) {
             if (layout_mode == 0 && originBatLineChart != null) {
@@ -1549,7 +1613,6 @@ public class MainActivity extends AppCompatActivity{
             pro_date_power_data(Chart,_barChart_list,"上一年用电量:("+ String.format("%.2f", Float.parseFloat(last_power)) +" kWh)",begin_time + over_time,"年份");
         }
     }
-
     @SuppressLint("SetTextI18n")
     public void mem_data_display_to_chart(String _s, TextView MmUse){
         float _mem = Float.parseFloat(_s);
@@ -1562,10 +1625,7 @@ public class MainActivity extends AppCompatActivity{
         // 2. 优化后的图表更新逻辑
         updateMemoryChart(_mem);
     }
-
-    /**
-     * 优化的内存图表更新方法
-     */
+    // 优化的内存图表更新方法
     private void updateMemoryChart(float memValue) {
         // 如果图表未初始化，先进行初始化
         if (!isMemChartInitialized) {
@@ -1584,14 +1644,10 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     }
-
-    /**
-     * 初始化内存图表（只执行一次）
-     */
+    // 初始化内存图表
     private void initMemoryChart(LineChart chart) {
         ArrayList <Entry> _mem_use_list = new ArrayList<>();
         _mem_use_list.add(new Entry(0, 0)); // 初始点
-
         mem_lineDataSet = new LineDataSet(_mem_use_list, "设备内存使用情况");
         mem_lineDataSet.setValueFormatter(new NoValueFormatter());
         mem_lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
@@ -1600,7 +1656,6 @@ public class MainActivity extends AppCompatActivity{
         mem_lineDataSet.setDrawFilled(true);
         mem_lineDataSet.setFillColor(Color.parseColor("#98EBFC")); // 浅绿色填充
         mem_lineDataSet.setColor(Color.parseColor("#98EBFC")); // 绿色线条
-
         // 配置图表属性（只配置一次）
         chart.getDescription().setText(" ");
         chart.setExtraTopOffset(5f);
@@ -1625,26 +1680,19 @@ public class MainActivity extends AppCompatActivity{
         chart.setData(data);
         isMemChartInitialized = true;
     }
-
-    /**
-     * 添加新的数据点（高效更新）
-     */
+    // 添加新的数据点
     private void addMemDataPoint(LineChart chart, float memValue) {
         if (chart.getData() != null && chart.getData().getDataSetCount() > 0) {
             LineDataSet set = (LineDataSet) chart.getData().getDataSetByIndex(0);
-
             // 添加新点
             int newIndex = set.getEntryCount();
             set.addEntry(new Entry(newIndex, memValue));
-
             // 动态更新图表标签
             @SuppressLint("DefaultLocale") String label = String.format("设备内存使用情况(已使用:%.1f kb  空闲:%.1f kb)", memValue, 126 - memValue);
             set.setLabel(label);
-
             // 限制数据点数量（保持最近100个点）
             if (set.getEntryCount() > 100) {
                 set.removeEntry(0);
-
                 // 重新索引所有点
                 List<Entry> entries = new ArrayList<>();
                 for (int i = 0; i < set.getEntryCount(); i++) {
@@ -1653,14 +1701,12 @@ public class MainActivity extends AppCompatActivity{
                 }
                 set.setValues(entries);
             }
-
             // 自动调整X轴范围
             int dataCount = set.getEntryCount();
             if (dataCount > 0) {
                 chart.getXAxis().setAxisMinimum(0f);
                 chart.getXAxis().setAxisMaximum(Math.max(dataCount, 100f));
             }
-
             // 通知图表更新
             chart.getData().notifyDataChanged();
             chart.notifyDataSetChanged();
@@ -1749,12 +1795,10 @@ public class MainActivity extends AppCompatActivity{
                     }
                     break;
             }
-            return false; // 返回 false，让 MPAndroidChart 内部继续处理高亮十字线手势
+            return false;
         });
     }
-    /**
-     * 初始化BarChart图表
-     */
+    // 初始化BarChart图表
     @SuppressLint({"DefaultLocale", "ClickableViewAccessibility"})
     private void pro_date_power_data(BarChart carChart,ArrayList<BarEntry> barChart, String label, String des, String type) {
         // 先重置，清掉上一个类型的残留状态
@@ -1945,7 +1989,6 @@ public class MainActivity extends AppCompatActivity{
             p = p.getParent();
         }
     }
-
     private void sendCancelToChart(BarChart chart) {
         if (chart == null) return;
         MotionEvent cancel = MotionEvent.obtain(
@@ -1975,7 +2018,6 @@ public class MainActivity extends AppCompatActivity{
         dataSet.setValueTextSize(6f);
         return new BarData(dataSet);
     }
-
     @SuppressLint("SetTextI18n")
     public void updateWeather() {
         try {
@@ -2024,8 +2066,6 @@ public class MainActivity extends AppCompatActivity{
             e.printStackTrace();
         }
     }
-
-    @NonNull
     private String getString() {
         String weather_str = "";
         if (weatherCode == 0) weather_str = "晴天";
@@ -2059,8 +2099,7 @@ public class MainActivity extends AppCompatActivity{
         else if (weatherCode == 99) weather_str = "雷暴伴大冰雹";
         return weather_str;
     }
-
-    /* 获取屏幕状态通过PowerManager */
+    // 获取屏幕状态通过PowerManager
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkScreenStatus() {
         PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
@@ -2073,7 +2112,7 @@ public class MainActivity extends AppCompatActivity{
         }
         return isScreenOn;
     }
-    /*获取最上层activity*/
+    // 获取最上层activity
     public ComponentName getTopActivity(){
         ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
@@ -2083,7 +2122,7 @@ public class MainActivity extends AppCompatActivity{
         }
         return topActivity;
     }
-    /*发送请求数据延时*/
+    // 发送请求数据延时
     public int request_delay_ms(){
         if (readDate(this, "refresh_time") != null) {
             return Integer.parseInt(readDate(this, "refresh_time"));
@@ -2093,9 +2132,7 @@ public class MainActivity extends AppCompatActivity{
     }
     public void showPopupMenu(final View view) {
         final PopupMenu popupMenu = new PopupMenu(this, view);
-        //menu 布局
         popupMenu.getMenuInflater().inflate(R.menu.main, popupMenu.getMenu());
-
         MenuItem switchItem = popupMenu.getMenu().findItem(R.id.switch_card_mode);
         if (switchItem != null) {
             boolean isCardMode = (viewSwitcher.getDisplayedChild() == 1);
@@ -2145,20 +2182,15 @@ public class MainActivity extends AppCompatActivity{
             }
             return false;
         });
-        //显示菜单，不要少了这一步
         popupMenu.show();
     }
-    /**
-     * 取得当月天数
-     * */
-    public int getCurrentMonthLastDay()
-    {
+    // 取得当月天数
+    public int getCurrentMonthLastDay() {
         Calendar a = Calendar.getInstance();
         a.set(Calendar.DATE, 1);//把日期设置为当月第一天
         a.roll(Calendar.DATE, -1);//日期回滚一天，也就是最后一天
         return a.get(Calendar.DATE);
     }
-
     public static String readDate(Context context, String s) {
         sp = context.getSharedPreferences("CONFIG_INFO", MODE_PRIVATE);
         return sp.getString(s, null);
@@ -2167,7 +2199,6 @@ public class MainActivity extends AppCompatActivity{
         editor.putString(l, s);
         editor.apply();
     }
-
     public static void deleteData(String l) {
         editor.remove(l); // 根据l删除数据
         editor.apply();
@@ -2179,38 +2210,12 @@ public class MainActivity extends AppCompatActivity{
             e.printStackTrace();
         }
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        check_request_permissions();
-    }
-    protected void onPause() {
-        super.onPause();
-    }
-    protected void onStop(){
-        super.onStop();
-    }
-    protected void onDestroy() {
-        super.onDestroy();
-        if (wifilist != null) {
-            wifilist.clear();
-        }
-        Thread_Run = false;
-        isExit = true;
-        if (dataFetchThread != null) {
-            dataFetchThread.interrupt(); // 立刻打断 sleep，让旧线程瞬间结束
-            dataFetchThread = null;
-        }
-        tcpClient.close();
-    }
+    // 触摸振动
     public static void goAnim(Context context, int millisecond) {
         Vibrator vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
         vibrator.vibrate(millisecond);
     }
-
-    /**
-     * 再次返回键退出程序
-     */
+    // 再次返回键退出程序
     @Override
     public void onBackPressed() {
         if (lastBack == 0 || System.currentTimeMillis() - lastBack > 2000) {
@@ -2220,7 +2225,6 @@ public class MainActivity extends AppCompatActivity{
         }
         super.onBackPressed();
     }
-
     // 请求多个权限
     private void check_request_permissions() {
         // 创建一个权限列表，把需要使用而没用授权的的权限存放在这里
@@ -2275,7 +2279,6 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     }
-
     // 请求权限回调方法
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -2290,9 +2293,31 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        check_request_permissions();
+    }
+    protected void onPause() {
+        super.onPause();
+    }
+    protected void onStop(){
+        super.onStop();
+    }
+    protected void onDestroy() {
+        super.onDestroy();
+        if (wifilist != null) {
+            wifilist.clear();
+        }
+        Thread_Run = false;
+        isExit = true;
+        if (dataFetchThread != null) {
+            dataFetchThread.interrupt(); // 立刻打断 sleep，让旧线程瞬间结束
+            dataFetchThread = null;
+        }
+        tcpClient.close();
+    }
 }
-
-// 💡 关键修改点 1：将 implements IAxisValueFormatter 改为 extends ValueFormatter
 class ExamModelOneXValueFormatter extends ValueFormatter {
     private final ArrayList<String> list;
 
@@ -2311,7 +2336,6 @@ class ExamModelOneXValueFormatter extends ValueFormatter {
         return list.get(values);
     }
 }
-
 /*数据值格式化器*/
 class NoValueFormatter extends ValueFormatter {
 

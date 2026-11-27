@@ -330,12 +330,19 @@ public class FluidBubbleView extends View {
         float leftY = baseY + dipDepth + dp2px(25f);
         float rightY = baseY + dipDepth + dp2px(25f);
 
-        // 路径：上边缘贴图表顶，下边缘为中间凹的椭圆弧
-        skyPath.moveTo(leftX, skyTop);
-        skyPath.lineTo(w, skyTop);
-        skyPath.lineTo(w, rightY);
+        float cornerRadius = dp2px(8f); // 圆角大小，按需调
 
-        // 控制点在弧线上方，形成向下凹的椭圆感
+        // 从左上角圆角开始
+        skyPath.moveTo(leftX, skyTop + cornerRadius);
+        // 左上角圆角
+        skyPath.quadTo(leftX, skyTop, leftX + cornerRadius, skyTop);
+        // 顶部直线到右上角
+        skyPath.lineTo(w - cornerRadius, skyTop);
+        // 右上角圆角
+        skyPath.quadTo(w, skyTop, w, skyTop + cornerRadius);
+        // 右侧直线到右下
+        skyPath.lineTo(w, rightY);
+        // 底部椭圆弧（保持原样）
         float ctrlY = baseY - dipDepth * 0.8f;
         skyPath.quadTo(w * 0.5f, ctrlY, leftX, leftY);
         skyPath.close();
@@ -861,7 +868,21 @@ public class FluidBubbleView extends View {
             cachedTopMaskColor = fogColor;
         }
         fogPaint.setShader(cachedTopMask);
-        canvas.drawRect(0, 0, w, bandTop + bandH, fogPaint);
+        float cornerRadius = dp2px(8f);
+        Path topMaskPath = new Path();
+        // 左上角圆角
+        topMaskPath.moveTo(0, cornerRadius);
+        topMaskPath.quadTo(0, 0, cornerRadius, 0);
+        // 顶部直线到右上角
+        topMaskPath.lineTo(w - cornerRadius, 0);
+        // 右上角圆角
+        topMaskPath.quadTo(w, 0, w, cornerRadius);
+        // 右侧直线到底部
+        topMaskPath.lineTo(w, bandTop + bandH);
+        // 底部直线到左侧
+        topMaskPath.lineTo(0, bandTop + bandH);
+        topMaskPath.close();
+        canvas.drawPath(topMaskPath, fogPaint);
         fogPaint.setShader(null);
 
         // 雪

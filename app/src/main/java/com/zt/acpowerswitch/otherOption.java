@@ -78,10 +78,7 @@ public class otherOption extends AppCompatActivity {
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                Log.d(TAG,"先暂停发送数据");
-                MainActivity.stop_send = true;
-            }
+            public void onStartTrackingTouch(SeekBar seekBar) {}
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
@@ -207,7 +204,6 @@ public class otherOption extends AppCompatActivity {
         //输出模式按钮监听
         auto_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            send_command_to_server("power_out_mode:自动模式");
             if (send_command_to_server("power_out_mode:自动模式")){
                 auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
                 power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
@@ -239,44 +235,42 @@ public class otherOption extends AppCompatActivity {
         reset_network.setOnClickListener(view -> {
             goAnim(this, 50);
             new AlertDialog.Builder(this)
-            .setTitle("📛 注意:📢 📢 📢")
-            .setMessage("该操作将彻底重置逆变器网络,如果你不在逆变器旁边,请慬慎执行!!!")
-            .setPositiveButton("取消", null)
-            .setNegativeButton("重置", (dialogInterface, i) -> {
-                goAnim(this, 50);
-                if (send_command_to_server("del_wifi_config")) {
-                    new AlertDialog.Builder(this)
-                        .setTitle("🔔 提 示")
-                        .setMessage("重置成功!即将清除APP缓存,并退出.")
-                        .setNegativeButton("完成", (dialogInterface1, i1) -> {
-                            goAnim(this, 50);
-                            // 先关闭 TCP 连接并打印日志，否则清理数据后进程会直接被杀死
-                            if (tcpClient != null) tcpClient.close();
-                            about.log(TAG, "关闭当前连接");
-                            // 使用 Java 语法清除 App 数据（执行后 App 会自动关闭）
-                            ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-                            if (activityManager != null) {
-                                activityManager.clearApplicationUserData();
-                            }
-                        }).show();
-                } else {
-                    new AlertDialog.Builder(this)
-                        .setTitle("提 示")
-                        .setMessage("设备正忙,请稍后再试!")
-                        .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(this, 50)).show();
-                }
-            }).show();
+                    .setTitle("📛 注意:📢 📢 📢")
+                    .setMessage("该操作将彻底重置逆变器网络,如果你不在逆变器旁边,请慬慎执行!!!")
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("重置", (dialogInterface, i) -> {
+                        goAnim(this, 50);
+                        if (send_command_to_server("del_wifi_config")) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("🔔 提 示")
+                                    .setMessage("重置成功!即将清除APP缓存,并退出.")
+                                    .setNegativeButton("完成", (dialogInterface1, i1) -> {
+                                        goAnim(this, 50);
+                                        // 先关闭 TCP 连接并打印日志，否则清理数据后进程会直接被杀死
+                                        if (tcpClient != null) tcpClient.close();
+                                        about.log(TAG, "关闭当前连接");
+                                        // 使用 Java 语法清除 App 数据（执行后 App 会自动关闭）
+                                        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                                        if (activityManager != null) {
+                                            activityManager.clearApplicationUserData();
+                                        }
+                                    }).show();
+                        } else {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("提 示")
+                                    .setMessage("设备正忙,请稍后再试!")
+                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(this, 50)).show();
+                        }
+                    }).show();
         });
     }
     private void refresh_calibration_display() {
         String saved_request_calibration = readDate(otherOption.this, "request_calibration");
-        if (saved_request_calibration != null){
-            if (Integer.parseInt(saved_request_calibration) == 1){
-                request_calibration.setText("正在校准");
-            }else if(Integer.parseInt(saved_request_calibration) == 0){
-                request_calibration.setText("执行");
-            }else if(Integer.parseInt(saved_request_calibration) == -1){
-                request_calibration.setText("等待启动校准");
+        if (saved_request_calibration != null && !saved_request_calibration.isEmpty()){
+            switch (saved_request_calibration) {
+                case "1" -> request_calibration.setText("正在校准");
+                case "0" -> request_calibration.setText("执行");
+                case "-1" -> request_calibration.setText("等待启动校准");
             }
         }
     }
@@ -287,26 +281,26 @@ public class otherOption extends AppCompatActivity {
         }
         if (text.equals("正在校准") || text.equals("等待启动校准")){
             new AlertDialog.Builder(otherOption.this)
-                .setTitle("提 示:")
-                .setMessage("是否取消校准?")
-                .setPositiveButton("取消", null)
-                .setNegativeButton("确定", (d, i) -> {
-                    goAnim(otherOption.this, 50);
-                    if (send_command_to_server("request_calibration:0")){
-                        waitForCalibrationValue("0");
-                    }
-                }).show();
+                    .setTitle("提 示:")
+                    .setMessage("是否取消校准?")
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (d, i) -> {
+                        goAnim(otherOption.this, 50);
+                        if (send_command_to_server("request_calibration:0")){
+                            waitForCalibrationValue();
+                        }
+                    }).show();
         }else if (text.equals("执行")){
             new AlertDialog.Builder(otherOption.this)
-                .setTitle("提 示:")
-                .setMessage("是否重新校准电池?")
-                .setPositiveButton("取消", null)
-                .setNegativeButton("确定", (d, i) -> {
-                    goAnim(otherOption.this, 50);
-                    if (send_command_to_server("request_calibration:1")){
-                        waitForCalibrationValue("1");
-                    }
-                }).show();
+                    .setTitle("提 示:")
+                    .setMessage("是否重新校准电池?")
+                    .setPositiveButton("取消", null)
+                    .setNegativeButton("确定", (d, i) -> {
+                        goAnim(otherOption.this, 50);
+                        if (send_command_to_server("request_calibration:1")){
+                            waitForCalibrationValue();
+                        }
+                    }).show();
         }
     }
 
@@ -328,29 +322,8 @@ public class otherOption extends AppCompatActivity {
             power_grid_mode.setBackground(null);
         }
     }
-    private void waitForCalibrationValue(String expectedValue) {
-        final int[] attempts = {0};
-        final int MAX_ATTEMPTS = 10;  // 最多等 10 次
-        final int INTERVAL_MS = 300;  // 每次间隔 300ms
-
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                attempts[0]++;
-                String currentValue =  readDate(otherOption.this, "request_calibration");  // 读本地存储
-
-                if (expectedValue.equals(currentValue)) {
-                    // 服务端已更新
-                    refresh_calibration_display();
-                } else if (attempts[0] >= MAX_ATTEMPTS) {
-                    // 超时，放弃等待
-                    refresh_calibration_display();
-                } else {
-                    // 继续等
-                    new Handler(Looper.getMainLooper()).postDelayed(this, INTERVAL_MS);
-                }
-            }
-        }, INTERVAL_MS);
+    private void waitForCalibrationValue() {
+        new Handler(Looper.getMainLooper()).postDelayed(this::refresh_calibration_display, 1000);
     }
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
@@ -365,76 +338,76 @@ public class otherOption extends AppCompatActivity {
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
         new AlertDialog.Builder(otherOption.this)
-            .setTitle("提 示:")
-            .setMessage(msg)
-            .setView(layout)
-            .setPositiveButton("取消", null)
-            .setNegativeButton("确定", (dialog, which) -> {
-                goAnim(otherOption.this, 50);
-                switch (msg) {
-                    case "设置负载最大功率阈值(最大不超过5KW)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            w_edit.setText(editText.getText());
-                            send_edit_arg(w_edit,"power","功率参数巳改变,发送参数到服务端",
-                                    "set_w:","功率设置项请输入整数或小数类型");
-                        }
-                        break;
-                    case "开启逆变阈值(高于此电压则开启逆变,默认值:27.2)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            open_pv_value.setText(editText.getText());
-                            send_edit_arg(open_pv_value,"on_inv_value","开启逆变阈值巳改变,发送参数到服务端",
-                                    "set_open_pv_value:","逆变阈值请输入整数或小数类型");
-                        }
-                        break;
-                    case "低于此电压则关闭逆变器(截止电压默认值:24)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            low_voltage_set.setText(editText.getText());
-                            send_edit_arg(low_voltage_set,"lowvoltage","最低电压值巳改变,发送参数到服务端",
-                                    "low_voltage:","最低电压值项请输入整数或小数类型");
-                        }
-                        break;
-                    case "设置极致锁相峰值误差范围(默认值:200us)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            lock_us_diff.setText(editText.getText());
-                            send_edit_arg(lock_us_diff,"peakToPeakDiff","最低极致锁相峰值微秒值改变,发送参数到服务端",
-                                    "lock_us_diff:","极致锁相峰值微秒值差请输入整数类型");
-                        }
-                        break;
-                    case "设置逆变系统总内阻(默认值:0.0mΩ)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            system_r.setText(editText.getText());
-                            send_edit_arg(system_r,"SYSTEM_R","系统内阻参数巳改变,发送参数到服务端",
-                                    "SYSTEM_R:","系统总内阻请输入整数或小数类型");
-                        }
-                        break;
-                    case "主功率板MOS温度风扇触发值(默认值:28度)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            mos_trigger_value.setText(editText.getText());
-                            send_edit_arg(mos_trigger_value,"mos_temp_value","mos温度触发值巳改变,发送参数到服务端",
-                                    "mos_temp:","主功率板风扇温度触发值请输入整数或小数类型");
-                        }
-                        break;
-                    case "获取远程数据的时间间隔(默认值:1000ms)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            refresh_time_set.setText(editText.getText());
-                            refresh_time_set();
-                        }
-                        break;
-                    case "请输入远程逆变器域名或IP址址":
-                        if (!editText.getText().toString().isEmpty()) {
-                            target_ip.setText(editText.getText());
-                            target_ip_set();
-                        }
-                        break;
-                    case "请输入远程逆变器端口(默认值:55555)":
-                        if (!editText.getText().toString().isEmpty()) {
-                            target_port.setText(editText.getText());
-                            target_port_set();
-                        }
-                        break;
-                }
-            })
-            .show();
+                .setTitle("提 示:")
+                .setMessage(msg)
+                .setView(layout)
+                .setPositiveButton("取消", null)
+                .setNegativeButton("确定", (dialog, which) -> {
+                    goAnim(otherOption.this, 50);
+                    switch (msg) {
+                        case "设置负载最大功率阈值(最大不超过5KW)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                w_edit.setText(editText.getText());
+                                send_edit_arg(w_edit,"power","功率参数巳改变,发送参数到服务端",
+                                        "set_w:","功率设置项请输入整数或小数类型");
+                            }
+                            break;
+                        case "开启逆变阈值(高于此电压则开启逆变,默认值:27.2)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                open_pv_value.setText(editText.getText());
+                                send_edit_arg(open_pv_value,"on_inv_value","开启逆变阈值巳改变,发送参数到服务端",
+                                        "set_open_pv_value:","逆变阈值请输入整数或小数类型");
+                            }
+                            break;
+                        case "低于此电压则关闭逆变器(截止电压默认值:24)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                low_voltage_set.setText(editText.getText());
+                                send_edit_arg(low_voltage_set,"lowvoltage","最低电压值巳改变,发送参数到服务端",
+                                        "low_voltage:","最低电压值项请输入整数或小数类型");
+                            }
+                            break;
+                        case "设置极致锁相峰值误差范围(默认值:200us)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                lock_us_diff.setText(editText.getText());
+                                send_edit_arg(lock_us_diff,"peakToPeakDiff","最低极致锁相峰值微秒值改变,发送参数到服务端",
+                                        "lock_us_diff:","极致锁相峰值微秒值差请输入整数类型");
+                            }
+                            break;
+                        case "设置逆变系统总内阻(默认值:0.0mΩ)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                system_r.setText(editText.getText());
+                                send_edit_arg(system_r,"SYSTEM_R","系统内阻参数巳改变,发送参数到服务端",
+                                        "SYSTEM_R:","系统总内阻请输入整数或小数类型");
+                            }
+                            break;
+                        case "主功率板MOS温度风扇触发值(默认值:28度)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                mos_trigger_value.setText(editText.getText());
+                                send_edit_arg(mos_trigger_value,"mos_temp_value","mos温度触发值巳改变,发送参数到服务端",
+                                        "mos_temp:","主功率板风扇温度触发值请输入整数或小数类型");
+                            }
+                            break;
+                        case "获取远程数据的时间间隔(默认值:1000ms)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                refresh_time_set.setText(editText.getText());
+                                refresh_time_set();
+                            }
+                            break;
+                        case "请输入远程逆变器域名或IP址址":
+                            if (!editText.getText().toString().isEmpty()) {
+                                target_ip.setText(editText.getText());
+                                target_ip_set();
+                            }
+                            break;
+                        case "请输入远程逆变器端口(默认值:55555)":
+                            if (!editText.getText().toString().isEmpty()) {
+                                target_port.setText(editText.getText());
+                                target_port_set();
+                            }
+                            break;
+                    }
+                })
+                .show();
     }
     public void send_edit_arg(TextView textview, String save, String msg, String cmd, String err_msg) {
         new Thread(() -> {
