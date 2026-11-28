@@ -252,7 +252,7 @@ public class TCPClient {
             throw new IOException("Socket未连接");
         }
 
-        byte[] data = message.getBytes(StandardCharsets.UTF_8);
+        byte[] data = (message + "\n").getBytes(StandardCharsets.UTF_8);
         outputStream.write(data);
         outputStream.flush();
     }

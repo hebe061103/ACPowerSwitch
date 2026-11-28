@@ -215,7 +215,6 @@ public class MainActivity extends AppCompatActivity{
     private String last_t_charge_dischg_time;
     private String last_bat_health_text;
     private String last_bat_health_detail;
-    // 逆变器自身功耗
     private final float invSelfConsumption = 30f;
     private boolean moduleInitialized;
     private Thread dataFetchThread;
@@ -666,7 +665,7 @@ public class MainActivity extends AppCompatActivity{
                 for (int i = 0; i < 3; i++) {
                     String response = tcpClient.sendAndReceive(data);
                     about.log(TAG, "返回数据:" + response);
-                    if (response != null && response.contains("ACK")) {
+                    if (response != null && response.trim().contains("ACK")) {
                         return true;
                     }
                     sleep(300);
