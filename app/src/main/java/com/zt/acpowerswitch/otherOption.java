@@ -30,6 +30,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.function.Consumer;
+
 public class otherOption extends AppCompatActivity {
     private static final String TAG = "otherOption:";
     public SeekBar seekBar;
@@ -58,7 +60,12 @@ public class otherOption extends AppCompatActivity {
         setContentView(R.layout.other_activity);
         str_pro();
     }
-
+    private void sendCommandWithUi(String cmd, Consumer<Boolean> onResult) {
+        new Thread(() -> {
+            boolean ok = send_command_to_server(cmd);
+            runOnUiThread(() -> onResult.accept(ok));
+        }).start();
+    }
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     public void str_pro() {
         //校准光耦和电阻的物理硬件延迟误差,硬件补偿值
@@ -83,9 +90,11 @@ public class otherOption extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 String hardware_offset_us = String.valueOf(seekBar.getProgress() - 2000);
-                if (send_command_to_server("lock_us:"+ hardware_offset_us)){
-                    MainActivity.saveData("hardware_offset_us", hardware_offset_us);
-                }
+                sendCommandWithUi("lock_us:"+ hardware_offset_us, ok -> {
+                    if (ok) {
+                        MainActivity.saveData("hardware_offset_us", hardware_offset_us);
+                    }
+                });
             }
         });
         TextView btnMinus = findViewById(R.id.btnMinus); //点击"-"
@@ -103,11 +112,11 @@ public class otherOption extends AppCompatActivity {
             }
             // 重新定义任务
             int finalM = m;
-            saveRunnable = () -> {
-                if (send_command_to_server("lock_us:" + finalM)) {
+            saveRunnable = () -> sendCommandWithUi("lock_us:" + finalM, ok -> {
+                if (ok) {
                     MainActivity.saveData("hardware_offset_us", String.valueOf(finalM));
                 }
-            };
+            });
             // 延时3秒没有再次点击则执行
             handler.postDelayed(saveRunnable, 3000);
         });
@@ -127,11 +136,11 @@ public class otherOption extends AppCompatActivity {
             }
             // 重新定义任务
             int finalM = m;
-            saveRunnable = () -> {
-                if (send_command_to_server("lock_us:" + finalM)) {
+            saveRunnable = () -> sendCommandWithUi("lock_us:" + finalM, ok -> {
+                if (ok) {
                     MainActivity.saveData("hardware_offset_us", String.valueOf(finalM));
                 }
-            };
+            });
             // 延时3秒没有再次点击则执行
             handler.postDelayed(saveRunnable, 3000);
         });
@@ -204,30 +213,36 @@ public class otherOption extends AppCompatActivity {
         //输出模式按钮监听
         auto_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("power_out_mode:自动模式")){
-                auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-                power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
-                pv_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("work_mode", "自动模式");
-            }
+            sendCommandWithUi("power_out_mode:自动模式", ok -> {
+                if (ok) {
+                    auto_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                    power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
+                    pv_mode.setBackgroundColor(Color.TRANSPARENT);
+                    saveData("work_mode", "自动模式");
+                }
+            });
         });
         power_grid_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("power_out_mode:市电模式")){
-                power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-                auto_mode.setBackgroundColor(Color.TRANSPARENT);
-                pv_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("work_mode", "市电模式");
-            }
+            sendCommandWithUi("power_out_mode:市电模式", ok -> {
+                if (ok) {
+                    power_grid_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                    auto_mode.setBackgroundColor(Color.TRANSPARENT);
+                    pv_mode.setBackgroundColor(Color.TRANSPARENT);
+                    saveData("work_mode", "市电模式");
+                }
+            });
         });
         pv_mode.setOnClickListener(view -> {
             goAnim(otherOption.this, 50);
-            if (send_command_to_server("power_out_mode:逆变模式")){
-                pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
-                auto_mode.setBackgroundColor(Color.TRANSPARENT);
-                power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
-                saveData("work_mode", "逆变模式");
-            }
+            sendCommandWithUi("power_out_mode:逆变模式", ok -> {
+                if (ok) {
+                    pv_mode.setBackgroundColor(Color.parseColor("#673AB7"));
+                    auto_mode.setBackgroundColor(Color.TRANSPARENT);
+                    power_grid_mode.setBackgroundColor(Color.TRANSPARENT);
+                    saveData("work_mode", "逆变模式");
+                }
+            });
         });
         out_mode_display(); //输出模式显示,字体背景加颜色
         // 重置网络及参数处理
@@ -235,33 +250,35 @@ public class otherOption extends AppCompatActivity {
         reset_network.setOnClickListener(view -> {
             goAnim(this, 50);
             new AlertDialog.Builder(this)
-                    .setTitle("📛 注意:📢 📢 📢")
-                    .setMessage("该操作将彻底重置逆变器网络,如果你不在逆变器旁边,请慬慎执行!!!")
-                    .setPositiveButton("取消", null)
-                    .setNegativeButton("重置", (dialogInterface, i) -> {
-                        goAnim(this, 50);
-                        if (send_command_to_server("del_wifi_config")) {
+                .setTitle("📛 注意:📢 📢 📢")
+                .setMessage("该操作将彻底重置逆变器网络,如果你不在逆变器旁边,请慬慎执行!!!")
+                .setPositiveButton("取消", null)
+                .setNegativeButton("重置", (dialogInterface, i) -> {
+                    goAnim(this, 50);
+                    sendCommandWithUi("del_wifi_config", ok -> {
+                        if (ok) {
                             new AlertDialog.Builder(this)
-                                    .setTitle("🔔 提 示")
-                                    .setMessage("重置成功!即将清除APP缓存,并退出.")
-                                    .setNegativeButton("完成", (dialogInterface1, i1) -> {
-                                        goAnim(this, 50);
-                                        // 先关闭 TCP 连接并打印日志，否则清理数据后进程会直接被杀死
-                                        if (tcpClient != null) tcpClient.close();
-                                        about.log(TAG, "关闭当前连接");
-                                        // 使用 Java 语法清除 App 数据（执行后 App 会自动关闭）
-                                        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-                                        if (activityManager != null) {
-                                            activityManager.clearApplicationUserData();
-                                        }
-                                    }).show();
+                                .setTitle("🔔 提 示")
+                                .setMessage("重置成功!即将清除APP缓存,并退出.")
+                                .setNegativeButton("完成", (dialogInterface1, i1) -> {
+                                    goAnim(this, 50);
+                                    // 先关闭 TCP 连接并打印日志，否则清理数据后进程会直接被杀死
+                                    if (tcpClient != null) tcpClient.close();
+                                    about.log(TAG, "关闭当前连接");
+                                    // 使用 Java 语法清除 App 数据（执行后 App 会自动关闭）
+                                    ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                                    if (activityManager != null) {
+                                        activityManager.clearApplicationUserData();
+                                    }
+                                }).show();
                         } else {
                             new AlertDialog.Builder(this)
-                                    .setTitle("提 示")
-                                    .setMessage("设备正忙,请稍后再试!")
-                                    .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(this, 50)).show();
+                                .setTitle("提 示")
+                                .setMessage("设备正忙,请稍后再试!")
+                                .setNegativeButton("完成", (dialogInterface12, i12) -> goAnim(this, 50)).show();
                         }
-                    }).show();
+                    });
+                }).show();
         });
     }
     private void refresh_calibration_display() {
@@ -286,9 +303,11 @@ public class otherOption extends AppCompatActivity {
                     .setPositiveButton("取消", null)
                     .setNegativeButton("确定", (d, i) -> {
                         goAnim(otherOption.this, 50);
-                        if (send_command_to_server("request_calibration:0")){
-                            waitForCalibrationValue();
-                        }
+                        sendCommandWithUi("request_calibration:0", ok -> {
+                            if (ok) {
+                                waitForCalibrationValue();
+                            }
+                        });
                     }).show();
         }else if (text.equals("执行")){
             new AlertDialog.Builder(otherOption.this)
@@ -297,9 +316,11 @@ public class otherOption extends AppCompatActivity {
                     .setPositiveButton("取消", null)
                     .setNegativeButton("确定", (d, i) -> {
                         goAnim(otherOption.this, 50);
-                        if (send_command_to_server("request_calibration:1")){
-                            waitForCalibrationValue();
-                        }
+                        sendCommandWithUi("request_calibration:1", ok -> {
+                            if (ok) {
+                                waitForCalibrationValue();
+                            }
+                        });
                     }).show();
         }
     }
@@ -323,7 +344,7 @@ public class otherOption extends AppCompatActivity {
         }
     }
     private void waitForCalibrationValue() {
-        new Handler(Looper.getMainLooper()).postDelayed(this::refresh_calibration_display, 1000);
+        new Handler(Looper.getMainLooper()).postDelayed(this::refresh_calibration_display, 2000);
     }
     public void send_arg_server(String msg){
         goAnim(otherOption.this, 50);
@@ -415,8 +436,8 @@ public class otherOption extends AppCompatActivity {
                 about.log(TAG, msg);
                 if (isInteger(textview.getText().toString()) || isDecimal(textview.getText().toString()) && Float.parseFloat(textview.getText().toString()) > 0) {
                     // 切回主线程更新 UI
-                    runOnUiThread(() -> {
-                        if (send_command_to_server(cmd + textview.getText().toString())){
+                    runOnUiThread(() -> sendCommandWithUi(cmd + textview.getText().toString(), ok -> {
+                        if (ok) {
                             new AlertDialog.Builder(otherOption.this)
                                     .setTitle("提 示:")
                                     .setMessage("设置成功!")
@@ -424,7 +445,7 @@ public class otherOption extends AppCompatActivity {
                                         goAnim(otherOption.this, 50);
                                         saveData(save, textview.getText().toString());
                                     }).show();
-                        }else{
+                        } else {
                             new AlertDialog.Builder(otherOption.this)
                                     .setTitle("提 示:")
                                     .setMessage("设置失败,请重试!")
@@ -433,7 +454,7 @@ public class otherOption extends AppCompatActivity {
                                         textview.setText(readDate(otherOption.this, save));
                                     }).show();
                         }
-                    });
+                    }));
                 } else {
                     about.log(TAG, err_msg);
                     runOnUiThread(() -> Toast.makeText(otherOption.this, err_msg, Toast.LENGTH_SHORT).show());

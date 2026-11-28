@@ -60,19 +60,19 @@ public class WeatherUpdater {
         long now = System.currentTimeMillis();
         long last = cache.getLong(KEY_TIME, 0);
         if (!force && now - last < CACHE_VALID_MS) {
-            Log.d(TAG, "使用缓存天气数据，直接返回");
+            Log.d(TAG, "使用巳有缓存天气数据，直接返回");
             if (callback != null) callback.onResult(readCache(), true);
             return;
         }
 
         executor.execute(() -> {
-            Log.d(TAG, "使用坐标 纬度=" + FIXED_LAT + " 经度=" + FIXED_LNG);
+            Log.d(TAG, "使用本地坐标获取天气数据:纬度=" + FIXED_LAT + " 经度=" + FIXED_LNG);
             WeatherData data = fetchFromApi();
             if (data != null) {
                 saveCache(data);
                 mainHandler.post(() -> { if (callback != null) callback.onResult(data, false); });
             } else {
-                Log.w(TAG, "API请求失败，返回旧缓存");
+                Log.w(TAG, "API请求失败，返回旧缓存天气数据");
                 mainHandler.post(() -> { if (callback != null) callback.onResult(readCache(), true); });
             }
         });

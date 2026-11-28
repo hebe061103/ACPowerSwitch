@@ -29,6 +29,7 @@ public class TCPClient {
     private static final String TAG = "TCPClient:";
     private static final int CONNECT_TIMEOUT = 3000;
     private static final int READ_TIMEOUT = 3000;
+    public static final Object SEND_LOCK = new Object();
 
     // ============ DOH 配置 ============
     private static final String[] DOH_URLS = {
