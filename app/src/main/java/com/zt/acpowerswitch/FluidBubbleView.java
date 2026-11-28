@@ -28,6 +28,7 @@ public class FluidBubbleView extends View {
     private int fluidColor = Color.parseColor("#39FF14");
     private LinearGradient cachedSkyGradient;
     private int cachedSkyHeight = -1;
+    private boolean cachedSkyNight;
     private LinearGradient cachedTopMask;
     private int cachedTopMaskHeight = -1;
     private int cachedTopMaskColor = -1;
@@ -56,6 +57,7 @@ public class FluidBubbleView extends View {
 
     // ==================== 月亮 Shader 缓存 ====================
     private final Paint craterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint moonStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // ==================== 坐标绑定 ====================
     private float solarX = -1f, solarY = -1f;
@@ -211,6 +213,12 @@ public class FluidBubbleView extends View {
         craterPaint.setColor(Color.parseColor("#E8E0C8"));
         craterPaint.setAlpha(90);
 
+        moonStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        moonStrokePaint.setStyle(Paint.Style.STROKE);
+        moonStrokePaint.setStrokeWidth(dp2px(0.6f));
+        moonStrokePaint.setColor(Color.parseColor("#B0C4DE")); // 冷灰蓝
+        moonStrokePaint.setAlpha(70);
+
         ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(2200);
         animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -258,12 +266,21 @@ public class FluidBubbleView extends View {
 
     private void checkDayNight() {
         if (sunriseMinute < 0 || sunsetMinute < 0) {
-            isNight = false; // 没数据默认白天，月亮不显示
+            if (isNight) {
+                isNight = false;
+                cachedSkyGradient = null;
+                invalidate();
+            }
             return;
         }
         Calendar now = Calendar.getInstance();
         int cur = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
-        isNight = cur < sunriseMinute || cur > sunsetMinute;
+        boolean newNight = cur < sunriseMinute || cur > sunsetMinute;
+        if (newNight != isNight) {
+            isNight = newNight;
+            cachedSkyGradient = null;
+            invalidate();
+        }
     }
 
     public void updateConfig(float progress, int color,
@@ -346,15 +363,26 @@ public class FluidBubbleView extends View {
         float ctrlY = baseY - dipDepth * 0.8f;
         skyPath.quadTo(w * 0.5f, ctrlY, leftX, leftY);
         skyPath.close();
-
-        if (cachedSkyGradient == null || (int) h != cachedSkyHeight) {
-            cachedSkyGradient = new LinearGradient(
-                    0, skyTop,
-                    0, baseY + dp2px(14f),
-                    Color.parseColor("#4FC3F7"),
-                    Color.parseColor("#E1F5FE"),
-                    Shader.TileMode.CLAMP
-            );
+        boolean night = isNight;
+        if (cachedSkyGradient == null || (int) h != cachedSkyHeight || night != cachedSkyNight) {
+            if (night) {
+                // 夜间天空用深蓝
+                cachedSkyGradient = new LinearGradient(
+                        0, skyTop, 0, baseY + dp2px(14f),
+                        Color.parseColor("#1A3A5C"),
+                        Color.parseColor("#0D2137"),
+                        Shader.TileMode.CLAMP
+                );
+            } else {
+                // 白天保持浅蓝
+                cachedSkyGradient = new LinearGradient(
+                        0, skyTop, 0, baseY + dp2px(14f),
+                        Color.parseColor("#4FC3F7"),
+                        Color.parseColor("#E1F5FE"),
+                        Shader.TileMode.CLAMP
+                );
+            }
+            cachedSkyNight = night;
             cachedSkyHeight = (int) h;
         }
         skyPaint.setShader(cachedSkyGradient);
@@ -1248,25 +1276,51 @@ public class FluidBubbleView extends View {
         if (moonX < 0 || moonY < 0) return;
         float moonR = dp2px(12f);
 
-        // 1. 月亮本体（暖灰）
-        moonPaint.setColor(Color.parseColor("#E8E8E0"));
+        // ===== 1. 月亮本体：径向渐变，中心亮边缘暗，模拟自发光 =====
+        RadialGradient moonBodyGradient = new RadialGradient(
+                moonX, moonY, moonR,
+                Color.parseColor("#FFFFFF"),       // 中心纯白
+                Color.parseColor("#E8E8E0"),       // 边缘暖灰
+                Shader.TileMode.CLAMP
+        );
+        canvas.drawCircle(moonX, moonY, moonR, moonStrokePaint);
+        moonPaint.setShader(moonBodyGradient);
         canvas.drawCircle(moonX, moonY, moonR, moonPaint);
+        moonPaint.setShader(null);
 
-        // 2. 光晕叠在上方
+        // ===== 2. 内发光：在边缘再叠一层薄光 =====
+        RadialGradient innerGlow = new RadialGradient(
+                moonX, moonY, moonR,
+                Color.argb(0, 255, 255, 255),
+                Color.argb(60, 255, 255, 255),
+                Shader.TileMode.CLAMP
+        );
+        moonPaint.setShader(innerGlow);
+        canvas.drawCircle(moonX, moonY, moonR, moonPaint);
+        moonPaint.setShader(null);
+
+        // ===== 3. 外晕：三层叠加，从密到疏 =====
         float glowAlpha = 80 + (int) (30 * Math.sin(animationPhase * Math.PI * 2));
-        moonGlowPaint.setColor(Color.parseColor("#E8F0F8"));
+
+        // 第一层：紧贴本体，最亮
+        moonGlowPaint.setColor(Color.parseColor("#F0F4F8"));
         moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha)));
         canvas.drawCircle(moonX, moonY, moonR * 1.8f, moonGlowPaint);
 
-        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha / 2)));
-        canvas.drawCircle(moonX, moonY, moonR * 2.6f, moonGlowPaint);
+        // 第二层：中等扩散
+        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha * 0.6f)));
+        canvas.drawCircle(moonX, moonY, moonR * 2.4f, moonGlowPaint);
 
-        // 3. 环形山（用成员 craterPaint，不每帧 new）
+        // 第三层：大范围弥散
+        moonGlowPaint.setAlpha((int) Math.max(0, Math.min(255, glowAlpha * 0.3f)));
+        canvas.drawCircle(moonX, moonY, moonR * 3.2f, moonGlowPaint);
+
+        // ===== 4. 环形山：用成员 craterPaint，不每帧 new =====
         canvas.drawCircle(moonX - moonR * 0.3f, moonY - moonR * 0.2f, moonR * 0.25f, craterPaint);
         canvas.drawCircle(moonX + moonR * 0.25f, moonY + moonR * 0.1f, moonR * 0.2f, craterPaint);
         canvas.drawCircle(moonX - moonR * 0.1f, moonY + moonR * 0.3f, moonR * 0.18f, craterPaint);
 
-        // 4. 高光点（纯白，让月亮"亮"起来）
+        // ===== 5. 高光点：纯白，让月亮"亮"起来 =====
         Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         highlightPaint.setColor(Color.WHITE);
         highlightPaint.setAlpha(200);
